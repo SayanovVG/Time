@@ -1,0 +1,703 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="theme-color" content="#111827">
+  <title>Фитнес Трекер</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+    body { 
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background: linear-gradient(135deg, #111827 0%, #1f2937 50%, #111827 100%);
+      min-height: 100vh;
+      color: white;
+      padding: 16px;
+      padding-bottom: 32px;
+    }
+    input { font-size: 16px !important; font-family: inherit; }
+    input:focus { outline: none; border-color: #3b82f6 !important; box-shadow: 0 0 0 2px rgba(59,130,246,0.3); }
+    button { font-family: inherit; cursor: pointer; border: none; }
+    button:active { transform: scale(0.98); }
+
+    /* Tab buttons */
+    .tabs { display: flex; gap: 8px; margin-bottom: 16px; }
+    .tab-btn { flex: 1; padding: 12px; border-radius: 12px; font-weight: 700; font-size: 14px; display: flex; align-items: center; justify-content: center; gap: 8px; transition: all 0.2s; }
+    .tab-btn.active-training { background: linear-gradient(to right, #3b82f6, #8b5cf6); color: white; }
+    .tab-btn.active-nutrition { background: linear-gradient(to right, #22c55e, #10b981); color: white; }
+    .tab-btn.inactive { background: rgba(55, 65, 81, 0.6); color: #d1d5db; }
+
+    /* Header card */
+    .header-card { border-radius: 12px; padding: 24px; margin-bottom: 24px; box-shadow: 0 25px 50px -12px rgba(0,0,0,0.5); border: 1px solid rgba(255,255,255,0.2); }
+    .header-card.week-1-2 { background: linear-gradient(to right, #3b82f6, #2563eb); }
+    .header-card.week-3-4 { background: linear-gradient(to right, #a855f7, #7c3aed); }
+    .header-card.week-5-6 { background: linear-gradient(to right, #ef4444, #dc2626); }
+    .header-card.week-7 { background: linear-gradient(to right, #22c55e, #16a34a); }
+    .header-top { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 16px; }
+    .header-title { font-size: 24px; font-weight: 900; letter-spacing: -0.5px; }
+    .header-subtitle { font-size: 14px; color: rgba(255,255,255,0.8); margin-top: 4px; }
+    .header-info { font-size: 12px; color: rgba(255,255,255,0.6); margin-top: 4px; }
+    .header-day { font-size: 30px; font-weight: 900; text-align: right; }
+    .header-day-label { font-size: 12px; color: rgba(255,255,255,0.7); text-align: right; }
+    .day-buttons { display: flex; gap: 8px; }
+    .day-btn { flex: 1; padding: 10px; border-radius: 8px; font-size: 14px; font-weight: 700; transition: all 0.2s; }
+    .day-btn.active { background: white; color: #111827; }
+    .day-btn.inactive { background: rgba(255,255,255,0.2); color: white; }
+
+    /* Exercise card */
+    .exercise-card { background: rgba(255,255,255,0.1); backdrop-filter: blur(10px); border: 1px solid rgba(255,255,255,0.2); border-radius: 8px; padding: 16px; margin-bottom: 12px; transition: background 0.2s; }
+    .exercise-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 12px; }
+    .exercise-name { font-weight: 700; font-size: 14px; }
+    .exercise-info { font-size: 12px; color: #d1d5db; margin-top: 4px; }
+    .exercise-info .yellow { color: #facc15; }
+    .exercise-badges { display: flex; align-items: center; gap: 8px; }
+    .badge-done { background: linear-gradient(to right, #22c55e, #10b981); color: white; font-size: 12px; padding: 4px 12px; border-radius: 9999px; font-weight: 700; animation: pulse 2s infinite; }
+    .hint-btn { background: rgba(59,130,246,0.3); color: #93c5fd; font-size: 12px; padding: 4px 8px; border-radius: 9999px; display: flex; align-items: center; gap: 4px; }
+    .hint-box { background: rgba(30,58,138,0.3); border: 1px solid rgba(59,130,246,0.3); border-radius: 8px; padding: 12px; margin-bottom: 12px; font-size: 12px; color: #bfdbfe; }
+    .hint-title { font-weight: 700; color: #93c5fd; margin-bottom: 4px; }
+
+    /* Set row */
+    .set-row { display: flex; align-items: center; gap: 8px; padding: 10px; border-radius: 6px; margin-bottom: 8px; transition: all 0.2s; }
+    .set-row.incomplete { background: rgba(55,65,81,0.4); border: 1px solid rgba(75,85,99,0.4); }
+    .set-row.complete { background: rgba(34,197,94,0.2); border: 1px solid rgba(34,197,94,0.4); }
+    .set-content { flex: 1; }
+    .set-label { font-size: 12px; color: #9ca3af; margin-bottom: 6px; }
+    .set-inputs { display: flex; gap: 8px; }
+    .set-input { width: 80px; padding: 6px 8px; font-size: 12px; border: 1px solid #6b7280; border-radius: 6px; background: #1f2937; color: white; }
+    .set-input.small { width: 64px; }
+    .check-btn { width: 36px; height: 36px; border-radius: 6px; display: flex; align-items: center; justify-content: center; transition: all 0.2s; }
+    .check-btn.incomplete { background: #4b5563; color: #d1d5db; }
+    .check-btn.complete { background: #22c55e; color: white; }
+
+    /* Week navigation */
+    .week-nav { display: flex; gap: 8px; margin-bottom: 24px; }
+    .week-btn { display: flex; align-items: center; gap: 8px; background: rgba(55,65,81,0.6); color: white; padding: 10px 16px; border-radius: 8px; font-size: 14px; font-weight: 700; transition: all 0.2s; }
+    .week-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+    .week-current { flex: 1; background: linear-gradient(to right, #9333ea, #db2777); color: white; padding: 10px 16px; border-radius: 8px; font-weight: 700; text-align: center; font-size: 14px; }
+    .next-week-btn { width: 100%; background: linear-gradient(to right, #22c55e, #10b981, #14b8a6); color: white; padding: 12px; border-radius: 8px; font-weight: 700; font-size: 18px; margin-bottom: 24px; box-shadow: 0 10px 15px -3px rgba(0,0,0,0.3); }
+    .final-week { background: linear-gradient(to right, #eab308, #f97316, #ef4444); color: white; padding: 16px; border-radius: 8px; text-align: center; font-weight: 900; margin-bottom: 24px; animation: pulse 2s infinite; }
+
+    /* Nutrition */
+    .macros-card { background: linear-gradient(to right, #16a34a, #10b981); border-radius: 12px; padding: 16px; margin-bottom: 16px; box-shadow: 0 10px 15px -3px rgba(0,0,0,0.3); }
+    .macros-label { font-size: 12px; color: rgba(255,255,255,0.8); margin-bottom: 8px; font-weight: 500; }
+    .macros-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; }
+    .macro-item { text-align: center; }
+    .macro-value { font-size: 24px; font-weight: 900; }
+    .macro-goal { font-size: 12px; color: rgba(255,255,255,0.7); }
+    .macro-bar { height: 6px; background: rgba(255,255,255,0.2); border-radius: 9999px; margin-top: 4px; overflow: hidden; }
+    .macro-bar-fill { height: 100%; background: white; border-radius: 9999px; transition: width 0.3s; }
+
+    .recipe-box { background: rgba(168,85,247,0.2); border: 1px solid rgba(168,85,247,0.4); border-radius: 8px; padding: 12px; margin-bottom: 16px; }
+    .recipe-title { font-size: 12px; font-weight: 700; color: #d8b4fe; margin-bottom: 4px; }
+    .recipe-text { font-size: 12px; color: #e9d5ff; }
+
+    .section-card { background: rgba(255,255,255,0.1); backdrop-filter: blur(10px); border: 1px solid rgba(255,255,255,0.2); border-radius: 12px; padding: 16px; margin-bottom: 16px; }
+    .section-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; }
+    .section-title { font-weight: 700; display: flex; align-items: center; gap: 8px; }
+    .section-count { font-size: 12px; color: #9ca3af; }
+
+    .meal-row { display: flex; align-items: center; gap: 12px; padding: 12px; border-radius: 8px; margin-bottom: 8px; cursor: pointer; transition: all 0.2s; }
+    .meal-row.incomplete { background: rgba(55,65,81,0.4); border: 1px solid rgba(75,85,99,0.4); }
+    .meal-row.complete { background: rgba(34,197,94,0.2); border: 1px solid rgba(34,197,94,0.4); }
+    .meal-icon { font-size: 20px; }
+    .meal-content { flex: 1; }
+    .meal-name { font-size: 14px; font-weight: 500; }
+    .meal-time { font-size: 12px; color: #9ca3af; margin-left: 8px; }
+    .meal-items { font-size: 12px; color: #9ca3af; margin-top: 2px; }
+    .meal-macros { font-size: 12px; color: #6b7280; margin-top: 4px; }
+    .meal-check { width: 24px; height: 24px; border-radius: 9999px; display: flex; align-items: center; justify-content: center; }
+    .meal-check.incomplete { background: #4b5563; }
+    .meal-check.complete { background: #22c55e; }
+    .buy-tag { background: rgba(234,179,8,0.3); color: #fde047; font-size: 12px; padding: 2px 8px; border-radius: 9999px; margin-left: 8px; }
+
+    .shopping-box { background: rgba(234,179,8,0.2); border: 1px solid rgba(234,179,8,0.4); border-radius: 8px; padding: 12px; margin-bottom: 16px; }
+    .shopping-title { font-size: 12px; font-weight: 700; color: #fde047; margin-bottom: 4px; }
+    .shopping-text { font-size: 12px; color: #fef08a; }
+
+    .reset-btn { width: 100%; background: rgba(127,29,29,0.3); border: 1px solid rgba(239,68,68,0.3); color: #f87171; padding: 8px; border-radius: 8px; font-size: 12px; font-weight: 500; margin-top: 16px; }
+
+    /* Timer overlay */
+    .overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.7); backdrop-filter: blur(4px); display: flex; align-items: center; justify-content: center; z-index: 50; }
+    .timer-card { position: relative; border-radius: 24px; padding: 32px; text-align: center; box-shadow: 0 25px 50px -12px rgba(0,0,0,0.5); border: 4px solid rgba(255,255,255,0.2); margin: 16px; }
+    .timer-card.rest { background: linear-gradient(135deg, #dc2626, #ea580c); }
+    .timer-card.between { background: linear-gradient(135deg, #9333ea, #4f46e5); }
+    .timer-close { position: absolute; top: 16px; right: 16px; background: none; color: rgba(255,255,255,0.7); font-size: 24px; }
+    .timer-header { display: flex; align-items: center; justify-content: center; gap: 12px; margin-bottom: 16px; }
+    .timer-icon { font-size: 40px; }
+    .timer-label { font-size: 18px; color: rgba(255,255,255,0.8); font-weight: 500; }
+    .timer-time { font-size: 80px; font-weight: 900; margin-bottom: 16px; font-variant-numeric: tabular-nums; }
+    .timer-time.warning { color: #fde047; }
+    .timer-exercise { font-size: 14px; color: rgba(255,255,255,0.7); margin-bottom: 24px; max-width: 200px; margin-left: auto; margin-right: auto; }
+    .timer-progress { width: 256px; height: 12px; background: rgba(255,255,255,0.2); border-radius: 9999px; margin: 0 auto 24px; overflow: hidden; }
+    .timer-progress-fill { height: 100%; border-radius: 9999px; transition: width 1s linear; }
+    .timer-progress-fill.normal { background: white; }
+    .timer-progress-fill.warning { background: #facc15; }
+    .timer-skip { background: rgba(255,255,255,0.2); color: white; padding: 8px 24px; border-radius: 8px; font-weight: 700; }
+
+    /* Completion overlay */
+    .completion-card { background: linear-gradient(135deg, #22c55e, #10b981, #14b8a6); border-radius: 24px; padding: 32px; text-align: center; box-shadow: 0 25px 50px -12px rgba(0,0,0,0.5); border: 4px solid rgba(255,255,255,0.2); margin: 16px; animation: bounce 1s; }
+    .completion-icon { font-size: 80px; margin-bottom: 16px; }
+    .completion-title { font-size: 28px; font-weight: 900; margin-bottom: 8px; }
+    .completion-subtitle { font-size: 18px; color: rgba(255,255,255,0.8); margin-bottom: 16px; }
+    .completion-saved { font-size: 14px; color: rgba(255,255,255,0.6); margin-bottom: 24px; }
+    .completion-btn { background: white; color: #16a34a; padding: 12px 32px; border-radius: 12px; font-weight: 700; font-size: 18px; }
+
+    /* Rest day */
+    .rest-day { text-align: center; padding: 48px 0; }
+    .rest-icon { font-size: 60px; margin-bottom: 16px; }
+    .rest-title { font-size: 24px; font-weight: 700; margin-bottom: 8px; }
+    .rest-subtitle { color: #9ca3af; }
+
+    @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.7; } }
+    @keyframes bounce { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-10px); } }
+  </style>
+</head>
+<body>
+  <div id="app"></div>
+
+  <script>
+    // ==================== PROGRAM DATA ====================
+    const PROGRAM = {
+      1: {
+        name: 'СПИНА + БИЦЕПС',
+        exercises: [
+          { id: 1, name: 'Тяга к поясу (#8)', reps: 12, pause: 150, pauseBetween: 180, hint: 'Сядь, упрись грудью в подушку. Тяни рукоять к животу, сводя лопатки. Локти вдоль корпуса.' },
+          { id: 2, name: 'Вертикальная тяга (#7)', reps: 12, pause: 150, pauseBetween: 180, hint: 'Хват широкий. Тяни к верху груди, сводя лопатки вниз. Корпус слегка отклонён назад.' },
+          { id: 3, name: 'Подтягивания широким хватом', reps: null, pause: 180, pauseBetween: 180, hint: 'Широкий хват, ладони от себя. Тянись грудью к перекладине. Делай максимум.' },
+          { id: 18, name: 'Face Pulls (резинка)', reps: 15, pause: 60, pauseBetween: 120, hint: 'Тяни к лицу, разводя руки. Локти выше кистей! Лопатки сведены.' },
+          { id: 4, name: 'Подтягивания узким обратным хватом', reps: 10, pause: 120, pauseBetween: 120, hint: 'Узкий хват, ладони к себе. Тяни подбородок к перекладине.' },
+          { id: 5, name: 'Сгибание рук резинка', reps: 15, pause: 60, pauseBetween: 0, hint: 'Встань на резинку. Локти прижаты. Сгибай к плечам, медленно опускай.' }
+        ]
+      },
+      3: {
+        name: 'НОГИ + ПРЕСС',
+        exercises: [
+          { id: 6, name: 'Жим ногами (#3)', reps: 12, pause: 180, pauseBetween: 180, hint: 'Стопы на ширине плеч. Опускай до 90° в коленях. Жми пятками.' },
+          { id: 19, name: 'Комбо лифт — становая (#6)', reps: 10, pause: 150, pauseBetween: 180, hint: 'Спина ПРЯМАЯ! Мощно выпрямись ногами и спиной.' },
+          { id: 7, name: 'Разгибание ноги (#1)', reps: 12, pause: 90, pauseBetween: 120, hint: 'Разгибай полностью, пауза 1 сек вверху. Опускай плавно.' },
+          { id: 8, name: 'Сгибание ноги (#2)', reps: 12, pause: 90, pauseBetween: 120, hint: 'Сгибай до касания ягодиц. Не отрывай таз.' },
+          { id: 9, name: 'Пресс (#15)', reps: 15, pause: 60, pauseBetween: 90, hint: 'Скручивайся, отрывая лопатки. Не тяни шею руками.' },
+          { id: 20, name: 'Гиперэкстензия (#15)', reps: 12, pause: 60, pauseBetween: 0, hint: 'Опускайся до 90°. Поднимайся до линии с ногами. Сжимай ягодицы.' }
+        ]
+      },
+      5: {
+        name: 'ГРУДЬ + ПЛЕЧИ + ТРИЦЕПС',
+        exercises: [
+          { id: 11, name: 'Жим от груди (#10)', reps: 12, pause: 150, pauseBetween: 180, hint: 'Жми на уровне сосков. Локти под 45°.' },
+          { id: 12, name: 'Жим плеча сидя (#9)', reps: 12, pause: 150, pauseBetween: 180, hint: 'Жми вверх, не выпрямляя локти до конца.' },
+          { id: 13, name: 'Боковые разведения рез', reps: 15, pause: 60, pauseBetween: 90, hint: 'Руки в стороны до уровня плеч. Мизинец выше большого пальца.' },
+          { id: 14, name: 'Жим плеча рез (стоя)', reps: 12, pause: 60, pauseBetween: 120, hint: 'Жми вверх. Корпус стабилен.' },
+          { id: 15, name: 'Трицепс сидя (#14)', reps: 10, pause: 90, pauseBetween: 120, hint: 'Разгибай руки полностью, сжимай трицепс.' },
+          { id: 16, name: 'Отжимания на брусьях', reps: null, pause: 150, pauseBetween: 120, hint: 'Опускайся до 90° в локтях. Корпус наклонён вперёд.' },
+          { id: 17, name: 'Разгибание рук рез', reps: 15, pause: 45, pauseBetween: 0, hint: 'Локти прижаты. Разгибай до полного выпрямления.' }
+        ]
+      }
+    };
+
+    const WEEK_CONFIGS = {
+      1: { name: 'Адаптация', sets: 3, reps: '12', cssClass: 'week-1-2' },
+      2: { name: 'Адаптация', sets: 3, reps: '12', cssClass: 'week-1-2' },
+      3: { name: 'Кумуляция объёма', sets: 4, reps: '8-10', cssClass: 'week-3-4' },
+      4: { name: 'Кумуляция объёма', sets: 4, reps: '8-10', cssClass: 'week-3-4' },
+      5: { name: 'ПИК объёма', sets: 4, reps: '8-10', cssClass: 'week-5-6' },
+      6: { name: 'ПИК объёма', sets: 4, reps: '8-10', cssClass: 'week-5-6' },
+      7: { name: 'Разгрузка', sets: 3, reps: '10-12', cssClass: 'week-7' }
+    };
+
+    const MEALS = [
+      { id: 'preworkout', time: '5:30', name: 'До трени', items: 'Коллаген + кофеин + вода с лимоном', protein: 5, fat: 0, carbs: 2, icon: '🍋' },
+      { id: 'postworkout', time: '7:00', name: 'После трени', items: 'Гейнер + креатин 5г', protein: 41, fat: 13, carbs: 72, icon: '🥤' },
+      { id: 'breakfast', time: '7:40', name: 'Завтрак', items: 'Гречка 150г + 3 яйца + 2 сосиски', protein: 34, fat: 37, carbs: 33, icon: '🍳' },
+      { id: 'snack1', time: '10:00', name: 'Перекус 1', items: 'Банан', protein: 1, fat: 0, carbs: 25, icon: '🍌' },
+      { id: 'lunch', time: '13:00', name: 'Обед', items: 'Курица 300г + макароны 200г', protein: 55, fat: 17, carbs: 50, icon: '🍗' },
+      { id: 'snack2', time: '16:00', name: 'Перекус 2', items: 'Протеин + банан', protein: 26, fat: 2, carbs: 28, icon: '💪' },
+      { id: 'snack3', time: '18:30', name: 'Доп приём', items: 'Макароны 150г', protein: 5, fat: 1, carbs: 40, icon: '🍝' },
+      { id: 'dinner', time: '21:00', name: 'Ужин', items: 'Творог 250г + кефир 200мл', protein: 51, fat: 14, carbs: 16, icon: '🥛' }
+    ];
+
+    const SUPPLEMENTS = [
+      { id: 'collagen', name: 'Коллаген', time: '5:30', status: 'have' },
+      { id: 'caffeine', name: 'Кофеин', time: '5:30', status: 'have' },
+      { id: 'creatine', name: 'Креатин 5г', time: '7:00', status: 'have' },
+      { id: 'vitd', name: 'Витамин D3', time: '7:40', status: 'buy' },
+      { id: 'omega', name: 'Омега-3', time: '7:40', status: 'buy' },
+      { id: 'zinc', name: 'Цинк', time: '7:40', status: 'buy' },
+      { id: 'protein', name: 'Протеин', time: '16:00', status: 'have' },
+      { id: 'magnesium', name: 'Магний', time: '22:00', status: 'have' }
+    ];
+
+    const MACRO_GOALS = { protein: 218, fat: 84, carbs: 266 };
+    const dayNames = ['Вс', 'Пн', 'Вт', 'Ср', 'Чт', 'Пт', 'Сб'];
+
+    // ==================== STATE ====================
+    let state = {
+      activeTab: 'training',
+      currentWeek: 1,
+      currentDay: 1,
+      workoutData: {},
+      nutritionData: {},
+      expandedHints: {},
+      timer: { active: false, timeLeft: 0, maxTime: 0, exercise: '', type: 'rest' },
+      showCompletion: false
+    };
+
+    // ==================== STORAGE ====================
+    function loadData() {
+      try {
+        const saved = localStorage.getItem('fitnessTrackerV9');
+        if (saved) {
+          const data = JSON.parse(saved);
+          state.workoutData = data.workoutData || {};
+          state.currentWeek = data.currentWeek || 1;
+          state.nutritionData = data.nutritionData || {};
+        }
+      } catch (e) { console.log('Load error:', e); }
+    }
+
+    function saveData() {
+      try {
+        localStorage.setItem('fitnessTrackerV9', JSON.stringify({
+          workoutData: state.workoutData,
+          currentWeek: state.currentWeek,
+          nutritionData: state.nutritionData
+        }));
+      } catch (e) { console.log('Save error:', e); }
+    }
+
+    // ==================== AUDIO ====================
+    let audioCtx = null;
+    function getAudioCtx() {
+      if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+      return audioCtx;
+    }
+    function playBeep() {
+      try {
+        const ctx = getAudioCtx();
+        const osc = ctx.createOscillator();
+        const gain = ctx.createGain();
+        osc.connect(gain); gain.connect(ctx.destination);
+        osc.frequency.value = 800; gain.gain.value = 0.3;
+        osc.start(); osc.stop(ctx.currentTime + 0.15);
+      } catch(e) {}
+    }
+    function playGong() {
+      try {
+        const ctx = getAudioCtx();
+        const osc = ctx.createOscillator();
+        const gain = ctx.createGain();
+        osc.connect(gain); gain.connect(ctx.destination);
+        osc.frequency.value = 440;
+        gain.gain.setValueAtTime(0.5, ctx.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 1);
+        osc.start(); osc.stop(ctx.currentTime + 1);
+      } catch(e) {}
+    }
+
+    // ==================== TIMER ====================
+    let timerInterval = null;
+    let lastBeepTime = null;
+
+    function startTimer(seconds, exercise, type) {
+      state.timer = { active: true, timeLeft: seconds, maxTime: seconds, exercise, type };
+      lastBeepTime = null;
+      if (timerInterval) clearInterval(timerInterval);
+      timerInterval = setInterval(() => {
+        state.timer.timeLeft--;
+        if (state.timer.timeLeft <= 10 && state.timer.timeLeft > 5 && state.timer.timeLeft !== lastBeepTime) {
+          playBeep(); lastBeepTime = state.timer.timeLeft;
+        }
+        if (state.timer.timeLeft <= 5 && state.timer.timeLeft > 0 && state.timer.timeLeft !== lastBeepTime) {
+          playBeep(); setTimeout(playBeep, 100); lastBeepTime = state.timer.timeLeft;
+        }
+        if (state.timer.timeLeft <= 0) { playGong(); stopTimer(); }
+        render();
+      }, 1000);
+      render();
+    }
+
+    function stopTimer() {
+      if (timerInterval) clearInterval(timerInterval);
+      timerInterval = null;
+      state.timer = { active: false, timeLeft: 0, maxTime: 0, exercise: '', type: 'rest' };
+      render();
+    }
+
+    // ==================== HELPERS ====================
+    function getWeekConfig() { return WEEK_CONFIGS[state.currentWeek]; }
+    function getTodayKey() { const d = new Date(); return `${d.getFullYear()}-${d.getMonth()+1}-${d.getDate()}`; }
+    function getExerciseData(exId) {
+      const key = `w${state.currentWeek}_ex${exId}`;
+      return state.workoutData[key] || { sets: [] };
+    }
+    function formatPause(sec) { return sec >= 120 ? `${sec/60} мин` : `${sec}с`; }
+    function formatTime(sec) {
+      const m = Math.floor(sec / 60), s = sec % 60;
+      return m > 0 ? `${m}:${s.toString().padStart(2,'0')}` : `${s}`;
+    }
+    function getTodayNutrition() {
+      return state.nutritionData[getTodayKey()] || { meals: {}, supplements: {} };
+    }
+    function calculateMacros() {
+      const today = getTodayNutrition();
+      let p = 0, f = 0, c = 0;
+      MEALS.forEach(m => { if (today.meals[m.id]) { p += m.protein; f += m.fat; c += m.carbs; } });
+      return { protein: p, fat: f, carbs: c };
+    }
+
+    // ==================== ACTIONS ====================
+    function updateSet(exId, setIdx, field, value) {
+      const key = `w${state.currentWeek}_ex${exId}`;
+      if (!state.workoutData[key]) state.workoutData[key] = { sets: [] };
+      while (state.workoutData[key].sets.length <= setIdx) {
+        state.workoutData[key].sets.push({ weight: '', reps: '', completed: false });
+      }
+      state.workoutData[key].sets[setIdx][field] = value;
+      saveData();
+    }
+
+    function toggleComplete(exId, setIdx, exercise, isLastSet, isLastExercise) {
+      const key = `w${state.currentWeek}_ex${exId}`;
+      if (!state.workoutData[key]) state.workoutData[key] = { sets: [] };
+      const numSets = getWeekConfig().sets;
+      while (state.workoutData[key].sets.length <= setIdx) {
+        state.workoutData[key].sets.push({ weight: '', reps: '', completed: false });
+      }
+      const wasCompleted = state.workoutData[key].sets[setIdx].completed;
+      state.workoutData[key].sets[setIdx].completed = !wasCompleted;
+
+      if (!wasCompleted) {
+        if (isLastSet && isLastExercise) {
+          state.showCompletion = true;
+        } else if (isLastSet && exercise.pauseBetween > 0) {
+          startTimer(exercise.pauseBetween, 'Переход к следующему упражнению', 'between');
+        } else if (!isLastSet) {
+          startTimer(exercise.pause, exercise.name, 'rest');
+          const curr = state.workoutData[key].sets[setIdx];
+          if (!state.workoutData[key].sets[setIdx + 1]) {
+            state.workoutData[key].sets[setIdx + 1] = { weight: '', reps: '', completed: false };
+          }
+          if (curr.weight) state.workoutData[key].sets[setIdx + 1].weight = curr.weight;
+          if (curr.reps) state.workoutData[key].sets[setIdx + 1].reps = curr.reps;
+        }
+      }
+      saveData();
+      render();
+    }
+
+    function toggleMeal(mealId) {
+      const key = getTodayKey();
+      if (!state.nutritionData[key]) state.nutritionData[key] = { meals: {}, supplements: {} };
+      state.nutritionData[key].meals[mealId] = !state.nutritionData[key].meals[mealId];
+      saveData(); render();
+    }
+
+    function toggleSupplement(suppId) {
+      const key = getTodayKey();
+      if (!state.nutritionData[key]) state.nutritionData[key] = { meals: {}, supplements: {} };
+      state.nutritionData[key].supplements[suppId] = !state.nutritionData[key].supplements[suppId];
+      saveData(); render();
+    }
+
+    function goToNextWeek() {
+      if (state.currentWeek < 7) {
+        const next = state.currentWeek + 1;
+        [1, 3, 5].forEach(day => {
+          const prog = PROGRAM[day];
+          if (!prog) return;
+          prog.exercises.forEach(ex => {
+            const prevKey = `w${state.currentWeek}_ex${ex.id}`;
+            const nextKey = `w${next}_ex${ex.id}`;
+            if (state.workoutData[prevKey]) {
+              state.workoutData[nextKey] = {
+                sets: state.workoutData[prevKey].sets.map(s => ({ ...s, completed: false }))
+              };
+            }
+          });
+        });
+        state.currentWeek = next;
+        saveData(); render();
+      }
+    }
+
+    function resetAllData() {
+      if (confirm('Сбросить ВСЕ данные? Это действие нельзя отменить!')) {
+        state.workoutData = {};
+        state.nutritionData = {};
+        state.currentWeek = 1;
+        localStorage.removeItem('fitnessTrackerV9');
+        render();
+      }
+    }
+
+    function toggleHint(exId) {
+      state.expandedHints[`ex${exId}`] = !state.expandedHints[`ex${exId}`];
+      render();
+    }
+
+    function setTab(tab) { state.activeTab = tab; render(); }
+    function setDay(day) { state.currentDay = day; render(); }
+    function setWeek(week) { state.currentWeek = week; saveData(); render(); }
+    function closeCompletion() { state.showCompletion = false; render(); }
+
+    // ==================== RENDER ====================
+    function render() {
+      const weekConfig = getWeekConfig();
+      const numSets = weekConfig.sets;
+      const todayWorkout = PROGRAM[state.currentDay];
+      const todayNutrition = getTodayNutrition();
+      const macros = calculateMacros();
+
+      let html = '';
+
+      // Timer Overlay
+      if (state.timer.active) {
+        const isWarning = state.timer.timeLeft <= 10;
+        const progress = (state.timer.timeLeft / state.timer.maxTime) * 100;
+        html += `
+          <div class="overlay">
+            <div class="timer-card ${state.timer.type}">
+              <button class="timer-close" onclick="stopTimer()">✕</button>
+              <div class="timer-header">
+                <span class="timer-icon">⏱️</span>
+                <span class="timer-label">${state.timer.type === 'between' ? '➡️ ПЕРЕХОД' : '😤 ОТДЫХ'}</span>
+              </div>
+              <div class="timer-time ${isWarning ? 'warning' : ''}">${formatTime(state.timer.timeLeft)}</div>
+              <div class="timer-exercise">${state.timer.exercise}</div>
+              <div class="timer-progress">
+                <div class="timer-progress-fill ${isWarning ? 'warning' : 'normal'}" style="width: ${progress}%"></div>
+              </div>
+              <button class="timer-skip" onclick="stopTimer()">Пропустить →</button>
+            </div>
+          </div>`;
+      }
+
+      // Completion Overlay
+      if (state.showCompletion) {
+        html += `
+          <div class="overlay">
+            <div class="completion-card">
+              <div class="completion-icon">🏆</div>
+              <div class="completion-title">ТРЕНИРОВКА ЗАВЕРШЕНА!</div>
+              <div class="completion-subtitle">💪 Отличная работа!</div>
+              <div class="completion-saved">Прогресс сохранён</div>
+              <button class="completion-btn" onclick="closeCompletion()">Готово ✓</button>
+            </div>
+          </div>`;
+      }
+
+      // Tabs
+      html += `
+        <div class="tabs">
+          <button class="tab-btn ${state.activeTab === 'training' ? 'active-training' : 'inactive'}" onclick="setTab('training')">
+            🏋️ Тренировка
+          </button>
+          <button class="tab-btn ${state.activeTab === 'nutrition' ? 'active-nutrition' : 'inactive'}" onclick="setTab('nutrition')">
+            🍽️ Питание
+          </button>
+        </div>`;
+
+      if (state.activeTab === 'nutrition') {
+        // ==================== NUTRITION TAB ====================
+        const completedMeals = MEALS.filter(m => todayNutrition.meals[m.id]).length;
+        const completedSupps = SUPPLEMENTS.filter(s => todayNutrition.supplements[s.id]).length;
+
+        html += `
+          <!-- Macros -->
+          <div class="macros-card">
+            <div class="macros-label">📊 Съедено сегодня</div>
+            <div class="macros-grid">
+              <div class="macro-item">
+                <div class="macro-value">${macros.protein}</div>
+                <div class="macro-goal">/ ${MACRO_GOALS.protein}г Б</div>
+                <div class="macro-bar"><div class="macro-bar-fill" style="width: ${Math.min(100, macros.protein/MACRO_GOALS.protein*100)}%"></div></div>
+              </div>
+              <div class="macro-item">
+                <div class="macro-value">${macros.fat}</div>
+                <div class="macro-goal">/ ${MACRO_GOALS.fat}г Ж</div>
+                <div class="macro-bar"><div class="macro-bar-fill" style="width: ${Math.min(100, macros.fat/MACRO_GOALS.fat*100)}%"></div></div>
+              </div>
+              <div class="macro-item">
+                <div class="macro-value">${macros.carbs}</div>
+                <div class="macro-goal">/ ${MACRO_GOALS.carbs}г У</div>
+                <div class="macro-bar"><div class="macro-bar-fill" style="width: ${Math.min(100, macros.carbs/MACRO_GOALS.carbs*100)}%"></div></div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Gainer Recipe -->
+          <div class="recipe-box">
+            <div class="recipe-title">🥤 Рецепт гейнера:</div>
+            <div class="recipe-text">Молоко 300мл + овсянка 50г + банан + протеин 30г</div>
+          </div>
+
+          <!-- Meals -->
+          <div class="section-card">
+            <div class="section-header">
+              <div class="section-title">🍽️ Приёмы пищи</div>
+              <div class="section-count">${completedMeals}/${MEALS.length}</div>
+            </div>
+            ${MEALS.map(meal => `
+              <div class="meal-row ${todayNutrition.meals[meal.id] ? 'complete' : 'incomplete'}" onclick="toggleMeal('${meal.id}')">
+                <span class="meal-icon">${meal.icon}</span>
+                <div class="meal-content">
+                  <div><span class="meal-name">${meal.name}</span><span class="meal-time">${meal.time}</span></div>
+                  <div class="meal-items">${meal.items}</div>
+                  ${meal.protein > 0 ? `<div class="meal-macros">Б: ${meal.protein} • Ж: ${meal.fat} • У: ${meal.carbs}</div>` : ''}
+                </div>
+                <div class="meal-check ${todayNutrition.meals[meal.id] ? 'complete' : 'incomplete'}">
+                  ${todayNutrition.meals[meal.id] ? '✓' : ''}
+                </div>
+              </div>
+            `).join('')}
+          </div>
+
+          <!-- Supplements -->
+          <div class="section-card">
+            <div class="section-header">
+              <div class="section-title">💊 Спортпит</div>
+              <div class="section-count">${completedSupps}/${SUPPLEMENTS.length}</div>
+            </div>
+            ${SUPPLEMENTS.map(supp => `
+              <div class="meal-row ${todayNutrition.supplements[supp.id] ? 'complete' : 'incomplete'}" onclick="toggleSupplement('${supp.id}')">
+                <div class="meal-content">
+                  <div>
+                    <span class="meal-name">${supp.name}</span>
+                    <span class="meal-time">${supp.time}</span>
+                    ${supp.status === 'buy' ? '<span class="buy-tag">докупить</span>' : ''}
+                  </div>
+                </div>
+                <div class="meal-check ${todayNutrition.supplements[supp.id] ? 'complete' : 'incomplete'}">
+                  ${todayNutrition.supplements[supp.id] ? '✓' : ''}
+                </div>
+              </div>
+            `).join('')}
+          </div>
+
+          <!-- Shopping -->
+          <div class="shopping-box">
+            <div class="shopping-title">🛒 Докупить (~1100₽/мес):</div>
+            <div class="shopping-text">Витамин D3 • Омега-3 • Цинк</div>
+          </div>`;
+
+      } else {
+        // ==================== TRAINING TAB ====================
+        
+        // Header
+        html += `
+          <div class="header-card ${weekConfig.cssClass}">
+            <div class="header-top">
+              <div>
+                <div class="header-title">${todayWorkout?.name || 'ОТДЫХ'}</div>
+                <div class="header-subtitle">Неделя ${state.currentWeek}/7 • ${weekConfig.name}</div>
+                <div class="header-info">${weekConfig.sets} подходов × ${weekConfig.reps} повт.</div>
+              </div>
+              <div>
+                <div class="header-day">${dayNames[state.currentDay]}</div>
+                <div class="header-day-label">Пн/Ср/Пт</div>
+              </div>
+            </div>
+            <div class="day-buttons">
+              ${[1, 3, 5].map(day => `
+                <button class="day-btn ${state.currentDay === day ? 'active' : 'inactive'}" onclick="setDay(${day})">
+                  ${dayNames[day]}
+                </button>
+              `).join('')}
+            </div>
+          </div>`;
+
+        if (!todayWorkout) {
+          html += `
+            <div class="rest-day">
+              <div class="rest-icon">😴</div>
+              <div class="rest-title">День отдыха!</div>
+              <div class="rest-subtitle">Восстанавливайся и ешь по плану 💪</div>
+            </div>`;
+        } else {
+          // Exercises
+          todayWorkout.exercises.forEach((ex, exIdx) => {
+            const exData = getExerciseData(ex.id);
+            const sets = exData.sets || [];
+            const completedSets = sets.filter(s => s.completed).length;
+            const isLastExercise = exIdx === todayWorkout.exercises.length - 1;
+            const showHint = state.expandedHints[`ex${ex.id}`];
+
+            html += `
+              <div class="exercise-card">
+                <div class="exercise-header">
+                  <div>
+                    <div class="exercise-name">${ex.name}</div>
+                    <div class="exercise-info">
+                      ${numSets} подходов × ${ex.reps || 'max'} повт. • <span class="${ex.pause >= 120 ? 'yellow' : ''}">${formatPause(ex.pause)}</span>
+                    </div>
+                  </div>
+                  <div class="exercise-badges">
+                    ${completedSets === numSets ? '<span class="badge-done">✓ Done</span>' : ''}
+                    ${ex.hint ? `<button class="hint-btn" onclick="toggleHint(${ex.id})">? ${showHint ? '▲' : '▼'}</button>` : ''}
+                  </div>
+                </div>
+
+                ${showHint && ex.hint ? `
+                  <div class="hint-box">
+                    <div class="hint-title">💡 Техника:</div>
+                    ${ex.hint}
+                  </div>
+                ` : ''}
+
+                ${Array(numSets).fill(0).map((_, setIdx) => {
+                  const setData = sets[setIdx] || { weight: '', reps: '', completed: false };
+                  const isLastSet = setIdx === numSets - 1;
+                  return `
+                    <div class="set-row ${setData.completed ? 'complete' : 'incomplete'}">
+                      <div class="set-content">
+                        <div class="set-label">Set ${setIdx + 1}</div>
+                        <div class="set-inputs">
+                          <input type="text" inputmode="decimal" placeholder="кг" value="${setData.weight}" 
+                            class="set-input" onchange="updateSet(${ex.id},${setIdx},'weight',this.value)">
+                          <input type="text" inputmode="numeric" placeholder="${ex.reps ? 'повт' : 'max'}" value="${setData.reps}"
+                            class="set-input small" onchange="updateSet(${ex.id},${setIdx},'reps',this.value)">
+                        </div>
+                      </div>
+                      <button class="check-btn ${setData.completed ? 'complete' : 'incomplete'}" 
+                        onclick="toggleComplete(${ex.id},${setIdx},PROGRAM[${state.currentDay}].exercises[${exIdx}],${isLastSet},${isLastExercise})">
+                        ✓
+                      </button>
+                    </div>
+                  `;
+                }).join('')}
+              </div>`;
+          });
+        }
+
+        // Week Navigation
+        html += `
+          <div class="week-nav">
+            <button class="week-btn" onclick="setWeek(${state.currentWeek - 1})" ${state.currentWeek === 1 ? 'disabled' : ''}>
+              ◀ W${state.currentWeek - 1}
+            </button>
+            <div class="week-current">Week ${state.currentWeek} / 7</div>
+            <button class="week-btn" onclick="setWeek(${state.currentWeek + 1})" ${state.currentWeek === 7 ? 'disabled' : ''}>
+              W${state.currentWeek + 1} ▶
+            </button>
+          </div>`;
+
+        if (state.currentWeek < 7) {
+          html += `<button class="next-week-btn" onclick="goToNextWeek()">✓ Завершить неделю → Неделя ${state.currentWeek + 1}</button>`;
+        } else {
+          html += `<div class="final-week">🏆 РАЗГРУЗКА — ФИНАЛЬНАЯ НЕДЕЛЯ! 🏆</div>`;
+        }
+      }
+
+      // Reset Button
+      html += `<button class="reset-btn" onclick="resetAllData()">🗑️ Сбросить все данные</button>`;
+
+      document.getElementById('app').innerHTML = html;
+    }
+
+    // ==================== INIT ====================
+    loadData();
+    render();
+  </script>
+</body>
+</html>
