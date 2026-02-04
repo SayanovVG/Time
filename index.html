@@ -6,8 +6,9 @@
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="mobile-web-app-capable" content="yes">
   <meta name="theme-color" content="#111827">
-  <title>Фитнес Трекер</title>
+  <title>Фитнес Система v12</title>
   <style>
+
     * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
     body { 
       font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
@@ -17,23 +18,241 @@
       padding: 16px;
       padding-bottom: 32px;
     }
-    input { font-size: 16px !important; font-family: inherit; }
-    input:focus { outline: none; border-color: #3b82f6 !important; box-shadow: 0 0 0 2px rgba(59,130,246,0.3); }
-    button { font-family: inherit; cursor: pointer; border: none; }
+    input, textarea, select { font-size: 16px !important; font-family: inherit; }
+    input:focus, textarea:focus, select:focus { outline: none; border-color: #3b82f6 !important; box-shadow: 0 0 0 2px rgba(59,130,246,0.3); }
+    button { font-family: inherit; cursor: pointer; border: none; transition: all 0.2s; }
     button:active { transform: scale(0.96); }
 
     /* Clock */
-    .clock-row { display: flex; justify-content: flex-end; padding: 0 2px; margin-bottom: 6px; }
+    .clock-row { display: flex; justify-content: flex-end; padding: 0 2px; margin-bottom: 12px; }
     .clock-display { color: #f1f5f9; font-size: 18px; font-weight: 800; letter-spacing: 2px; font-variant-numeric: tabular-nums; }
 
-    /* Tab buttons */
-    .tabs { display: flex; gap: 8px; margin-bottom: 16px; }
-    .tab-btn { flex: 1; padding: 12px; border-radius: 12px; font-weight: 700; font-size: 14px; display: flex; align-items: center; justify-content: center; gap: 8px; transition: all 0.2s; }
-    .tab-btn.active-training { background: linear-gradient(to right, #3b82f6, #8b5cf6); color: white; }
-    .tab-btn.active-nutrition { background: linear-gradient(to right, #22c55e, #10b981); color: white; }
-    .tab-btn.inactive { background: rgba(55, 65, 81, 0.6); color: #d1d5db; }
+    /* Main tabs */
+    .main-tabs { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; margin-bottom: 20px; }
+    .main-tab {
+      padding: 14px 8px;
+      border-radius: 12px;
+      font-weight: 700;
+      font-size: 13px;
+      text-align: center;
+      background: rgba(55, 65, 81, 0.5);
+      color: #9ca3af;
+      border: 2px solid transparent;
+    }
+    .main-tab.active {
+      background: linear-gradient(135deg, #3b82f6, #8b5cf6);
+      color: white;
+      border-color: rgba(255,255,255,0.2);
+      box-shadow: 0 4px 12px rgba(59, 130, 246, 0.4);
+    }
+    .main-tab-icon { font-size: 20px; display: block; margin-bottom: 4px; }
 
-    /* Header card */
+    /* Tab content */
+    .tab-content { display: none; }
+    .tab-content.active { display: block; animation: fadeIn 0.3s; }
+    @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+
+    /* Cards */
+    .card {
+      background: rgba(31, 41, 55, 0.8);
+      border-radius: 16px;
+      padding: 20px;
+      margin-bottom: 16px;
+      border: 1px solid rgba(255,255,255,0.1);
+      box-shadow: 0 4px 6px rgba(0,0,0,0.3);
+    }
+    .card-title {
+      font-size: 18px;
+      font-weight: 700;
+      margin-bottom: 16px;
+      color: #f1f5f9;
+    }
+
+    /* Buttons */
+    .btn {
+      padding: 14px 24px;
+      border-radius: 12px;
+      font-weight: 700;
+      font-size: 15px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+    }
+    .btn-primary { background: linear-gradient(135deg, #3b82f6, #8b5cf6); color: white; }
+    .btn-success { background: linear-gradient(135deg, #22c55e, #10b981); color: white; }
+    .btn-danger { background: linear-gradient(135deg, #ef4444, #dc2626); color: white; }
+    .btn-secondary { background: rgba(55, 65, 81, 0.8); color: #d1d5db; }
+    .btn-full { width: 100%; }
+
+    /* Input fields */
+    .input-group { margin-bottom: 16px; }
+    .input-label {
+      display: block;
+      font-size: 13px;
+      font-weight: 600;
+      color: #9ca3af;
+      margin-bottom: 8px;
+    }
+    .input-field {
+      width: 100%;
+      padding: 12px 16px;
+      border-radius: 10px;
+      background: rgba(17, 24, 39, 0.6);
+      border: 2px solid rgba(75, 85, 99, 0.5);
+      color: white;
+      font-size: 15px;
+    }
+    .input-field::placeholder { color: #6b7280; }
+
+    /* Search */
+    .search-container { position: relative; margin-bottom: 16px; }
+    .search-results {
+      position: absolute;
+      top: 100%;
+      left: 0;
+      right: 0;
+      background: #1f2937;
+      border-radius: 12px;
+      margin-top: 8px;
+      max-height: 300px;
+      overflow-y: auto;
+      z-index: 100;
+      border: 2px solid rgba(75, 85, 99, 0.5);
+      display: none;
+    }
+    .search-results.show { display: block; }
+    .search-result-item {
+      padding: 14px 16px;
+      cursor: pointer;
+      border-bottom: 1px solid rgba(75, 85, 99, 0.3);
+    }
+    .search-result-item:hover { background: rgba(59, 130, 246, 0.2); }
+    .search-result-title { font-weight: 600; color: #f1f5f9; margin-bottom: 4px; }
+    .search-result-info { font-size: 12px; color: #9ca3af; }
+
+    /* List items */
+    .list-item {
+      background: rgba(17, 24, 39, 0.6);
+      border-radius: 12px;
+      padding: 16px;
+      margin-bottom: 12px;
+      border: 1px solid rgba(75, 85, 99, 0.3);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .list-item-content { flex: 1; }
+    .list-item-title { font-weight: 600; color: #f1f5f9; margin-bottom: 4px; }
+    .list-item-subtitle { font-size: 13px; color: #9ca3af; }
+    .list-item-actions { display: flex; gap: 8px; }
+    .icon-btn {
+      width: 36px;
+      height: 36px;
+      border-radius: 8px;
+      background: rgba(55, 65, 81, 0.6);
+      color: #d1d5db;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 16px;
+    }
+
+    /* Progress panel */
+    .progress-panel {
+      background: linear-gradient(135deg, #3b82f6, #8b5cf6);
+      border-radius: 16px;
+      padding: 24px;
+      margin-bottom: 20px;
+      border: 2px solid rgba(255,255,255,0.2);
+    }
+    .progress-title { font-size: 16px; font-weight: 700; margin-bottom: 16px; opacity: 0.9; }
+    .progress-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 12px;
+    }
+    .progress-label { font-size: 14px; opacity: 0.9; }
+    .progress-value { font-size: 20px; font-weight: 800; }
+    .progress-bar {
+      height: 12px;
+      background: rgba(0,0,0,0.2);
+      border-radius: 6px;
+      overflow: hidden;
+      margin-top: 8px;
+    }
+    .progress-fill {
+      height: 100%;
+      background: white;
+      border-radius: 6px;
+      transition: width 0.3s;
+    }
+
+    /* Macro pills */
+    .macro-pills { display: flex; gap: 8px; flex-wrap: wrap; }
+    .macro-pill {
+      padding: 8px 14px;
+      border-radius: 20px;
+      font-size: 12px;
+      font-weight: 700;
+    }
+    .macro-pill.protein { background: rgba(239, 68, 68, 0.3); color: #fca5a5; }
+    .macro-pill.fat { background: rgba(251, 191, 36, 0.3); color: #fcd34d; }
+    .macro-pill.carbs { background: rgba(34, 197, 94, 0.3); color: #86efac; }
+    .macro-pill.calories { background: rgba(168, 85, 247, 0.3); color: #c4b5fd; }
+
+    /* Empty state */
+    .empty-state {
+      text-align: center;
+      padding: 40px 20px;
+      color: #6b7280;
+    }
+    .empty-icon { font-size: 48px; margin-bottom: 16px; opacity: 0.5; }
+    .empty-text { font-size: 15px; margin-bottom: 20px; }
+
+    /* Modal */
+    .modal-overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: rgba(0,0,0,0.8);
+      z-index: 1000;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+    }
+    .modal-overlay.show { display: flex; }
+    .modal {
+      background: #1f2937;
+      border-radius: 20px;
+      max-width: 500px;
+      width: 100%;
+      max-height: 90vh;
+      overflow-y: auto;
+      padding: 24px;
+      border: 2px solid rgba(75, 85, 99, 0.5);
+    }
+    .modal-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 20px;
+    }
+    .modal-title { font-size: 20px; font-weight: 700; }
+    .modal-close {
+      width: 32px;
+      height: 32px;
+      border-radius: 8px;
+      background: rgba(55, 65, 81, 0.6);
+      color: #d1d5db;
+      font-size: 20px;
+    }
+
+    /* Training specific - from v10 */
     .header-card { border-radius: 12px; padding: 24px; margin-bottom: 24px; box-shadow: 0 25px 50px -12px rgba(0,0,0,0.5); border: 1px solid rgba(255,255,255,0.2); }
     .header-card.week-1-2 { background: linear-gradient(to right, #3b82f6, #2563eb); }
     .header-card.week-3-4 { background: linear-gradient(to right, #a855f7, #7c3aed); }
@@ -42,81 +261,45 @@
     .header-top { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 16px; }
     .header-title { font-size: 24px; font-weight: 900; letter-spacing: -0.5px; }
     .header-subtitle { font-size: 14px; color: rgba(255,255,255,0.8); margin-top: 4px; }
-    .header-info { font-size: 12px; color: rgba(255,255,255,0.6); margin-top: 4px; }
     .header-day { font-size: 30px; font-weight: 900; text-align: right; }
-    .header-day-label { font-size: 12px; color: rgba(255,255,255,0.7); text-align: right; }
     .day-buttons { display: flex; gap: 8px; }
-    .day-btn { flex: 1; padding: 10px; border-radius: 8px; font-size: 14px; font-weight: 700; transition: all 0.2s; }
+    .day-btn { flex: 1; padding: 10px; border-radius: 8px; font-size: 14px; font-weight: 700; }
     .day-btn.active { background: white; color: #111827; }
-    .day-btn.inactive { background: rgba(255,255,255,0.2); color: white; }
-
-    /* Exercise card */
-    .exercise-card { background: rgba(255,255,255,0.1); backdrop-filter: blur(10px); border: 1px solid rgba(255,255,255,0.2); border-radius: 8px; padding: 16px; margin-bottom: 12px; }
-    .exercise-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 12px; }
-    .exercise-name { font-weight: 700; font-size: 14px; }
-    .exercise-info { font-size: 12px; color: #d1d5db; margin-top: 4px; }
-    .exercise-info .yellow { color: #facc15; }
-    .exercise-info .custom-tag { color: #a78bfa; font-size: 11px; font-weight: 600; }
-    .exercise-badges { display: flex; align-items: center; gap: 8px; flex-shrink: 0; }
-    .badge-done { background: linear-gradient(to right, #22c55e, #10b981); color: white; font-size: 12px; padding: 4px 12px; border-radius: 9999px; font-weight: 700; animation: pulse 2s infinite; }
-    .hint-btn { background: rgba(59,130,246,0.3); color: #93c5fd; font-size: 12px; padding: 4px 8px; border-radius: 9999px; display: flex; align-items: center; gap: 4px; }
-    .hint-box { background: rgba(30,58,138,0.3); border: 1px solid rgba(59,130,246,0.3); border-radius: 8px; padding: 12px; margin-bottom: 12px; font-size: 12px; color: #bfdbfe; }
-    .hint-title { font-weight: 700; color: #93c5fd; margin-bottom: 4px; }
-
-    /* Set row */
-    .set-row { display: flex; align-items: center; gap: 8px; padding: 10px; border-radius: 6px; margin-bottom: 8px; transition: all 0.2s; }
-    .set-row.incomplete { background: rgba(55,65,81,0.4); border: 1px solid rgba(75,85,99,0.4); }
-    .set-row.complete { background: rgba(34,197,94,0.2); border: 1px solid rgba(34,197,94,0.4); }
-    .set-content { flex: 1; }
-    .set-label { font-size: 12px; color: #9ca3af; margin-bottom: 6px; }
-    .set-inputs { display: flex; gap: 8px; }
-    .set-input { width: 80px; padding: 6px 8px; font-size: 12px; border: 1px solid #6b7280; border-radius: 6px; background: #1f2937; color: white; }
-    .set-input.small { width: 64px; }
-    .check-btn { width: 36px; height: 36px; border-radius: 6px; display: flex; align-items: center; justify-content: center; transition: all 0.2s; }
-    .check-btn.incomplete { background: #4b5563; color: #d1d5db; }
-    .check-btn.complete { background: #22c55e; color: white; }
-
-    /* Week navigation */
-    .week-nav { display: flex; gap: 8px; margin-bottom: 24px; }
-    .week-btn { display: flex; align-items: center; gap: 8px; background: rgba(55,65,81,0.6); color: white; padding: 10px 16px; border-radius: 8px; font-size: 14px; font-weight: 700; transition: all 0.2s; }
-    .week-btn:disabled { opacity: 0.4; cursor: not-allowed; }
-    .week-current { flex: 1; background: linear-gradient(to right, #9333ea, #db2777); color: white; padding: 10px 16px; border-radius: 8px; font-weight: 700; text-align: center; font-size: 14px; }
-    .next-week-btn { width: 100%; background: linear-gradient(to right, #22c55e, #10b981, #14b8a6); color: white; padding: 12px; border-radius: 8px; font-weight: 700; font-size: 18px; margin-bottom: 24px; box-shadow: 0 10px 15px -3px rgba(0,0,0,0.3); }
-    .final-week { background: linear-gradient(to right, #eab308, #f97316, #ef4444); color: white; padding: 16px; border-radius: 8px; text-align: center; font-weight: 900; margin-bottom: 24px; animation: pulse 2s infinite; }
-
-    /* Nutrition */
-    .macros-card { background: linear-gradient(to right, #16a34a, #10b981); border-radius: 12px; padding: 16px; margin-bottom: 16px; box-shadow: 0 10px 15px -3px rgba(0,0,0,0.3); }
-    .macros-label { font-size: 12px; color: rgba(255,255,255,0.8); margin-bottom: 8px; font-weight: 500; }
-    .macros-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; }
-    .macro-item { text-align: center; }
-    .macro-value { font-size: 24px; font-weight: 900; }
-    .macro-goal { font-size: 12px; color: rgba(255,255,255,0.7); }
-    .macro-bar { height: 6px; background: rgba(255,255,255,0.2); border-radius: 9999px; margin-top: 4px; overflow: hidden; }
-    .macro-bar-fill { height: 100%; background: white; border-radius: 9999px; transition: width 0.3s; }
-    .recipe-box { background: rgba(168,85,247,0.2); border: 1px solid rgba(168,85,247,0.4); border-radius: 8px; padding: 12px; margin-bottom: 16px; }
-    .recipe-title { font-size: 12px; font-weight: 700; color: #d8b4fe; margin-bottom: 4px; }
-    .recipe-text { font-size: 12px; color: #e9d5ff; }
-    .section-card { background: rgba(255,255,255,0.1); backdrop-filter: blur(10px); border: 1px solid rgba(255,255,255,0.2); border-radius: 12px; padding: 16px; margin-bottom: 16px; }
-    .section-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; }
-    .section-title { font-weight: 700; display: flex; align-items: center; gap: 8px; }
-    .section-count { font-size: 12px; color: #9ca3af; }
-    .meal-row { display: flex; align-items: center; gap: 12px; padding: 12px; border-radius: 8px; margin-bottom: 8px; cursor: pointer; transition: all 0.2s; }
-    .meal-row.incomplete { background: rgba(55,65,81,0.4); border: 1px solid rgba(75,85,99,0.4); }
-    .meal-row.complete { background: rgba(34,197,94,0.2); border: 1px solid rgba(34,197,94,0.4); }
-    .meal-icon { font-size: 20px; }
-    .meal-content { flex: 1; }
-    .meal-name { font-size: 14px; font-weight: 500; }
-    .meal-time { font-size: 12px; color: #9ca3af; margin-left: 8px; }
-    .meal-items { font-size: 12px; color: #9ca3af; margin-top: 2px; }
-    .meal-macros { font-size: 12px; color: #6b7280; margin-top: 4px; }
-    .meal-check { width: 24px; height: 24px; border-radius: 9999px; display: flex; align-items: center; justify-content: center; }
-    .meal-check.incomplete { background: #4b5563; }
-    .meal-check.complete { background: #22c55e; }
-    .buy-tag { background: rgba(234,179,8,0.3); color: #fde047; font-size: 12px; padding: 2px 8px; border-radius: 9999px; margin-left: 8px; }
-    .shopping-box { background: rgba(234,179,8,0.2); border: 1px solid rgba(234,179,8,0.4); border-radius: 8px; padding: 12px; margin-bottom: 16px; }
-    .shopping-title { font-size: 12px; font-weight: 700; color: #fde047; margin-bottom: 4px; }
-    .shopping-text { font-size: 12px; color: #fef08a; }
-    .reset-btn { width: 100%; background: rgba(127,29,29,0.3); border: 1px solid rgba(239,68,68,0.3); color: #f87171; padding: 8px; border-radius: 8px; font-size: 12px; font-weight: 500; margin-top: 16px; }
+    .day-btn.inactive { background: rgba(255,255,255,0.2); color: rgba(255,255,255,0.7); }
+    .day-btn.rest { background: rgba(255,255,255,0.15); color: rgba(255,255,255,0.5); }
+    
+    .exercise-list { display: flex; flex-direction: column; gap: 12px; }
+    .exercise-card {
+      background: linear-gradient(to right, rgba(31,41,55,0.7), rgba(17,24,39,0.9));
+      border-radius: 12px;
+      padding: 16px;
+      border: 1px solid rgba(75,85,99,0.4);
+    }
+    .exercise-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 8px; }
+    .exercise-name { font-size: 16px; font-weight: 700; color: #f1f5f9; }
+    .exercise-reps { font-size: 14px; color: #9ca3af; }
+    .sets-row { display: flex; gap: 8px; flex-wrap: wrap; }
+    .set-btn {
+      min-width: 40px;
+      padding: 8px 12px;
+      border-radius: 8px;
+      font-size: 14px;
+      font-weight: 700;
+      background: rgba(55,65,81,0.6);
+      color: #9ca3af;
+    }
+    .set-btn.done { background: linear-gradient(to right, #22c55e, #10b981); color: white; }
+    .pause-row { display: flex; align-items: center; gap: 8px; margin-top: 8px; font-size: 13px; color: #9ca3af; }
+    .pause-controls { display: flex; gap: 4px; }
+    .pause-adj-btn {
+      width: 28px;
+      height: 28px;
+      border-radius: 6px;
+      background: rgba(55,65,81,0.6);
+      color: #d1d5db;
+      font-size: 14px;
+      font-weight: 700;
+    }
 
     /* Timer overlay */
     .overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.75); backdrop-filter: blur(4px); display: flex; align-items: center; justify-content: center; z-index: 50; }
@@ -129,49 +312,413 @@
     .timer-time.warning { color: #fde047; }
     .timer-exercise { font-size: 13px; color: rgba(255,255,255,0.65); margin-bottom: 14px; max-width: 210px; margin-left: auto; margin-right: auto; }
     .timer-progress { width: 240px; height: 10px; background: rgba(255,255,255,0.2); border-radius: 9999px; margin: 0 auto 18px; overflow: hidden; }
-    .timer-progress-fill { height: 100%; border-radius: 9999px; transition: width 1s linear; }
-    .timer-progress-fill.normal { background: white; }
+    .timer-progress-fill { height: 100%; border-radius: 9999px; transition: width 1s linear; background: white; }
     .timer-progress-fill.warning { background: #facc15; }
-
-    /* +/- кнопки */
     .timer-adjust-row { display: flex; gap: 10px; justify-content: center; align-items: center; margin-bottom: 10px; }
-    .timer-adjust-btn { width: 56px; height: 42px; border-radius: 10px; background: rgba(255,255,255,0.15); color: white; font-size: 16px; font-weight: 700; display: flex; align-items: center; justify-content: center; transition: background 0.12s; }
-    .timer-adjust-btn:active { background: rgba(255,255,255,0.35); transform: scale(0.93); }
-    .timer-adjust-label { font-size: 11px; color: rgba(255,255,255,0.5); margin: 0 2px; }
-
-    /* Кнопка сохранить */
+    .timer-adjust-btn {
+      width: 56px;
+      height: 42px;
+      border-radius: 10px;
+      background: rgba(255,255,255,0.15);
+      color: white;
+      font-size: 16px;
+      font-weight: 700;
+    }
     .timer-save-row { min-height: 30px; display: flex; justify-content: center; align-items: center; margin-bottom: 10px; }
-    .timer-save-btn { background: rgba(255,255,255,0.93); color: #1e293b; padding: 6px 18px; border-radius: 20px; font-weight: 700; font-size: 13px; display: flex; align-items: center; gap: 5px; }
-    .timer-save-btn:active { background: white; }
-    .timer-saved-text { color: rgba(255,255,255,0.85); font-size: 13px; font-weight: 600; animation: pulse 1s; }
+    .timer-save-btn {
+      background: rgba(255,255,255,0.93);
+      color: #1e293b;
+      padding: 6px 18px;
+      border-radius: 20px;
+      font-weight: 700;
+      font-size: 13px;
+    }
+    .timer-saved-text { color: rgba(255,255,255,0.85); font-size: 13px; font-weight: 600; }
+    .timer-skip {
+      background: rgba(255,255,255,0.18);
+      color: white;
+      padding: 8px 24px;
+      border-radius: 8px;
+      font-weight: 700;
+      font-size: 14px;
+    }
 
-    .timer-skip { background: rgba(255,255,255,0.18); color: white; padding: 8px 24px; border-radius: 8px; font-weight: 700; font-size: 14px; }
-    .timer-skip:active { background: rgba(255,255,255,0.3); }
 
-    /* Completion overlay */
-    .completion-card { background: linear-gradient(135deg, #22c55e, #10b981, #14b8a6); border-radius: 24px; padding: 32px; text-align: center; box-shadow: 0 25px 50px -12px rgba(0,0,0,0.5); border: 4px solid rgba(255,255,255,0.2); margin: 16px; animation: bounce 1s; }
-    .completion-icon { font-size: 80px; margin-bottom: 16px; }
-    .completion-title { font-size: 28px; font-weight: 900; margin-bottom: 8px; }
-    .completion-subtitle { font-size: 18px; color: rgba(255,255,255,0.8); margin-bottom: 16px; }
-    .completion-saved { font-size: 14px; color: rgba(255,255,255,0.6); margin-bottom: 24px; }
-    .completion-btn { background: white; color: #16a34a; padding: 12px 32px; border-radius: 12px; font-weight: 700; font-size: 18px; }
+    /* V12: Strength subtabs */
+    .strength-subtabs { 
+      display: flex; gap: 8px; margin-bottom: 16px; 
+    }
+    .strength-subtab {
+      flex: 1; padding: 10px; border-radius: 10px;
+      font-size: 13px; font-weight: 600; text-align: center;
+      background: rgba(55, 65, 81, 0.6); color: #9ca3af;
+    }
+    .strength-subtab.active {
+      background: linear-gradient(135deg, #3b82f6, #8b5cf6);
+      color: white;
+    }
+    .strength-content-subtab { display: none; }
+    .strength-content-subtab.active { display: block; }
+    
+    /* V12: Muscle tags */
+    .muscle-selector { 
+      display: flex; flex-wrap: wrap; gap: 6px; margin: 12px 0; 
+    }
+    .muscle-tag {
+      padding: 6px 12px; border-radius: 16px; font-size: 12px;
+      font-weight: 600; background: rgba(55, 65, 81, 0.6);
+      color: #9ca3af; cursor: pointer; border: 2px solid transparent;
+    }
+    .muscle-tag.primary {
+      background: rgba(239, 68, 68, 0.3);
+      color: #fca5a5; border-color: #ef4444;
+    }
+    .muscle-tag.secondary {
+      background: rgba(251, 191, 36, 0.3);
+      color: #fcd34d; border-color: #f59e0b;
+    }
 
-    /* Rest day */
-    .rest-day { text-align: center; padding: 48px 0; }
-    .rest-icon { font-size: 60px; margin-bottom: 16px; }
-    .rest-title { font-size: 24px; font-weight: 700; margin-bottom: 8px; }
-    .rest-subtitle { color: #9ca3af; }
-
-    @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.7; } }
-    @keyframes bounce { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-10px); } }
   </style>
 </head>
 <body>
-  <div id="app"></div>
+  <div class="clock-row">
+    <div class="clock-display" id="clock">00:00:00</div>
+  </div>
+
+  <div class="main-tabs">
+    <button class="main-tab active" onclick="switchMainTab('strength')">
+      <span class="main-tab-icon">💪</span>
+      Силовые
+    </button>
+    <button class="main-tab" onclick="switchMainTab('cardio')">
+      <span class="main-tab-icon">🏃</span>
+      Кардио
+    </button>
+    <button class="main-tab" onclick="switchMainTab('nutrition')">
+      <span class="main-tab-icon">🍽️</span>
+      Питание
+    </button>
+    <button class="main-tab" onclick="switchMainTab('profile')">
+      <span class="main-tab-icon">👤</span>
+      Профиль
+    </button>
+  </div>
+
+  <!-- STRENGTH TAB -->
+  <div id="tab-strength" class="tab-content active">
+    <div id="strength-content"></div>
+  </div>
+
+  <!-- CARDIO TAB -->
+  <div id="tab-cardio" class="tab-content">
+    <div class="card">
+      <div class="card-title">Кардио активности</div>
+      <button class="btn btn-primary btn-full" onclick="showAddCardioModal()">
+        + Добавить активность
+      </button>
+    </div>
+    <div id="cardio-history"></div>
+  </div>
+
+  <!-- NUTRITION TAB -->
+  <div id="tab-nutrition" class="tab-content">
+    <div class="progress-panel" id="nutrition-progress">
+      <div class="progress-title">📊 Прогресс за день</div>
+      <div class="progress-row">
+        <span class="progress-label">Цель:</span>
+        <span class="progress-value" id="daily-goal">— ккал</span>
+      </div>
+      <div class="progress-row">
+        <span class="progress-label">Съедено:</span>
+        <span class="progress-value" id="daily-consumed">0 ккал</span>
+      </div>
+      <div class="progress-row">
+        <span class="progress-label">Потрачено:</span>
+        <span class="progress-value" id="daily-burned">-0 ккал</span>
+      </div>
+      <div class="progress-bar">
+        <div class="progress-fill" id="daily-progress-fill" style="width: 0%"></div>
+      </div>
+      <div style="margin-top: 16px; font-size: 14px; opacity: 0.9;">
+        <div id="daily-remaining">Осталось: — ккал</div>
+        <div style="margin-top: 8px; display: flex; gap: 12px; flex-wrap: wrap;">
+          <span id="protein-progress">Б: 0г</span>
+          <span id="fat-progress">Ж: 0г</span>
+          <span id="carbs-progress">У: 0г</span>
+        </div>
+      </div>
+    </div>
+
+    <div style="display: flex; gap: 8px; margin-bottom: 16px;">
+      <button class="btn btn-secondary" style="flex: 1;" onclick="switchNutritionTab('diary')">📅 Дневник</button>
+      <button class="btn btn-secondary" style="flex: 1;" onclick="switchNutritionTab('products')">📦 Продукты</button>
+      <button class="btn btn-secondary" style="flex: 1;" onclick="switchNutritionTab('recipes')">📋 Рецепты</button>
+    </div>
+
+    <div id="nutrition-diary" class="nutrition-subtab">
+      <div class="card">
+        <div class="card-title">Дневник питания</div>
+        <button class="btn btn-success btn-full" onclick="showAddMealModal()">
+          + Добавить приём пищи
+        </button>
+      </div>
+      <div id="diary-list"></div>
+    </div>
+
+    <div id="nutrition-products" class="nutrition-subtab" style="display: none;">
+      <div class="card">
+        <div class="card-title">База продуктов</div>
+        <button class="btn btn-primary btn-full" onclick="showAddProductModal()">
+          + Добавить продукт
+        </button>
+      </div>
+      <div id="products-list"></div>
+    </div>
+
+    <div id="nutrition-recipes" class="nutrition-subtab" style="display: none;">
+      <div class="card">
+        <div class="card-title">Рецепты и блюда</div>
+        <button class="btn btn-primary btn-full" onclick="showAddRecipeModal()">
+          + Создать рецепт
+        </button>
+      </div>
+      <div id="recipes-list"></div>
+    </div>
+  </div>
+
+  <!-- PROFILE TAB -->
+  <div id="tab-profile" class="tab-content">
+    <div class="card">
+      <div class="card-title">Личные данные</div>
+      <div class="input-group">
+        <label class="input-label">Возраст (лет)</label>
+        <input type="number" class="input-field" id="profile-age" placeholder="47">
+      </div>
+      <div class="input-group">
+        <label class="input-label">Вес (кг)</label>
+        <input type="number" class="input-field" id="profile-weight" placeholder="85">
+      </div>
+      <div class="input-group">
+        <label class="input-label">Рост (см)</label>
+        <input type="number" class="input-field" id="profile-height" placeholder="180">
+      </div>
+      <div class="input-group">
+        <label class="input-label">Пол</label>
+        <select class="input-field" id="profile-gender">
+          <option value="male">Мужской</option>
+          <option value="female">Женский</option>
+        </select>
+      </div>
+      <div class="input-group">
+        <label class="input-label">Цель</label>
+        <select class="input-field" id="profile-goal">
+          <option value="bulk">Набор массы (+400 ккал)</option>
+          <option value="maintain">Поддержание веса</option>
+          <option value="cut">Сушка (-400 ккал)</option>
+        </select>
+      </div>
+      <div class="input-group">
+        <label class="input-label">Уровень активности</label>
+        <select class="input-field" id="profile-activity">
+          <option value="sedentary">Сидячий (×1.2)</option>
+          <option value="light">Легкий (×1.375)</option>
+          <option value="moderate">Умеренный (×1.55)</option>
+          <option value="active">Активный (×1.725)</option>
+          <option value="very-active">Очень активный (×1.9)</option>
+        </select>
+      </div>
+      <button class="btn btn-success btn-full" onclick="saveProfile()">
+        💾 Сохранить профиль
+      </button>
+    </div>
+
+    <div class="card" id="profile-results" style="display: none;">
+      <div class="card-title">Ваши показатели</div>
+      <div class="progress-row">
+        <span class="progress-label">Базовый метаболизм (BMR):</span>
+        <span class="progress-value" id="bmr-value">— ккал</span>
+      </div>
+      <div class="progress-row">
+        <span class="progress-label">Дневная норма (TDEE):</span>
+        <span class="progress-value" id="tdee-value">— ккал</span>
+      </div>
+      <div class="progress-row">
+        <span class="progress-label">Целевое потребление:</span>
+        <span class="progress-value" id="target-value">— ккал</span>
+      </div>
+      <div style="margin-top: 16px; padding-top: 16px; border-top: 1px solid rgba(75,85,99,0.5);">
+        <div class="progress-label" style="margin-bottom: 12px;">Рекомендуемое КБЖУ:</div>
+        <div class="macro-pills">
+          <div class="macro-pill calories" id="target-calories">К: — ккал</div>
+          <div class="macro-pill protein" id="target-protein">Б: — г</div>
+          <div class="macro-pill fat" id="target-fat">Ж: — г</div>
+          <div class="macro-pill carbs" id="target-carbs">У: — г</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODALS -->
+
+  <!-- Add Cardio Modal -->
+  <div class="modal-overlay" id="modal-add-cardio">
+    <div class="modal">
+      <div class="modal-header">
+        <div class="modal-title">Добавить активность</div>
+        <button class="modal-close" onclick="closeModal('modal-add-cardio')">×</button>
+      </div>
+      <div class="input-group">
+        <label class="input-label">Тип активности</label>
+        <select class="input-field" id="cardio-type">
+          <option value="run-interval">🏃 Бег интервальный</option>
+          <option value="run-easy">🏃 Бег легкий</option>
+          <option value="run-long">🏃 Бег длительный</option>
+          <option value="run-tempo">🏃 Бег темповый</option>
+          <option value="swim">🏊 Плавание</option>
+          <option value="bike">🚴 Велосипед</option>
+          <option value="rowing">🚣 Гребля</option>
+          <option value="other">➕ Другое</option>
+        </select>
+      </div>
+      <div class="input-group">
+        <label class="input-label">Дистанция (км)</label>
+        <input type="number" step="0.1" class="input-field" id="cardio-distance" placeholder="5.0">
+      </div>
+      <div class="input-group">
+        <label class="input-label">Время (минуты)</label>
+        <input type="number" class="input-field" id="cardio-time" placeholder="30">
+      </div>
+      <div style="padding: 16px; background: rgba(59,130,246,0.1); border-radius: 12px; margin-bottom: 16px;">
+        <div style="font-size: 13px; color: #9ca3af; margin-bottom: 8px;">Расчёт калорий:</div>
+        <div style="font-size: 24px; font-weight: 700; color: #3b82f6;" id="cardio-calories-preview">— ккал</div>
+      </div>
+      <button class="btn btn-success btn-full" onclick="saveCardio()">✅ Сохранить</button>
+    </div>
+  </div>
+
+  <!-- Add Meal Modal -->
+  <div class="modal-overlay" id="modal-add-meal">
+    <div class="modal">
+      <div class="modal-header">
+        <div class="modal-title">Добавить приём пищи</div>
+        <button class="modal-close" onclick="closeModal('modal-add-meal')">×</button>
+      </div>
+      <div class="search-container">
+        <input type="text" class="input-field" id="meal-search" placeholder="🔍 Поиск продукта...">
+        <div class="search-results" id="meal-search-results"></div>
+      </div>
+      <div id="meal-weight-input" style="display: none;">
+        <div class="input-group">
+          <label class="input-label">Вес (г)</label>
+          <input type="number" class="input-field" id="meal-weight" placeholder="100">
+        </div>
+        <div class="macro-pills" style="margin-bottom: 16px;">
+          <div class="macro-pill calories" id="meal-calc-calories">К: 0 ккал</div>
+          <div class="macro-pill protein" id="meal-calc-protein">Б: 0г</div>
+          <div class="macro-pill fat" id="meal-calc-fat">Ж: 0г</div>
+          <div class="macro-pill carbs" id="meal-calc-carbs">У: 0г</div>
+        </div>
+        <button class="btn btn-success btn-full" onclick="addMealToDay()">✅ Добавить в дневник</button>
+      </div>
+      <div style="margin-top: 16px; padding-top: 16px; border-top: 1px solid rgba(75,85,99,0.5);">
+        <button class="btn btn-secondary btn-full" onclick="showQuickRecipes()">📋 Выбрать рецепт</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Add Product Modal -->
+  <div class="modal-overlay" id="modal-add-product">
+    <div class="modal">
+      <div class="modal-header">
+        <div class="modal-title">Добавить продукт</div>
+        <button class="modal-close" onclick="closeModal('modal-add-product')">×</button>
+      </div>
+      <div class="search-container">
+        <input type="text" class="input-field" id="product-search" placeholder="🔍 Искать в базе продуктов...">
+        <button class="btn btn-primary btn-full" style="margin-top: 8px;" onclick="searchProductsAPI()">🌐 Искать в интернете</button>
+        <div class="search-results" id="product-search-results"></div>
+      </div>
+      <div style="margin: 20px 0; text-align: center; color: #6b7280; font-size: 13px;">или создать вручную</div>
+      <div class="input-group">
+        <label class="input-label">Название продукта</label>
+        <input type="text" class="input-field" id="product-name" placeholder="Куриное бедро">
+      </div>
+      <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
+        <div class="input-group">
+          <label class="input-label">Калории (на 100г)</label>
+          <input type="number" class="input-field" id="product-calories" placeholder="150">
+        </div>
+        <div class="input-group">
+          <label class="input-label">Белки (г)</label>
+          <input type="number" step="0.1" class="input-field" id="product-protein" placeholder="20">
+        </div>
+        <div class="input-group">
+          <label class="input-label">Жиры (г)</label>
+          <input type="number" step="0.1" class="input-field" id="product-fat" placeholder="10">
+        </div>
+        <div class="input-group">
+          <label class="input-label">Углеводы (г)</label>
+          <input type="number" step="0.1" class="input-field" id="product-carbs" placeholder="0">
+        </div>
+      </div>
+      <button class="btn btn-success btn-full" onclick="saveProduct()">💾 Сохранить продукт</button>
+    </div>
+  </div>
+
+  <!-- Add Recipe Modal -->
+  <div class="modal-overlay" id="modal-add-recipe">
+    <div class="modal">
+      <div class="modal-header">
+        <div class="modal-title">Создать рецепт</div>
+        <button class="modal-close" onclick="closeModal('modal-add-recipe')">×</button>
+      </div>
+      <div class="input-group">
+        <label class="input-label">Название рецепта</label>
+        <input type="text" class="input-field" id="recipe-name" placeholder="Гейнер утренний">
+      </div>
+      <div class="card-title" style="margin-bottom: 12px;">Состав:</div>
+      <div id="recipe-ingredients"></div>
+      <button class="btn btn-secondary btn-full" style="margin-bottom: 16px;" onclick="addIngredientToRecipe()">+ Добавить ингредиент</button>
+      <div class="macro-pills" style="margin-bottom: 16px;">
+        <div class="macro-pill calories" id="recipe-total-calories">К: 0 ккал</div>
+        <div class="macro-pill protein" id="recipe-total-protein">Б: 0г</div>
+        <div class="macro-pill fat" id="recipe-total-fat">Ж: 0г</div>
+        <div class="macro-pill carbs" id="recipe-total-carbs">У: 0г</div>
+      </div>
+      <button class="btn btn-success btn-full" onclick="saveRecipe()">💾 Сохранить рецепт</button>
+    </div>
+  </div>
+
+
+  <!-- V12: Exercise Modal -->
+  <div class="modal-overlay" id="modal-manage-exercise">
+    <div class="modal">
+      <div class="modal-header">
+        <div class="modal-title">Упражнение</div>
+        <button class="modal-close" onclick="closeModal('modal-manage-exercise')">×</button>
+      </div>
+      <div class="input-group">
+        <label class="input-label">Название</label>
+        <input type="text" class="input-field" id="ex-name">
+      </div>
+      <div class="input-group">
+        <label class="input-label">Целевые мышцы (клик: основные→вспомогательные→убрать)</label>
+        <div class="muscle-selector" id="muscle-selector"></div>
+      </div>
+      <div class="input-group">
+        <label class="input-label">Ссылка на видео ВК</label>
+        <input type="url" class="input-field" id="ex-video" placeholder="https://vk.com/video...">
+      </div>
+      <button class="btn btn-success btn-full" onclick="saveExerciseInfo()">💾 Сохранить</button>
+    </div>
+  </div>
 
   <script>
-    // ==================== PROGRAM DATA ====================
-    const PROGRAM = {
+
+    // ========== STATE & CONSTANTS ==========
+    const STORAGE_KEY = 'fitnessTrackerV12';
+
+const PROGRAM = {
       1: {
         name: 'СПИНА + БИЦЕПС',
         exercises: [
@@ -220,70 +767,75 @@
       7: { name: 'Разгрузка', sets: 3, reps: '10-12', cssClass: 'week-7' }
     };
 
-    const MEALS = [
-      { id: 'preworkout', time: '5:30', name: 'До трени', items: 'Коллаген + кофеин + вода с лимоном', protein: 5, fat: 0, carbs: 2, icon: '🍋' },
-      { id: 'postworkout', time: '7:00', name: 'После трени', items: 'Гейнер + креатин 5г', protein: 41, fat: 13, carbs: 72, icon: '🥤' },
-      { id: 'breakfast', time: '7:40', name: 'Завтрак', items: 'Гречка 150г + 3 яйца + 2 сосиски', protein: 34, fat: 37, carbs: 33, icon: '🍳' },
-      { id: 'snack1', time: '10:00', name: 'Перекус 1', items: 'Банан', protein: 1, fat: 0, carbs: 25, icon: '🍌' },
-      { id: 'lunch', time: '13:00', name: 'Обед', items: 'Курица 300г + макароны 200г', protein: 55, fat: 17, carbs: 50, icon: '🍗' },
-      { id: 'snack2', time: '16:00', name: 'Перекус 2', items: 'Протеин + банан', protein: 26, fat: 2, carbs: 28, icon: '💪' },
-      { id: 'snack3', time: '18:30', name: 'Доп приём', items: 'Макароны 150г', protein: 5, fat: 1, carbs: 40, icon: '🍝' },
-      { id: 'dinner', time: '21:00', name: 'Ужин', items: 'Творог 250г + кефир 200мл', protein: 51, fat: 14, carbs: 16, icon: '🥛' }
-    ];
+    
 
-    const SUPPLEMENTS = [
-      { id: 'collagen', name: 'Коллаген', time: '5:30', status: 'have' },
-      { id: 'caffeine', name: 'Кофеин', time: '5:30', status: 'have' },
-      { id: 'creatine', name: 'Креатин 5г', time: '7:00', status: 'have' },
-      { id: 'vitd', name: 'Витамин D3', time: '7:40', status: 'buy' },
-      { id: 'omega', name: 'Омега-3', time: '7:40', status: 'buy' },
-      { id: 'zinc', name: 'Цинк', time: '7:40', status: 'buy' },
-      { id: 'protein', name: 'Протеин', time: '16:00', status: 'have' },
-      { id: 'magnesium', name: 'Магний', time: '22:00', status: 'have' }
-    ];
-
-    const MACRO_GOALS = { protein: 218, fat: 84, carbs: 266 };
-    const dayNames = ['Вс', 'Пн', 'Вт', 'Ср', 'Чт', 'Пт', 'Сб'];
-
-    // ==================== STATE ====================
+    // ========== GLOBAL STATE ==========
     let state = {
-      activeTab: 'training',
-      currentWeek: 1,
-      currentDay: 1,
-      workoutData: {},
-      nutritionData: {},
-      customPauses: {},
-      expandedHints: {},
-      timer: { active: false, timeLeft: 0, maxTime: 0, exercise: '', exId: null, modified: false, saved: false },
-      showCompletion: false
+      currentMainTab: 'strength',
+      currentNutritionTab: 'diary',
+      
+      // Strength training
+      strength: {
+        currentWeek: 1,
+        currentDay: 1,
+        workoutData: {},
+        customPauses: {},
+        timer: { active: false, timeLeft: 0, maxTime: 0, exercise: '', exId: null, modified: false, saved: false },
+        showCompletion: false
+      },
+      
+      // Profile
+      profile: {
+        age: null,
+        weight: null,
+        height: null,
+        gender: 'male',
+        goal: 'bulk',
+        activityLevel: 'moderate'
+      },
+      
+      // Cardio
+      cardio: {
+        history: []
+      },
+      
+      // Nutrition
+      nutrition: {
+        products: [],
+        recipes: [],
+        diary: [],
+        recentProducts: []
+      },
+      
+      // Temp data
+      temp: {
+        selectedProduct: null,
+        recipeIngredients: []
+      }
     };
 
-    // ==================== STORAGE ====================
-    function loadData() {
-      try {
-        const saved = localStorage.getItem('fitnessTrackerV9');
-        if (saved) {
-          const data = JSON.parse(saved);
-          state.workoutData = data.workoutData || {};
-          state.currentWeek = data.currentWeek || 1;
-          state.nutritionData = data.nutritionData || {};
-          state.customPauses = data.customPauses || {};
-        }
-      } catch (e) {}
-    }
+    const WEEK_CONFIGS = {
+      1: { name: 'Адаптация', sets: 3, reps: '12', cssClass: 'week-1-2' },
+      2: { name: 'Адаптация', sets: 3, reps: '12', cssClass: 'week-1-2' },
+      3: { name: 'Кумуляция объёма', sets: 4, reps: '8-10', cssClass: 'week-3-4' },
+      4: { name: 'Кумуляция объёма', sets: 4, reps: '8-10', cssClass: 'week-3-4' },
+      5: { name: 'ПИК объёма', sets: 4, reps: '8-10', cssClass: 'week-5-6' },
+      6: { name: 'ПИК объёма', sets: 4, reps: '8-10', cssClass: 'week-5-6' },
+      7: { name: 'Разгрузка', sets: 3, reps: '10-12', cssClass: 'week-7' }
+    };
 
-    function saveData() {
-      try {
-        localStorage.setItem('fitnessTrackerV9', JSON.stringify({
-          workoutData: state.workoutData,
-          currentWeek: state.currentWeek,
-          nutritionData: state.nutritionData,
-          customPauses: state.customPauses
-        }));
-      } catch (e) {}
+    // ========== CLOCK ==========
+    function updateClock() {
+      const now = new Date();
+      const h = String(now.getHours()).padStart(2, '0');
+      const m = String(now.getMinutes()).padStart(2, '0');
+      const s = String(now.getSeconds()).padStart(2, '0');
+      document.getElementById('clock').textContent = `${h}:${m}:${s}`;
     }
+    setInterval(updateClock, 1000);
+    updateClock();
 
-    // ==================== AUDIO ====================
+    // ========== AUDIO SYSTEM ==========
     let audioCtx = null;
     let gongBuffer = null;
 
@@ -293,7 +845,6 @@
       return audioCtx;
     }
 
-    // === MP3 ГОНГ (загружается один раз) ===
     async function loadGong() {
       if (gongBuffer) return gongBuffer;
       try {
@@ -323,13 +874,12 @@
       } catch(e) { console.error('Gong play error:', e); }
     }
 
-    // === БОКСЁРСКИЙ ЗВОНОК с эскалацией громкости ===
     function playBoxingBell(volumeMultiplier = 1.0) {
       try {
         const ctx = getAudioCtx();
         const now = ctx.currentTime;
 
-        // --- Удар молотком: короткий белый шум с быстрым спадом ---
+        // Hit
         const hitLen = ctx.sampleRate * 0.025;
         const hitBuf = ctx.createBuffer(1, hitLen, ctx.sampleRate);
         const hitData = hitBuf.getChannelData(0);
@@ -348,7 +898,7 @@
         hitGain.connect(ctx.destination);
         hitSrc.start(now);
 
-        // --- Основной тон колокола: 1050Hz + металлические обертоны ---
+        // Bell tones
         const bellFreqs = [
           { freq: 1050, amp: 0.35, decay: 1.4 },
           { freq: 2100, amp: 0.18, decay: 1.0 },
@@ -371,7 +921,7 @@
           osc.stop(now + decay + 0.05);
         });
 
-        // --- Металлический shimmer ---
+        // Shimmer
         [-2, 2].forEach((det) => {
           const osc = ctx.createOscillator();
           const gain = ctx.createGain();
@@ -388,28 +938,729 @@
       } catch(e) { console.error('Bell error:', e); }
     }
 
-    // === ОБРАТНЫЙ ОТСЧЁТ с нарастающей громкостью ===
     function playCountdown() {
       for (let i = 0; i < 10; i++) {
         setTimeout(() => {
-          const volume = 0.25 + (i / 9) * 0.75; // 25% → 100%
+          const volume = 0.25 + (i / 9) * 0.75;
           playBoxingBell(volume);
         }, i * 1000);
       }
     }
 
-    function playBeep() {
-      try {
-        const ctx = getAudioCtx();
-        const osc = ctx.createOscillator();
-        const gain = ctx.createGain();
-        osc.connect(gain); gain.connect(ctx.destination);
-        osc.frequency.value = 800; gain.gain.value = 0.3;
-        osc.start(); osc.stop(ctx.currentTime + 0.15);
-      } catch(e) {}
+    // ========== TAB SWITCHING ==========
+    function switchMainTab(tab) {
+      state.currentMainTab = tab;
+      document.querySelectorAll('.main-tab').forEach(btn => btn.classList.remove('active'));
+      event.target.closest('.main-tab').classList.add('active');
+      document.querySelectorAll('.tab-content').forEach(content => content.classList.remove('active'));
+      document.getElementById(`tab-${tab}`).classList.add('active');
+      
+      if (tab === 'strength') renderStrength();
+      if (tab === 'cardio') renderCardioHistory();
+      if (tab === 'nutrition') updateNutritionProgress();
+      if (tab === 'profile') loadProfile();
+      
+      saveState();
     }
 
-    // ==================== TIMER ====================
+    function switchNutritionTab(tab) {
+      state.currentNutritionTab = tab;
+      document.querySelectorAll('.nutrition-subtab').forEach(subtab => subtab.style.display = 'none');
+      document.getElementById(`nutrition-${tab}`).style.display = 'block';
+      
+      if (tab === 'products') renderProductsList();
+      if (tab === 'recipes') renderRecipesList();
+      if (tab === 'diary') renderDiary();
+    }
+
+    // ========== MODAL MANAGEMENT ==========
+    function showModal(modalId) {
+      document.getElementById(modalId).classList.add('show');
+    }
+
+    function closeModal(modalId) {
+      document.getElementById(modalId).classList.remove('show');
+    }
+
+    function showAddCardioModal() {
+      showModal('modal-add-cardio');
+      updateCardioCaloriesPreview();
+    }
+
+    function showAddMealModal() {
+      showModal('modal-add-meal');
+      document.getElementById('meal-search').value = '';
+      document.getElementById('meal-search-results').innerHTML = '';
+      document.getElementById('meal-weight-input').style.display = 'none';
+    }
+
+    function showAddProductModal() {
+      showModal('modal-add-product');
+      document.getElementById('product-search').value = '';
+      document.getElementById('product-search-results').innerHTML = '';
+      clearProductForm();
+    }
+
+    function showAddRecipeModal() {
+      showModal('modal-add-recipe');
+      document.getElementById('recipe-name').value = '';
+      state.temp.recipeIngredients = [];
+      renderRecipeIngredients();
+    }
+
+    // ========== PROFILE ==========
+    function saveProfile() {
+      state.profile = {
+        age: parseInt(document.getElementById('profile-age').value) || null,
+        weight: parseFloat(document.getElementById('profile-weight').value) || null,
+        height: parseInt(document.getElementById('profile-height').value) || null,
+        gender: document.getElementById('profile-gender').value,
+        goal: document.getElementById('profile-goal').value,
+        activityLevel: document.getElementById('profile-activity').value
+      };
+      
+      calculateMetabolism();
+      saveState();
+      alert('✅ Профиль сохранён!');
+    }
+
+    function calculateMetabolism() {
+      const { age, weight, height, gender, goal, activityLevel } = state.profile;
+      
+      if (!age || !weight || !height) {
+        document.getElementById('profile-results').style.display = 'none';
+        return;
+      }
+      
+      // BMR
+      let bmr;
+      if (gender === 'male') {
+        bmr = 10 * weight + 6.25 * height - 5 * age + 5;
+      } else {
+        bmr = 10 * weight + 6.25 * height - 5 * age - 161;
+      }
+      
+      // TDEE
+      const activityMultipliers = {
+        'sedentary': 1.2,
+        'light': 1.375,
+        'moderate': 1.55,
+        'active': 1.725,
+        'very-active': 1.9
+      };
+      
+      const tdee = bmr * activityMultipliers[activityLevel];
+      
+      // Target
+      let target = tdee;
+      if (goal === 'bulk') target += 400;
+      if (goal === 'cut') target -= 400;
+      
+      // Macros
+      const protein = Math.round((target * 0.30) / 4);
+      const fat = Math.round((target * 0.25) / 9);
+      const carbs = Math.round((target * 0.45) / 4);
+      
+      // Display
+      document.getElementById('profile-results').style.display = 'block';
+      document.getElementById('bmr-value').textContent = `${Math.round(bmr)} ккал`;
+      document.getElementById('tdee-value').textContent = `${Math.round(tdee)} ккал`;
+      document.getElementById('target-value').textContent = `${Math.round(target)} ккал`;
+      document.getElementById('target-calories').textContent = `К: ${Math.round(target)} ккал`;
+      document.getElementById('target-protein').textContent = `Б: ${protein}г`;
+      document.getElementById('target-fat').textContent = `Ж: ${fat}г`;
+      document.getElementById('target-carbs').textContent = `У: ${carbs}г`;
+      document.getElementById('daily-goal').textContent = `${Math.round(target)} ккал`;
+    }
+
+    function loadProfile() {
+      const { age, weight, height, gender, goal, activityLevel } = state.profile;
+      if (age) document.getElementById('profile-age').value = age;
+      if (weight) document.getElementById('profile-weight').value = weight;
+      if (height) document.getElementById('profile-height').value = height;
+      if (gender) document.getElementById('profile-gender').value = gender;
+      if (goal) document.getElementById('profile-goal').value = goal;
+      if (activityLevel) document.getElementById('profile-activity').value = activityLevel;
+      calculateMetabolism();
+    }
+
+    // ========== CARDIO ==========
+    function updateCardioCaloriesPreview() {
+      const distance = parseFloat(document.getElementById('cardio-distance').value) || 0;
+      const time = parseFloat(document.getElementById('cardio-time').value) || 0;
+      const type = document.getElementById('cardio-type').value;
+      const weight = state.profile.weight || 75;
+      
+      let calories = 0;
+      if (type.startsWith('run')) {
+        calories = distance * (weight * 0.9);
+      } else if (type === 'swim') {
+        calories = (time / 60) * 400;
+      } else if (type === 'bike') {
+        calories = (time / 60) * 300;
+      } else {
+        calories = time * 10;
+      }
+      
+      document.getElementById('cardio-calories-preview').textContent = `${Math.round(calories)} ккал`;
+    }
+
+    document.getElementById('cardio-distance')?.addEventListener('input', updateCardioCaloriesPreview);
+    document.getElementById('cardio-time')?.addEventListener('input', updateCardioCaloriesPreview);
+    document.getElementById('cardio-type')?.addEventListener('change', updateCardioCaloriesPreview);
+
+    function saveCardio() {
+      const type = document.getElementById('cardio-type').value;
+      const distance = parseFloat(document.getElementById('cardio-distance').value) || 0;
+      const time = parseFloat(document.getElementById('cardio-time').value) || 0;
+      
+      if (!time) {
+        alert('Укажите время активности');
+        return;
+      }
+      
+      const caloriesText = document.getElementById('cardio-calories-preview').textContent;
+      const calories = parseInt(caloriesText);
+      
+      const typeNames = {
+        'run-interval': '🏃 Бег интервальный',
+        'run-easy': '🏃 Бег легкий',
+        'run-long': '🏃 Бег длительный',
+        'run-tempo': '🏃 Бег темповый',
+        'swim': '🏊 Плавание',
+        'bike': '🚴 Велосипед',
+        'rowing': '🚣 Гребля',
+        'other': '➕ Другое'
+      };
+      
+      state.cardio.history.unshift({
+        id: Date.now(),
+        date: new Date().toISOString(),
+        type: typeNames[type],
+        distance,
+        time,
+        calories
+      });
+      
+      saveState();
+      closeModal('modal-add-cardio');
+      renderCardioHistory();
+      updateNutritionProgress();
+      
+      document.getElementById('cardio-distance').value = '';
+      document.getElementById('cardio-time').value = '';
+    }
+
+    function renderCardioHistory() {
+      const container = document.getElementById('cardio-history');
+      const today = new Date().toDateString();
+      const todayItems = state.cardio.history.filter(item => 
+        new Date(item.date).toDateString() === today
+      );
+      
+      if (todayItems.length === 0) {
+        container.innerHTML = '<div class="empty-state"><div class="empty-icon">🏃</div><div class="empty-text">Нет записей кардио активностей</div></div>';
+        return;
+      }
+      
+      container.innerHTML = todayItems.map(item => {
+        const time = new Date(item.date).toLocaleTimeString('ru', { hour: '2-digit', minute: '2-digit' });
+        return `
+          <div class="list-item">
+            <div class="list-item-content">
+              <div class="list-item-title">${item.type}</div>
+              <div class="list-item-subtitle">
+                ${item.distance ? `${item.distance}км · ` : ''}${item.time}мин · ${item.calories}ккал · ${time}
+              </div>
+            </div>
+            <div class="list-item-actions">
+              <button class="icon-btn" onclick="deleteCardio(${item.id})">🗑️</button>
+            </div>
+          </div>
+        `;
+      }).join('');
+    }
+
+    function deleteCardio(id) {
+      if (!confirm('Удалить эту запись?')) return;
+      state.cardio.history = state.cardio.history.filter(item => item.id !== id);
+      saveState();
+      renderCardioHistory();
+      updateNutritionProgress();
+    }
+
+    // ========== NUTRITION - PRODUCTS ==========
+    async function searchProductsAPI() {
+      const query = document.getElementById('product-search').value.trim();
+      if (!query) return;
+      
+      const resultsContainer = document.getElementById('product-search-results');
+      resultsContainer.innerHTML = '<div style="padding: 16px; text-align: center; color: #9ca3af;">🔍 Поиск...</div>';
+      resultsContainer.classList.add('show');
+      
+      try {
+        const response = await fetch(`https://world.openfoodfacts.org/cgi/search.pl?search_terms=${encodeURIComponent(query)}&search_simple=1&json=1&page_size=10`);
+        const data = await response.json();
+        
+        if (!data.products || data.products.length === 0) {
+          resultsContainer.innerHTML = '<div style="padding: 16px; text-align: center; color: #9ca3af;">Ничего не найдено</div>';
+          return;
+        }
+        
+        resultsContainer.innerHTML = data.products.map(product => {
+          const nutrients = product.nutriments || {};
+          const name = product.product_name || 'Без названия';
+          const calories = Math.round(nutrients['energy-kcal_100g'] || 0);
+          const protein = (nutrients.proteins_100g || 0).toFixed(1);
+          const fat = (nutrients.fat_100g || 0).toFixed(1);
+          const carbs = (nutrients.carbohydrates_100g || 0).toFixed(1);
+          
+          return `
+            <div class="search-result-item" onclick='selectProductFromAPI(${JSON.stringify({name, calories, protein, fat, carbs})})'>
+              <div class="search-result-title">${name}</div>
+              <div class="search-result-info">На 100г: К${calories} Б${protein} Ж${fat} У${carbs}</div>
+            </div>
+          `;
+        }).join('');
+        
+      } catch (error) {
+        resultsContainer.innerHTML = '<div style="padding: 16px; text-align: center; color: #ef4444;">Ошибка поиска</div>';
+      }
+    }
+
+    function selectProductFromAPI(product) {
+      document.getElementById('product-name').value = product.name;
+      document.getElementById('product-calories').value = product.calories;
+      document.getElementById('product-protein').value = product.protein;
+      document.getElementById('product-fat').value = product.fat;
+      document.getElementById('product-carbs').value = product.carbs;
+      document.getElementById('product-search-results').classList.remove('show');
+    }
+
+    function clearProductForm() {
+      document.getElementById('product-name').value = '';
+      document.getElementById('product-calories').value = '';
+      document.getElementById('product-protein').value = '';
+      document.getElementById('product-fat').value = '';
+      document.getElementById('product-carbs').value = '';
+    }
+
+    function saveProduct() {
+      const name = document.getElementById('product-name').value.trim();
+      const calories = parseFloat(document.getElementById('product-calories').value) || 0;
+      const protein = parseFloat(document.getElementById('product-protein').value) || 0;
+      const fat = parseFloat(document.getElementById('product-fat').value) || 0;
+      const carbs = parseFloat(document.getElementById('product-carbs').value) || 0;
+      
+      if (!name) {
+        alert('Укажите название продукта');
+        return;
+      }
+      
+      state.nutrition.products.push({
+        id: Date.now(),
+        name,
+        calories,
+        protein,
+        fat,
+        carbs
+      });
+      
+      saveState();
+      closeModal('modal-add-product');
+      renderProductsList();
+      clearProductForm();
+    }
+
+    function renderProductsList() {
+      const container = document.getElementById('products-list');
+      
+      if (state.nutrition.products.length === 0) {
+        container.innerHTML = '<div class="empty-state"><div class="empty-icon">📦</div><div class="empty-text">База продуктов пуста</div></div>';
+        return;
+      }
+      
+      container.innerHTML = state.nutrition.products.map(product => `
+        <div class="list-item">
+          <div class="list-item-content">
+            <div class="list-item-title">${product.name}</div>
+            <div class="list-item-subtitle">
+              На 100г: ${product.calories}ккал · Б${product.protein} Ж${product.fat} У${product.carbs}
+            </div>
+          </div>
+          <div class="list-item-actions">
+            <button class="icon-btn" onclick="deleteProduct(${product.id})">🗑️</button>
+          </div>
+        </div>
+      `).join('');
+    }
+
+    function deleteProduct(id) {
+      if (!confirm('Удалить этот продукт?')) return;
+      state.nutrition.products = state.nutrition.products.filter(p => p.id !== id);
+      saveState();
+      renderProductsList();
+    }
+
+    // ========== NUTRITION - MEALS ==========
+    let searchTimeout;
+    document.getElementById('meal-search')?.addEventListener('input', (e) => {
+      clearTimeout(searchTimeout);
+      searchTimeout = setTimeout(() => searchMealProducts(e.target.value), 300);
+    });
+
+    function searchMealProducts(query) {
+      const resultsContainer = document.getElementById('meal-search-results');
+      
+      if (!query.trim()) {
+        resultsContainer.classList.remove('show');
+        return;
+      }
+      
+      const filtered = state.nutrition.products.filter(p => 
+        p.name.toLowerCase().includes(query.toLowerCase())
+      );
+      
+      if (filtered.length === 0) {
+        resultsContainer.innerHTML = '<div style="padding: 16px; text-align: center; color: #9ca3af;">Ничего не найдено</div>';
+        resultsContainer.classList.add('show');
+        return;
+      }
+      
+      resultsContainer.innerHTML = filtered.map(product => `
+        <div class="search-result-item" onclick="selectProductForMeal(${product.id})">
+          <div class="search-result-title">${product.name}</div>
+          <div class="search-result-info">На 100г: ${product.calories}ккал · Б${product.protein} Ж${product.fat} У${product.carbs}</div>
+        </div>
+      `).join('');
+      resultsContainer.classList.add('show');
+    }
+
+    function selectProductForMeal(productId) {
+      const product = state.nutrition.products.find(p => p.id === productId);
+      if (!product) return;
+      
+      state.temp.selectedProduct = product;
+      document.getElementById('meal-search-results').classList.remove('show');
+      document.getElementById('meal-weight-input').style.display = 'block';
+      document.getElementById('meal-weight').value = '100';
+      updateMealCalculation();
+    }
+
+    document.getElementById('meal-weight')?.addEventListener('input', updateMealCalculation);
+
+    function updateMealCalculation() {
+      const product = state.temp.selectedProduct;
+      if (!product) return;
+      
+      const weight = parseFloat(document.getElementById('meal-weight').value) || 0;
+      const multiplier = weight / 100;
+      
+      document.getElementById('meal-calc-calories').textContent = `К: ${Math.round(product.calories * multiplier)} ккал`;
+      document.getElementById('meal-calc-protein').textContent = `Б: ${(product.protein * multiplier).toFixed(1)}г`;
+      document.getElementById('meal-calc-fat').textContent = `Ж: ${(product.fat * multiplier).toFixed(1)}г`;
+      document.getElementById('meal-calc-carbs').textContent = `У: ${(product.carbs * multiplier).toFixed(1)}г`;
+    }
+
+    function addMealToDay() {
+      const product = state.temp.selectedProduct;
+      if (!product) return;
+      
+      const weight = parseFloat(document.getElementById('meal-weight').value) || 0;
+      if (!weight) {
+        alert('Укажите вес продукта');
+        return;
+      }
+      
+      const multiplier = weight / 100;
+      
+      state.nutrition.diary.push({
+        id: Date.now(),
+        date: new Date().toISOString(),
+        productName: product.name,
+        weight,
+        calories: Math.round(product.calories * multiplier),
+        protein: parseFloat((product.protein * multiplier).toFixed(1)),
+        fat: parseFloat((product.fat * multiplier).toFixed(1)),
+        carbs: parseFloat((product.carbs * multiplier).toFixed(1))
+      });
+      
+      if (!state.nutrition.recentProducts.includes(product.id)) {
+        state.nutrition.recentProducts.unshift(product.id);
+        if (state.nutrition.recentProducts.length > 15) {
+          state.nutrition.recentProducts = state.nutrition.recentProducts.slice(0, 15);
+        }
+      }
+      
+      saveState();
+      closeModal('modal-add-meal');
+      renderDiary();
+      updateNutritionProgress();
+      
+      state.temp.selectedProduct = null;
+      document.getElementById('meal-search').value = '';
+      document.getElementById('meal-weight-input').style.display = 'none';
+    }
+
+    function renderDiary() {
+      const container = document.getElementById('diary-list');
+      const today = new Date().toDateString();
+      const todayMeals = state.nutrition.diary.filter(meal => 
+        new Date(meal.date).toDateString() === today
+      );
+      
+      if (todayMeals.length === 0) {
+        container.innerHTML = '<div class="empty-state"><div class="empty-icon">📅</div><div class="empty-text">Нет записей за сегодня</div></div>';
+        return;
+      }
+      
+      container.innerHTML = todayMeals.map(meal => {
+        const time = new Date(meal.date).toLocaleTimeString('ru', { hour: '2-digit', minute: '2-digit' });
+        return `
+          <div class="list-item">
+            <div class="list-item-content">
+              <div class="list-item-title">${meal.productName} ${meal.weight ? `(${meal.weight}г)` : ''}</div>
+              <div class="list-item-subtitle">
+                ${meal.calories}ккал · Б${meal.protein} Ж${meal.fat} У${meal.carbs} · ${time}
+              </div>
+            </div>
+            <div class="list-item-actions">
+              <button class="icon-btn" onclick="deleteMeal(${meal.id})">🗑️</button>
+            </div>
+          </div>
+        `;
+      }).join('');
+    }
+
+    function deleteMeal(id) {
+      if (!confirm('Удалить эту запись?')) return;
+      state.nutrition.diary = state.nutrition.diary.filter(m => m.id !== id);
+      saveState();
+      renderDiary();
+      updateNutritionProgress();
+    }
+
+    function updateNutritionProgress() {
+      const today = new Date().toDateString();
+      const todayMeals = state.nutrition.diary.filter(meal => 
+        new Date(meal.date).toDateString() === today
+      );
+      const todayCardio = state.cardio.history.filter(item => 
+        new Date(item.date).toDateString() === today
+      );
+      
+      const consumed = todayMeals.reduce((sum, m) => sum + m.calories, 0);
+      const burned = todayCardio.reduce((sum, c) => sum + c.calories, 0);
+      const protein = todayMeals.reduce((sum, m) => sum + m.protein, 0);
+      const fat = todayMeals.reduce((sum, m) => sum + m.fat, 0);
+      const carbs = todayMeals.reduce((sum, m) => sum + m.carbs, 0);
+      
+      const goalText = document.getElementById('daily-goal').textContent;
+      const goal = parseInt(goalText) || 2800;
+      
+      const net = consumed - burned;
+      const remaining = goal - net;
+      const progress = Math.min((net / goal) * 100, 100);
+      
+      document.getElementById('daily-consumed').textContent = `${consumed} ккал`;
+      document.getElementById('daily-burned').textContent = `-${burned} ккал`;
+      document.getElementById('daily-remaining').textContent = remaining > 0 
+        ? `Осталось: ${remaining} ккал` 
+        : `Превышение: ${Math.abs(remaining)} ккал`;
+      document.getElementById('daily-progress-fill').style.width = `${progress}%`;
+      
+      document.getElementById('protein-progress').textContent = `Б: ${protein.toFixed(1)}г`;
+      document.getElementById('fat-progress').textContent = `Ж: ${fat.toFixed(1)}г`;
+      document.getElementById('carbs-progress').textContent = `У: ${carbs.toFixed(1)}г`;
+    }
+
+    // ========== NUTRITION - RECIPES ==========
+    function addIngredientToRecipe() {
+      const productName = prompt('Введите название продукта из вашей базы:');
+      if (!productName) return;
+      
+      const product = state.nutrition.products.find(p => 
+        p.name.toLowerCase().includes(productName.toLowerCase())
+      );
+      
+      if (!product) {
+        alert('Продукт не найден в базе');
+        return;
+      }
+      
+      const weight = parseFloat(prompt(`Вес ${product.name} (в граммах):`, '100'));
+      if (!weight) return;
+      
+      state.temp.recipeIngredients.push({
+        product,
+        weight
+      });
+      
+      renderRecipeIngredients();
+    }
+
+    function renderRecipeIngredients() {
+      const container = document.getElementById('recipe-ingredients');
+      
+      if (state.temp.recipeIngredients.length === 0) {
+        container.innerHTML = '<div style="padding: 16px; text-align: center; color: #6b7280; font-size: 13px;">Добавьте ингредиенты</div>';
+        updateRecipeTotals();
+        return;
+      }
+      
+      container.innerHTML = state.temp.recipeIngredients.map((ing, index) => {
+        const multiplier = ing.weight / 100;
+        const calories = Math.round(ing.product.calories * multiplier);
+        const protein = (ing.product.protein * multiplier).toFixed(1);
+        const fat = (ing.product.fat * multiplier).toFixed(1);
+        const carbs = (ing.product.carbs * multiplier).toFixed(1);
+        
+        return `
+          <div class="list-item" style="margin-bottom: 8px;">
+            <div class="list-item-content">
+              <div class="list-item-title">${ing.product.name} (${ing.weight}г)</div>
+              <div class="list-item-subtitle">${calories}ккал · Б${protein} Ж${fat} У${carbs}</div>
+            </div>
+            <button class="icon-btn" onclick="removeIngredient(${index})">×</button>
+          </div>
+        `;
+      }).join('');
+      
+      updateRecipeTotals();
+    }
+
+    function removeIngredient(index) {
+      state.temp.recipeIngredients.splice(index, 1);
+      renderRecipeIngredients();
+    }
+
+    function updateRecipeTotals() {
+      const totals = state.temp.recipeIngredients.reduce((acc, ing) => {
+        const multiplier = ing.weight / 100;
+        return {
+          calories: acc.calories + (ing.product.calories * multiplier),
+          protein: acc.protein + (ing.product.protein * multiplier),
+          fat: acc.fat + (ing.product.fat * multiplier),
+          carbs: acc.carbs + (ing.product.carbs * multiplier)
+        };
+      }, { calories: 0, protein: 0, fat: 0, carbs: 0 });
+      
+      document.getElementById('recipe-total-calories').textContent = `К: ${Math.round(totals.calories)} ккал`;
+      document.getElementById('recipe-total-protein').textContent = `Б: ${totals.protein.toFixed(1)}г`;
+      document.getElementById('recipe-total-fat').textContent = `Ж: ${totals.fat.toFixed(1)}г`;
+      document.getElementById('recipe-total-carbs').textContent = `У: ${totals.carbs.toFixed(1)}г`;
+    }
+
+    function saveRecipe() {
+      const name = document.getElementById('recipe-name').value.trim();
+      if (!name) {
+        alert('Укажите название рецепта');
+        return;
+      }
+      
+      if (state.temp.recipeIngredients.length === 0) {
+        alert('Добавьте хотя бы один ингредиент');
+        return;
+      }
+      
+      const totals = state.temp.recipeIngredients.reduce((acc, ing) => {
+        const multiplier = ing.weight / 100;
+        return {
+          calories: acc.calories + (ing.product.calories * multiplier),
+          protein: acc.protein + (ing.product.protein * multiplier),
+          fat: acc.fat + (ing.product.fat * multiplier),
+          carbs: acc.carbs + (ing.product.carbs * multiplier)
+        };
+      }, { calories: 0, protein: 0, fat: 0, carbs: 0 });
+      
+      state.nutrition.recipes.push({
+        id: Date.now(),
+        name,
+        ingredients: state.temp.recipeIngredients.map(ing => ({
+          productId: ing.product.id,
+          productName: ing.product.name,
+          weight: ing.weight
+        })),
+        calories: Math.round(totals.calories),
+        protein: parseFloat(totals.protein.toFixed(1)),
+        fat: parseFloat(totals.fat.toFixed(1)),
+        carbs: parseFloat(totals.carbs.toFixed(1))
+      });
+      
+      saveState();
+      closeModal('modal-add-recipe');
+      renderRecipesList();
+      
+      state.temp.recipeIngredients = [];
+      document.getElementById('recipe-name').value = '';
+    }
+
+    function renderRecipesList() {
+      const container = document.getElementById('recipes-list');
+      
+      if (state.nutrition.recipes.length === 0) {
+        container.innerHTML = '<div class="empty-state"><div class="empty-icon">📋</div><div class="empty-text">Нет сохранённых рецептов</div></div>';
+        return;
+      }
+      
+      container.innerHTML = state.nutrition.recipes.map(recipe => `
+        <div class="list-item">
+          <div class="list-item-content">
+            <div class="list-item-title">${recipe.name}</div>
+            <div class="list-item-subtitle">
+              ${recipe.calories}ккал · Б${recipe.protein} Ж${recipe.fat} У${recipe.carbs}
+            </div>
+            <div style="font-size: 11px; color: #6b7280; margin-top: 4px;">
+              ${recipe.ingredients.map(ing => `${ing.productName} ${ing.weight}г`).join(' · ')}
+            </div>
+          </div>
+          <div class="list-item-actions">
+            <button class="icon-btn" onclick="useRecipe(${recipe.id})">✅</button>
+            <button class="icon-btn" onclick="deleteRecipe(${recipe.id})">🗑️</button>
+          </div>
+        </div>
+      `).join('');
+    }
+
+    function useRecipe(id) {
+      const recipe = state.nutrition.recipes.find(r => r.id === id);
+      if (!recipe) return;
+      
+      state.nutrition.diary.push({
+        id: Date.now(),
+        date: new Date().toISOString(),
+        productName: recipe.name,
+        weight: null,
+        calories: recipe.calories,
+        protein: recipe.protein,
+        fat: recipe.fat,
+        carbs: recipe.carbs,
+        isRecipe: true
+      });
+      
+      saveState();
+      renderDiary();
+      updateNutritionProgress();
+      
+      if (state.currentNutritionTab === 'recipes') {
+        switchNutritionTab('diary');
+      }
+    }
+
+    function deleteRecipe(id) {
+      if (!confirm('Удалить этот рецепт?')) return;
+      state.nutrition.recipes = state.nutrition.recipes.filter(r => r.id !== id);
+      saveState();
+      renderRecipesList();
+    }
+
+    function showQuickRecipes() {
+      closeModal('modal-add-meal');
+      switchNutritionTab('recipes');
+    }
+
+    // ========== STRENGTH TRAINING MODULE ==========
+        // ==================== TIMER ====================
     let timerInterval = null;
     let lastBeepTime = null;
 
@@ -453,7 +1704,7 @@
         state.customPauses[state.timer.exId] = state.timer.maxTime;
         state.timer.modified = false;
         state.timer.saved = true;
-        saveData();
+        saveState();
         render();
         setTimeout(() => {
           if (state.timer.active) { state.timer.saved = false; render(); }
@@ -492,7 +1743,7 @@
         state.workoutData[key].sets.push({ weight: '', reps: '', completed: false });
       }
       state.workoutData[key].sets[setIdx][field] = value;
-      saveData();
+      saveState();
     }
 
     function toggleComplete(exId, setIdx, exerciseIdx, dayKey, isLastSet, isLastExercise) {
@@ -521,7 +1772,7 @@
         }
         // после последнего сета НЕпоследнего упражнения — таймер не запускается
       }
-      saveData();
+      saveState();
       render();
     }
 
@@ -529,13 +1780,13 @@
       const key = getTodayKey();
       if (!state.nutritionData[key]) state.nutritionData[key] = { meals: {}, supplements: {} };
       state.nutritionData[key].meals[mealId] = !state.nutritionData[key].meals[mealId];
-      saveData(); render();
+      saveState(); render();
     }
     function toggleSupplement(suppId) {
       const key = getTodayKey();
       if (!state.nutritionData[key]) state.nutritionData[key] = { meals: {}, supplements: {} };
       state.nutritionData[key].supplements[suppId] = !state.nutritionData[key].supplements[suppId];
-      saveData(); render();
+      saveState(); render();
     }
     function goToNextWeek() {
       if (state.currentWeek < 7) {
@@ -552,7 +1803,7 @@
           });
         });
         state.currentWeek = next;
-        saveData(); render();
+        saveState(); render();
       }
     }
     function resetAllData() {
@@ -565,10 +1816,11 @@
     function toggleHint(exId) { state.expandedHints['ex'+exId] = !state.expandedHints['ex'+exId]; render(); }
     function setTab(tab) { state.activeTab = tab; render(); }
     function setDay(day) { state.currentDay = day; render(); }
-    function setWeek(week) { state.currentWeek = week; saveData(); render(); }
+    function setWeek(week) { state.currentWeek = week; saveState(); render(); }
     function closeCompletion() { state.showCompletion = false; render(); }
 
-    // ==================== RENDER ====================
+
+        // ==================== RENDER ====================
     function render() {
       const weekConfig = getWeekConfig();
       const numSets = weekConfig.sets;
@@ -809,18 +2061,126 @@
       document.getElementById('app').innerHTML = html;
     }
 
-    // ==================== INIT ====================
-    loadData();
-    render();
 
-    // Обновление часов каждую секунду
-    setInterval(() => {
-      const el = document.getElementById('clock-display');
-      if (el) {
-        const n = new Date();
-        el.textContent = (n.getHours()<10?'0':'')+n.getHours()+':'+(n.getMinutes()<10?'0':'')+n.getMinutes();
+
+    // ========== STORAGE ==========
+    function saveState() {
+      try {
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+      } catch (e) {
+        console.error('Save error:', e);
       }
-    }, 1000);
+    }
+
+    function loadState() {
+      try {
+        const saved = localStorage.getItem(STORAGE_KEY);
+        if (saved) {
+          const loaded = JSON.parse(saved);
+          state = { ...state, ...loaded };
+          
+          // Migrate old v10 data if exists
+          const oldData = localStorage.getItem('fitnessTrackerV9');
+          if (oldData && !saved) {
+            const old = JSON.parse(oldData);
+            if (old.workoutData) state.strength.workoutData = old.workoutData;
+            if (old.currentWeek) state.strength.currentWeek = old.currentWeek;
+            if (old.customPauses) state.strength.customPauses = old.customPauses;
+            saveState();
+          }
+        }
+      } catch (e) {
+        console.error('Load error:', e);
+      }
+    }
+
+    // ========== INIT ==========
+
+    // ========== V12: EXERCISE MANAGEMENT ==========
+    
+    const MUSCLE_GROUPS = {
+      chest: "Грудь", lats: "Широчайшие", traps: "Трапеции",
+      "front-delts": "Передние дельты", "rear-delts": "Задние дельты",
+      biceps: "Бицепс", triceps: "Трицепс", quads: "Квадрицепсы",
+      hamstrings: "Бицепсы бедра", glutes: "Ягодичные",
+      calves: "Икры", abs: "Пресс", "lower-back": "Поясница", core: "Кор"
+    };
+
+    // Временное хранилище для редактирования
+    let editingExercise = null;
+
+    function showManageExercise(exId) {
+      const ex = PROGRAM[state.currentDay]?.exercises.find(e => e.id === exId);
+      if (!ex) return;
+      
+      editingExercise = ex;
+      document.getElementById('ex-name').value = ex.name || '';
+      document.getElementById('ex-video').value = ex.videoUrl || '';
+      
+      renderMuscleSelector(ex.muscles || {primary: [], secondary: []});
+      showModal('modal-manage-exercise');
+    }
+
+    function renderMuscleSelector(selectedMuscles) {
+      const container = document.getElementById('muscle-selector');
+      if (!container) return;
+      
+      container.innerHTML = Object.keys(MUSCLE_GROUPS).map(key => {
+        let cls = 'muscle-tag';
+        if (selectedMuscles.primary && selectedMuscles.primary.includes(key)) cls += ' primary';
+        else if (selectedMuscles.secondary && selectedMuscles.secondary.includes(key)) cls += ' secondary';
+        
+        return `<div class="${cls}" onclick="toggleMuscleTag('${key}')">${MUSCLE_GROUPS[key]}</div>`;
+      }).join('');
+    }
+
+    function toggleMuscleTag(muscle) {
+      if (!editingExercise) return;
+      
+      if (!editingExercise.muscles) editingExercise.muscles = {primary: [], secondary: []};
+      
+      const p = editingExercise.muscles.primary || [];
+      const s = editingExercise.muscles.secondary || [];
+      
+      // Remove from both
+      editingExercise.muscles.primary = p.filter(m => m !== muscle);
+      editingExercise.muscles.secondary = s.filter(m => m !== muscle);
+      
+      // Add based on current state: none->primary->secondary->none
+      if (!p.includes(muscle) && !s.includes(muscle)) {
+        editingExercise.muscles.primary.push(muscle);
+      } else if (p.includes(muscle)) {
+        editingExercise.muscles.primary = editingExercise.muscles.primary.filter(m => m !== muscle);
+        editingExercise.muscles.secondary.push(muscle);
+      }
+      
+      renderMuscleSelector(editingExercise.muscles);
+    }
+
+    function saveExerciseInfo() {
+      if (!editingExercise) return;
+      
+      editingExercise.videoUrl = document.getElementById('ex-video').value.trim();
+      // Name can be updated too if needed
+      
+      saveState();
+      closeModal('modal-manage-exercise');
+      render();
+    }
+
+
+    function init() {
+      loadState();
+      loadProfile();
+      renderStrength();
+      renderCardioHistory();
+      renderProductsList();
+      renderRecipesList();
+      renderDiary();
+      updateNutritionProgress();
+    }
+
+    init();
   </script>
 </body>
 </html>
