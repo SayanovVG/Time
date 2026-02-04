@@ -6,7 +6,7 @@
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="mobile-web-app-capable" content="yes">
   <meta name="theme-color" content="#111827">
-  <title>Фитнес Трекер v10-cardio</title>
+  <title>Фитнес Трекер</title>
   <style>
     * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
     body { 
@@ -164,103 +164,10 @@
 
     @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.7; } }
     @keyframes bounce { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-10px); } }
-
-    /* Main tabs */
-    .main-tabs {
-      display: grid;
-      grid-template-columns: repeat(2, 1fr);
-      gap: 8px;
-      margin-bottom: 20px;
-    }
-    .main-tab {
-      padding: 14px 8px;
-      border-radius: 12px;
-      font-weight: 700;
-      font-size: 13px;
-      text-align: center;
-      background: rgba(55, 65, 81, 0.5);
-      color: #9ca3af;
-      border: 2px solid transparent;
-      cursor: pointer;
-    }
-    .main-tab.active {
-      background: linear-gradient(135deg, #3b82f6, #8b5cf6);
-      color: white;
-      border-color: rgba(255,255,255,0.2);
-      box-shadow: 0 4px 12px rgba(59, 130, 246, 0.4);
-    }
-    .main-tab-icon { font-size: 20px; display: block; margin-bottom: 4px; }
-    
-    /* Tab content */
-    .tab-content { display: none; }
-    .tab-content.active { display: block; animation: fadeIn 0.3s; }
-    @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
-    
-    /* Cardio styles */
-    .cardio-activity {
-      background: rgba(31, 41, 55, 0.8);
-      border-radius: 12px;
-      padding: 16px;
-      margin-bottom: 12px;
-      border: 1px solid rgba(75, 85, 99, 0.5);
-    }
-    .cardio-header {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      margin-bottom: 8px;
-    }
-    .cardio-type {
-      font-weight: 700;
-      font-size: 15px;
-      color: #f1f5f9;
-    }
-    .cardio-details {
-      font-size: 13px;
-      color: #9ca3af;
-      margin-top: 4px;
-    }
-    .cardio-calories {
-      font-size: 18px;
-      font-weight: 700;
-      color: #22c55e;
-    }
-    .delete-btn {
-      padding: 6px 12px;
-      border-radius: 8px;
-      font-size: 12px;
-      font-weight: 600;
-      background: rgba(239, 68, 68, 0.2);
-      color: #fca5a5;
-      cursor: pointer;
-    }
-    .empty-state {
-      text-align: center;
-      padding: 60px 20px;
-      color: #6b7280;
-    }
-    .empty-icon { font-size: 64px; opacity: 0.3; margin-bottom: 16px; }
-    .empty-text { font-size: 16px; }
-
   </style>
 </head>
 <body>
   <div id="app"></div>
-
-
-  </div>
-
-  <!-- Cardio tab -->
-  <div id="tab-cardio" class="tab-content">
-    <div style="background: rgba(31, 41, 55, 0.8); border-radius: 16px; padding: 20px; margin-bottom: 16px; border: 1px solid rgba(255,255,255,0.1);">
-      <div style="font-size: 18px; font-weight: 700; margin-bottom: 16px; color: #f1f5f9;">🏃 Кардио активности</div>
-      <button onclick="showAddCardio()" style="width: 100%; padding: 14px; border-radius: 12px; font-weight: 700; font-size: 15px; background: linear-gradient(135deg, #22c55e, #10b981); color: white; cursor: pointer;">
-        + Добавить активность
-      </button>
-    </div>
-    <div id="cardio-list"></div>
-  </div>
-
 
   <script>
     // ==================== PROGRAM DATA ====================
@@ -342,8 +249,6 @@
     let state = {
       activeTab: 'training',
       currentWeek: 1,
-      currentTab: "strength",
-      cardio: [],
       currentDay: 1,
       workoutData: {},
       nutritionData: {},
@@ -729,22 +634,7 @@
       }
 
       // ---- ЧАСЫ ----
-      html += `<div class="clock-row"><span id="clock-display" class="clock-display">${clockStr}</span></div>
-  <!-- Main tabs -->
-  <div class="main-tabs">
-    <button class="main-tab active" onclick="switchMainTab('strength')">
-      <span class="main-tab-icon">💪</span>
-      Силовые
-    </button>
-    <button class="main-tab" onclick="switchMainTab('cardio')">
-      <span class="main-tab-icon">🏃</span>
-      Кардио
-    </button>
-  </div>
-
-  <!-- Strength tab -->
-  <div id="tab-strength" class="tab-content active">
-`;
+      html += `<div class="clock-row"><span id="clock-display" class="clock-display">${clockStr}</span></div>`;
 
       // ---- TABS ----
       html += `
@@ -931,58 +821,6 @@
         el.textContent = (n.getHours()<10?'0':'')+n.getHours()+':'+(n.getMinutes()<10?'0':'')+n.getMinutes();
       }
     }, 1000);
-  
-// CARDIO
-const CT={'run-interval':{n:'🏃 Интервал',c:12},'run-easy':{n:'🏃 Легкий',c:10},'swim':{n:'🏊 Плавание',c:11},'bike':{n:'🚴 Велосипед',c:8},'rowing':{n:'🚣 Гребля',c:11}};
-function switchMainTab(t){state.currentTab=t;document.querySelectorAll('.main-tab').forEach(x=>x.classList.remove('active'));event.target.classList.add('active');document.querySelectorAll('.tab-content').forEach(x=>x.classList.remove('active'));document.getElementById('tab-'+t).classList.add('active');if(t==='cardio')renderCardio();}
-function showAddCardio(){document.getElementById('cardio-modal').style.display='flex';document.getElementById('cardio-distance').value='';document.getElementById('cardio-time').value='';document.getElementById('cardio-calc-cal').textContent='—';document.getElementById('cardio-distance').oninput=updateCardioCalc;document.getElementById('cardio-time').oninput=updateCardioCalc;document.getElementById('cardio-type').onchange=updateCardioCalc;}
-function closeCardioModal(){document.getElementById('cardio-modal').style.display='none';}
-function updateCardioCalc(){const t=document.getElementById('cardio-type').value;const d=parseFloat(document.getElementById('cardio-distance').value)||0;const m=parseFloat(document.getElementById('cardio-time').value)||0;if(d&&m){const c=Math.round(m*CT[t].c);document.getElementById('cardio-calc-cal').textContent=c+' ккал';}}
-function saveCardio(){const t=document.getElementById('cardio-type').value;const d=parseFloat(document.getElementById('cardio-distance').value);const m=parseFloat(document.getElementById('cardio-time').value);if(!d||!m){alert('Заполни поля');return;}const c=Math.round(m*CT[t].c);if(!state.cardio)state.cardio=[];state.cardio.push({id:Date.now(),type:t,distance:d,time:m,calories:c,date:new Date().toISOString().split('T')[0]});saveState();closeCardioModal();renderCardio();
-function deleteCardioActivity(id){if(confirm('Удалить активность?')){state.cardio=state.cardio.filter(x=>x.id!==id);saveState();renderCardio();}}
-}
-function deleteCardio(id){if(confirm('Удалить?')){state.cardio=state.cardio.filter(x=>x.id!==id);saveState();renderCardio();}}
-function renderCardio(){const today=new Date().toISOString().split('T')[0];const acts=(state.cardio||[]).filter(x=>x.date===today);const c=document.getElementById('cardio-list');if(!acts.length){c.innerHTML='<div class="empty-state"><div class="empty-icon">🏃</div><div class="empty-text">Нет активностей</div></div>';return;}const tot=acts.reduce((s,x)=>s+x.calories,0);c.innerHTML='<div style="background:rgba(59,130,246,0.2);border:1px solid rgba(59,130,246,0.4);border-radius:12px;padding:16px;margin-bottom:16px;"><div style="font-size:13px;color:#93c5fd;">За сегодня:</div><div style="font-size:32px;font-weight:900;color:#60a5fa;">'+tot+' ккал</div></div>'+acts.map(a=>'<div class="cardio-activity"><div class="cardio-header"><div><div class="cardio-type">'+CT[a.type].n+'</div><div class="cardio-details">'+a.distance+' км · '+a.time+' мин</div></div><div style="display:flex;flex-direction:column;align-items:flex-end;gap:8px;"><div class="cardio-calories">'+a.calories+' ккал</div><button onclick="deleteCardioActivity('+a.id+')" class="delete-btn" style="padding:4px 8px;font-size:11px;">Удалить</button></div></div></div>').join('');}
-
   </script>
-
-  <!-- Cardio Modal -->
-  <div id="cardio-modal" style="display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.85); z-index: 9999; padding: 20px; overflow-y: auto;">
-    <div style="max-width: 500px; margin: 40px auto; background: #1f2937; border-radius: 20px; padding: 24px; border: 2px solid rgba(75, 85, 99, 0.5);">
-      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
-        <h3 style="font-size: 20px; font-weight: 700; color: #f1f5f9;">Добавить активность</h3>
-        <button onclick="closeCardioModal()" style="width: 32px; height: 32px; border-radius: 8px; background: rgba(55, 65, 81, 0.6); color: #d1d5db; font-size: 20px; cursor: pointer;">×</button>
-      </div>
-      
-      <div style="margin-bottom: 16px;">
-        <label style="display: block; font-size: 13px; font-weight: 600; color: #9ca3af; margin-bottom: 8px;">Тип</label>
-        <select id="cardio-type" style="width: 100%; padding: 12px; border-radius: 10px; background: rgba(17, 24, 39, 0.6); border: 2px solid rgba(75, 85, 99, 0.5); color: white; font-size: 15px;">
-          <option value="run-interval">🏃 Бег интервальный</option>
-          <option value="run-easy">🏃 Бег легкий</option>
-          <option value="swim">🏊 Плавание</option>
-          <option value="bike">🚴 Велосипед</option>
-          <option value="rowing">🚣 Гребля</option>
-        </select>
-      </div>
-      
-      <div style="margin-bottom: 16px;">
-        <label style="display: block; font-size: 13px; font-weight: 600; color: #9ca3af; margin-bottom: 8px;">Дистанция (км)</label>
-        <input type="number" step="0.1" id="cardio-distance" placeholder="5.0" style="width: 100%; padding: 12px; border-radius: 10px; background: rgba(17, 24, 39, 0.6); border: 2px solid rgba(75, 85, 99, 0.5); color: white; font-size: 15px;">
-      </div>
-      
-      <div style="margin-bottom: 16px;">
-        <label style="display: block; font-size: 13px; font-weight: 600; color: #9ca3af; margin-bottom: 8px;">Время (мин)</label>
-        <input type="number" id="cardio-time" placeholder="30" style="width: 100%; padding: 12px; border-radius: 10px; background: rgba(17, 24, 39, 0.6); border: 2px solid rgba(75, 85, 99, 0.5); color: white; font-size: 15px;">
-      </div>
-      
-      <div style="padding: 16px; background: rgba(59,130,246,0.1); border-radius: 12px; margin-bottom: 20px; text-align: center;">
-        <div style="font-size: 13px; color: #9ca3af; margin-bottom: 4px;">Калорий:</div>
-        <div style="font-size: 28px; font-weight: 700; color: #3b82f6;" id="cardio-calc-cal">—</div>
-<div style="font-size:11px;color:#6b7280;margin-top:8px;text-align:center;">Примерный расчёт: время × коэффициент активности</div>      </div>
-      
-      <button onclick="saveCardio()" style="width: 100%; padding: 14px; border-radius: 12px; font-weight: 700; font-size: 15px; background: linear-gradient(135deg, #22c55e, #10b981); color: white; cursor: pointer;">✅ Сохранить</button>
-    </div>
-  </div>
-
 </body>
 </html>
