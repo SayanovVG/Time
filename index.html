@@ -370,20 +370,27 @@ function updateSet(exId,setIdx,field,value){
 }
 function toggleComplete(exId,setIdx,exIdx,dayKey,isLastSet,isLastEx){
   const ex=PROGRAM[dayKey].exercises[exIdx];
-  const key='w'+state.currentWeek+'_ex'+exId;
+  const key="w"+state.currentWeek+"_ex"+exId;
   if(!state.workoutData[key])state.workoutData[key]={sets:[]};
-  while(state.workoutData[key].sets.length<=setIdx)state.workoutData[key].sets.push({weight:'',reps:'',completed:false});
+  while(state.workoutData[key].sets.length<=setIdx)state.workoutData[key].sets.push({weight:"",reps:"",completed:false});
   const was=state.workoutData[key].sets[setIdx].completed;
   state.workoutData[key].sets[setIdx].completed=!was;
   if(!was){
+    // Если поле пустое — сохраняем carry-over из прошлой недели
+    const carry=getCarryData(exId,setIdx);
+    const curr=state.workoutData[key].sets[setIdx];
+    if(carry){
+      if(!curr.weight&&carry.weight) curr.weight=carry.weight;
+      if(!curr.reps&&carry.reps) curr.reps=carry.reps;
+    }
     if(isLastSet&&isLastEx){state.showCompletion=true;}
     else if(!isLastSet){
       const pause=getPause(exId,ex.pause);
       startTimer(pause,ex.name,exId);
-      const curr=state.workoutData[key].sets[setIdx];
-      if(!state.workoutData[key].sets[setIdx+1])state.workoutData[key].sets[setIdx+1]={weight:'',reps:'',completed:false};
-      if(curr.weight)state.workoutData[key].sets[setIdx+1].weight=curr.weight;
-      if(curr.reps)state.workoutData[key].sets[setIdx+1].reps=curr.reps;
+      if(!state.workoutData[key].sets[setIdx+1])state.workoutData[key].sets[setIdx+1]={weight:"",reps:"",completed:false};
+      const next=state.workoutData[key].sets[setIdx+1];
+      if(curr.weight&&!next.weight) next.weight=curr.weight;
+      if(curr.reps&&!next.reps) next.reps=curr.reps;
     }
   }
   saveData();render();
@@ -582,20 +589,22 @@ function render(){
             const sd=sets[si]||{weight:'',reps:'',completed:false};
             const carry=getCarryData(ex.id,si);
             const isLastSet=si===numSetsEx-1;
-            // carry-over = есть данные из прошлой недели И текущий сет не изменён пользователем
-            const showCarry=carry&&(carry.weight||carry.reps)&&!sd.completed&&(!sd.weight&&!sd.reps);
-            const dispWeight=sd.weight||(showCarry?carry.weight:'');
-            const dispReps=sd.reps||(showCarry?carry.reps:'');
-            const rowClass=sd.completed?'complete':(showCarry?'carry-over':'incomplete');
+            // carry-over — проверяем каждое поле НЕЗАВИСИМО
+            const showCarryWeight=!!(carry&&carry.weight&&!sd.completed&&!sd.weight);
+            const showCarryReps=!!(carry&&carry.reps&&!sd.completed&&!sd.reps);
+            const showCarryAny=showCarryWeight||showCarryReps;
+            const dispWeight=sd.weight||(showCarryWeight?carry.weight:'');
+            const dispReps=sd.reps||(showCarryReps?carry.reps:'');
+            const rowClass=sd.completed?'complete':(showCarryAny?'carry-over':'incomplete');
             return `<div class="set-row ${rowClass}">
               <span class="set-num">S${si+1}</span>
-              ${showCarry?'<span class="carry-dot"></span>':''}
+              ${showCarryAny?'<span class="carry-dot"></span>':''}
               <div class="set-inputs">
                 <input type="text" inputmode="decimal" placeholder="кг" value="${dispWeight}"
-                  class="set-input ${showCarry&&!sd.weight?'carry':''}"
+                  class="set-input ${showCarryWeight?'carry':''}"
                   onchange="updateSet(${ex.id},${si},'weight',this.value)">
                 <input type="text" inputmode="numeric" placeholder="${ex.reps?'повт':'max'}" value="${dispReps}"
-                  class="set-input small ${showCarry&&!sd.reps?'carry':''}"
+                  class="set-input small ${showCarryReps?'carry':''}"
                   onchange="updateSet(${ex.id},${si},'reps',this.value)">
               </div>
               <button class="check-btn ${sd.completed?'complete':'incomplete'}"
