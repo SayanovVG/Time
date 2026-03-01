@@ -18,17 +18,48 @@
       --font-d: 'Bebas Neue',sans-serif; --font-m: 'DM Mono',monospace; --font-b: 'Inter',sans-serif;
     }
     * { margin:0; padding:0; box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
-    body { font-family:var(--font-b); background:var(--bg); min-height:100vh; color:var(--text); padding:14px; padding-bottom:40px; }
+    html, body { height:100%; overflow:hidden; }
+    body { font-family:var(--font-b); background:var(--bg); color:var(--text); display:flex; flex-direction:column; }
     input { font-size:16px!important; font-family:var(--font-m); }
     input:focus { outline:none; }
     button { font-family:var(--font-b); cursor:pointer; border:none; }
     button:active { transform:scale(0.96); }
 
+    /* Фиксированная шапка */
+    .sticky-header {
+      flex-shrink:0;
+      padding:14px 14px 0;
+      background:var(--bg);
+      position:relative;
+      z-index:10;
+    }
+    /* Тень снизу от шапки чтобы контент уходил под неё красиво */
+    .sticky-header::after {
+      content:'';
+      position:absolute;
+      bottom:-16px; left:0; right:0; height:16px;
+      background:linear-gradient(to bottom, var(--bg), transparent);
+      pointer-events:none;
+      z-index:5;
+    }
+
+    /* Скроллируемый контент */
+    .scroll-content {
+      flex:1;
+      overflow-y:auto;
+      overflow-x:hidden;
+      padding:14px 14px 40px;
+      -webkit-overflow-scrolling:touch;
+    }
+    /* Скрываем скроллбар */
+    .scroll-content::-webkit-scrollbar { display:none; }
+    .scroll-content { scrollbar-width:none; }
+
     .top-bar { display:flex; justify-content:space-between; align-items:center; margin-bottom:14px; }
     .brand { font-family:var(--font-d); font-size:30px; letter-spacing:4px; color:var(--accent); }
     .clock-display { font-family:var(--font-m); font-size:18px; color:var(--text); background:var(--bg3); padding:6px 12px; border-radius:8px; border:1px solid var(--border); letter-spacing:2px; }
 
-    .tabs { display:grid; grid-template-columns:1fr 1fr; gap:5px; margin-bottom:14px; background:var(--bg2); padding:4px; border-radius:12px; border:1px solid var(--border); }
+    .tabs { display:grid; grid-template-columns:1fr 1fr; gap:5px; margin-bottom:0; background:var(--bg2); padding:4px; border-radius:12px; border:1px solid var(--border); }
     .tab-btn { padding:11px; border-radius:9px; font-weight:700; font-size:13px; display:flex; align-items:center; justify-content:center; gap:7px; transition:all 0.2s; background:transparent; color:var(--muted); }
     .tab-btn.active-training { background:var(--accent); color:#0a0a0a; }
     .tab-btn.active-nutrition { background:var(--green); color:#0a0a0a; }
@@ -161,7 +192,7 @@
   </style>
 </head>
 <body>
-<div id="app"></div>
+<div id="app" style="display:flex;flex-direction:column;height:100%;"></div>
 <script>
 const PROGRAM = {
   1: { name:'СПИНА + БИЦЕПС', exercises:[
@@ -492,14 +523,17 @@ function render(){
     </div></div>`;
   }
 
-  // TOP BAR
-  html+=`<div class="top-bar"><span class="brand">IRON LOG</span><span id="clock" class="clock-display">${clockStr}</span></div>`;
-
-  // TABS
-  html+=`<div class="tabs">
-    <button class="tab-btn ${state.activeTab==='training'?'active-training':'inactive'}" onclick="setTab('training')">🏋️ Тренировка</button>
-    <button class="tab-btn ${state.activeTab==='nutrition'?'active-nutrition':'inactive'}" onclick="setTab('nutrition')">🍽️ Питание</button>
+  // STICKY HEADER
+  html+=`<div class="sticky-header">
+    <div class="top-bar"><span class="brand">IRON LOG</span><span id="clock" class="clock-display">${clockStr}</span></div>
+    <div class="tabs">
+      <button class="tab-btn ${state.activeTab==='training'?'active-training':'inactive'}" onclick="setTab('training')">🏋️ Тренировка</button>
+      <button class="tab-btn ${state.activeTab==='nutrition'?'active-nutrition':'inactive'}" onclick="setTab('nutrition')">🍽️ Питание</button>
+    </div>
   </div>`;
+
+  // SCROLL CONTENT
+  html+=`<div class="scroll-content">`;
 
   if(state.activeTab==='nutrition'){
     const cm=MEALS.filter(m=>todayNutr.meals[m.id]).length;
@@ -628,6 +662,7 @@ function render(){
   }
 
   html+=`<button class="reset-btn" onclick="resetAllData()">🗑️ Сбросить все данные</button>`;
+  html+=`</div>`; // close scroll-content
   document.getElementById('app').innerHTML=html;
 }
 
