@@ -1,0 +1,18 @@
+{
+  "name": "MAX TIME",
+  "short_name": "MAX TIME",
+  "description": "Фитнес трекер — тренировки и питание",
+  "start_url": "./index.html",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#1a1917",
+  "theme_color": "#1a1917",
+  "orientation": "portrait",
+  "icons": [
+    {
+      "src": "data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 192 192'><rect width='192' height='192' fill='%231a1917'/><text x='50%' y='55%' font-size='120' text-anchor='middle' dominant-baseline='middle' fill='%23ff6200' font-family='Arial Black'>M</text></svg>",
+      "sizes": "192x192",
+      "type": "image/svg+xml"
+    }
+  ]
+}
