@@ -18,7 +18,7 @@ input:focus{outline:none}
 button{cursor:pointer;border:none}
 button:active{opacity:.8}
 
-.topbar{display:flex;align-items:center;justify-content:space-between;padding:14px 16px 10px;border-bottom:3px solid #ff6b00;background:#3d3d3d}
+.topbar{display:flex;align-items:center;justify-content:space-between;padding:14px 16px 10px;border-bottom:3px solid #ff6b00;background:#3d3d3d;position:sticky;top:0;z-index:50}
 .topbar-left{display:flex;align-items:center;gap:10px}
 .week-badge{width:36px;height:36px;background:#ff6b00;border-radius:0;display:flex;align-items:center;justify-content:center;font-size:20px;font-weight:900;color:#000;flex-shrink:0;text-shadow:none}
 .topbar-title{font-size:20px;font-weight:900;letter-spacing:2px;color:#f0f0f0;line-height:1;text-transform:uppercase;text-shadow:2px 2px 0 rgba(0,0,0,.5)}
@@ -60,7 +60,7 @@ button:active{opacity:.8}
 .set-inp{background:#2a2a2a;border:1px solid #4a4a4a;color:#f0f0f0;padding:7px 8px;font-size:14px;width:76px;border-radius:0;font-family:'Arial Black',Impact,sans-serif;font-weight:900}
 .set-inp::placeholder{color:#555;font-weight:400;font-family:Arial,sans-serif}
 .set-inp:focus{border-color:#ff6b00}
-.set-inp.done-inp{border-color:rgba(255,107,0,.4)}
+.set-inp.prev-inp{color:#555;border-color:#3a3a3a;font-family:Arial,sans-serif;font-weight:400;font-style:italic}
 .chk-btn{width:34px;height:34px;border-radius:0;border:1px solid #4a4a4a;background:#2a2a2a;color:#555;font-size:15px;display:flex;align-items:center;justify-content:center;flex-shrink:0;transition:all .2s;font-weight:900}
 .chk-btn.checked{background:#ff6b00;border-color:#ff6b00;color:#000}
 
@@ -201,23 +201,20 @@ const PROGRAM={
 };
 const WC={1:{n:'АДАПТАЦИЯ',s:3},2:{n:'АДАПТАЦИЯ',s:3},3:{n:'ОБЪЁМ',s:4},4:{n:'ОБЪЁМ',s:4},5:{n:'ПИК',s:4},6:{n:'ПИК',s:4},7:{n:'РАЗГРУЗКА',s:3}};
 const DN=['Вс','Пн','Вт','Ср','Чт','Пт','Сб'];
-const MG={cal:2800,prot:218,fat:84,carbs:266};
-const SUPPS=[
-  {id:'collagen',name:'Коллаген',time:'5:30'},
-  {id:'caffeine',name:'Кофеин',time:'5:30'},
-  {id:'creatine',name:'Креатин 5г',time:'7:00'},
-  {id:'vitd',name:'Витамин D3',time:'7:40',buy:true},
-  {id:'omega',name:'Омега-3',time:'7:40',buy:true},
-  {id:'zinc',name:'Цинк',time:'7:40',buy:true},
-  {id:'protein',name:'Протеин',time:'16:00'},
-  {id:'magnesium',name:'Магний',time:'22:00'}
-];
+function getMG(){try{return JSON.parse(localStorage.getItem('mt_goals')||'null');}catch(e){return null;}}
+function setMG(g){try{localStorage.setItem('mt_goals',JSON.stringify(g));}catch(e){}}
+function gSupps(){try{return JSON.parse(localStorage.getItem('mt_supps')||'[]');}catch(e){return[];}}
+function sSupps(a){try{localStorage.setItem('mt_supps',JSON.stringify(a));}catch(e){}}
+
+let _st=null;
+function debounceSf(v){S.ns.q=v;clearTimeout(_st);if(v.length>=2)_st=setTimeout(()=>sf(v),500);}
 
 let S={tab:'training',week:1,day:1,wd:{},cp:{},hints:{},
   timer:{on:false,left:0,max:0,ex:'',eid:null,mod:false,saved:false},
   done:false,
   ns:{q:'',res:[],loading:false,err:false,sel:null,gram:'',manual:false,
-    mf:{name:'',cal:'',prot:'',fat:'',carbs:'',grams:''}}
+    mf:{name:'',cal:'',prot:'',fat:'',carbs:'',grams:''}},
+  calc:{on:false,weight:'',height:'',age:'',sex:'m',activity:'1.55',goal:'maintain'}
 };
 
 function load(){try{const d=JSON.parse(localStorage.getItem('mt_v12')||'{}');S.wd=d.wd||{};S.week=d.week||1;S.cp=d.cp||{};}catch(e){}}
@@ -371,19 +368,73 @@ function gnw(){if(S.week<7){const nw=S.week+1;[1,3,5].forEach(d=>{const p=PROGRA
 function ra(){if(confirm('Сбросить ВСЕ данные?')){S.wd={};S.cp={};S.week=1;localStorage.removeItem('mt_v12');render();}}
 
 // NUTRITION
-async function sf(q){if(!q.trim())return;S.ns.loading=true;S.ns.err=false;S.ns.res=[];render();
-try{const url='https://world.openfoodfacts.org/cgi/search.pl?search_terms='+encodeURIComponent(q)+'&json=1&fields=product_name,nutriments&page_size=8&action=process&search_simple=1';
-const r=await fetch(url);const data=await r.json();
-const prods=(data.products||[]).filter(p=>p.product_name&&p.nutriments);
-const custom=gcp().filter(p=>p.name.toLowerCase().includes(q.toLowerCase()));
-S.ns.res=[...custom.map(p=>({...p,isC:true})),...prods.map(p=>({name:p.product_name,cal:Math.round(p.nutriments['energy-kcal_100g']||p.nutriments['energy_100g']/4.184||0),prot:Math.round((p.nutriments['proteins_100g']||0)*10)/10,fat:Math.round((p.nutriments['fat_100g']||0)*10)/10,carbs:Math.round((p.nutriments['carbohydrates_100g']||0)*10)/10}))].slice(0,10);
-}catch(e){S.ns.err=true;S.ns.res=gcp().filter(p=>p.name.toLowerCase().includes(q.toLowerCase())).map(p=>({...p,isC:true}));}
-S.ns.loading=false;render();}
+async function sf(q){
+  if(!q.trim())return;
+  S.ns.loading=true;S.ns.err=false;S.ns.res=[];render();
+  const custom=gcp().filter(p=>p.name.toLowerCase().includes(q.toLowerCase())).map(p=>({...p,isC:true}));
+  try{
+    const url='https://world.openfoodfacts.org/cgi/search.pl?search_terms='+encodeURIComponent(q)+'&search_simple=1&action=process&json=1&page_size=15&fields=product_name,nutriments,languages_codes';
+    const r=await fetch(url,{signal:AbortSignal.timeout(8000)});
+    const data=await r.json();
+    const prods=(data.products||[])
+      .filter(p=>p.product_name&&p.nutriments&&(p.nutriments['energy-kcal_100g']||p.nutriments['energy_100g']))
+      .map(p=>({
+        name:p.product_name.split(',')[0].substring(0,50),
+        cal:Math.round(p.nutriments['energy-kcal_100g']||(p.nutriments['energy_100g']||0)/4.184),
+        prot:Math.round((p.nutriments['proteins_100g']||0)*10)/10,
+        fat:Math.round((p.nutriments['fat_100g']||0)*10)/10,
+        carbs:Math.round((p.nutriments['carbohydrates_100g']||0)*10)/10
+      }))
+      .filter(p=>p.cal>0&&p.cal<1000)
+      .slice(0,8);
+    S.ns.res=[...custom,...prods].slice(0,10);
+  }catch(e){
+    S.ns.err=true;
+    S.ns.res=custom;
+  }
+  S.ns.loading=false;render();
+}
+
+function calcGoals(){
+  const c=S.calc;
+  const w=parseFloat(c.weight),h=parseFloat(c.height),a=parseFloat(c.age),act=parseFloat(c.activity);
+  if(!w||!h||!a)return null;
+  const bmr=c.sex==='m'?(10*w+6.25*h-5*a+5):(10*w+6.25*h-5*a-161);
+  const tdee=Math.round(bmr*act);
+  let cal=tdee;
+  if(c.goal==='cut') cal=Math.round(tdee*0.82);
+  if(c.goal==='bulk') cal=Math.round(tdee*1.12);
+  const prot=c.goal==='cut'?Math.round(w*2.4):Math.round(w*2);
+  const fat=Math.round(cal*0.25/9);
+  const carbs=Math.round((cal-prot*4-fat*9)/4);
+  return{cal,prot,fat:fat<Math.round(w*0.8)?Math.round(w*0.8):fat,carbs:carbs<0?0:carbs};
+}
+
+function calcAndSave(){
+  S.calc.weight=document.getElementById('calc-weight').value;
+  S.calc.height=document.getElementById('calc-height').value;
+  S.calc.age=document.getElementById('calc-age').value;
+  S.calc.activity=document.getElementById('calc-act').value;
+  const g=calcGoals();
+  if(!g){alert('Заполни все поля');return;}
+  setMG(g);S.calc.on=false;render();
+}
 
 function selp(p){S.ns.sel=p;S.ns.gram='';S.ns.manual=false;render();setTimeout(()=>{const el=document.getElementById('gi');if(el)el.focus();},100);}
 function ap(){const g=parseFloat(S.ns.gram);if(!g||g<=0)return;const p=S.ns.sel;const e={id:Date.now(),name:p.name,grams:g,cal:Math.round(p.cal*g/100),prot:Math.round(p.prot*g/100*10)/10,fat:Math.round(p.fat*g/100*10)/10,carbs:Math.round(p.carbs*g/100*10)/10};const nd=gnd();if(!nd.log)nd.log=[];nd.log.push(e);snd(nd);S.ns.sel=null;S.ns.gram='';S.ns.q='';S.ns.res=[];render();}
 function am(){const m=S.ns.mf;if(!m.name.trim()||!m.grams)return;const g=parseFloat(m.grams)||100;const e={id:Date.now(),name:m.name.trim(),grams:g,cal:Math.round((parseFloat(m.cal)||0)*g/100),prot:Math.round((parseFloat(m.prot)||0)*g/100*10)/10,fat:Math.round((parseFloat(m.fat)||0)*g/100*10)/10,carbs:Math.round((parseFloat(m.carbs)||0)*g/100*10)/10};const cp=gcp();if(!cp.find(p=>p.name.toLowerCase()===m.name.trim().toLowerCase())){cp.push({id:'c'+Date.now(),name:m.name.trim(),cal:parseFloat(m.cal)||0,prot:parseFloat(m.prot)||0,fat:parseFloat(m.fat)||0,carbs:parseFloat(m.carbs)||0,isC:true});scp(cp);}const nd=gnd();if(!nd.log)nd.log=[];nd.log.push(e);snd(nd);S.ns.manual=false;S.ns.mf={name:'',cal:'',prot:'',fat:'',carbs:'',grams:''};render();}
 function dl(id){const nd=gnd();nd.log=(nd.log||[]).filter(e=>e.id!==id);snd(nd);render();}
+function addSupp(){
+  const name=document.getElementById('supp-name').value.trim();
+  const time=document.getElementById('supp-time').value.trim()||'—';
+  if(!name)return;
+  const a=gSupps();
+  a.push({id:'s'+Date.now(),name,time});
+  sSupps(a);render();
+}
+function delSupp(id){
+  sSupps(gSupps().filter(s=>s.id!==id));render();
+}
 function ts(id){const nd=gnd();if(!nd.sup)nd.sup={};nd.sup[id]=!nd.sup[id];snd(nd);render();}
 function cm(log){let c=0,p=0,f=0,ca=0;(log||[]).forEach(e=>{c+=e.cal;p+=e.prot;f+=e.fat;ca+=e.carbs;});return{cal:Math.round(c),prot:Math.round(p*10)/10,fat:Math.round(f*10)/10,carbs:Math.round(ca*10)/10};}
 
@@ -428,15 +479,9 @@ function render(){
   h+=`<div class="topbar">
     <div class="topbar-left">
       <div class="week-badge">${S.week}</div>
-      <div><div class="topbar-title">CONCRETE</div><div class="topbar-sub">Бетон / Стрит</div></div>
+      <div><div class="topbar-title">MAX TIME</div><div class="topbar-sub">${wc.n} · НЕД.${S.week}/7</div></div>
     </div>
-    <div class="palette-dots">
-      <div class="dot" style="background:#2a2a2a;border:1px solid #555"></div>
-      <div class="dot" style="background:#3d3d3d;border:1px solid #555"></div>
-      <div class="dot" style="background:#555"></div>
-      <div class="dot" style="background:#f0f0f0"></div>
-      <div class="dot" style="background:#ff6b00"></div>
-    </div>
+    <span id="clk" style="font-family:'Arial Black',Impact,sans-serif;font-size:20px;font-weight:900;color:#f0f0f0;letter-spacing:2px">${clk}</span>
   </div>
   <div class="tabs">
     <button class="tab-btn ${S.tab==='training'?'active':''}" onclick="S.tab='training';render()">ТРЕНИРОВКА</button>
@@ -479,11 +524,19 @@ function render(){
           ${Array(wc.s).fill(0).map((_,si)=>{
             const sd=sets[si]||{w:'',r:'',c:false};
             const isLS=si===wc.s-1;
+            // prev week data
+            const pk='w'+(S.week-1)+'_e'+ex.id;
+            const ps=(S.wd[pk]||{sets:[]}).sets[si]||{w:'',r:''};
+            const pw=sd.w||''; const pr=sd.r||'';
+            const isPrev=!sd.w&&!sd.r&&S.week>1&&(ps.w||ps.r);
+            const dispW=isPrev?ps.w:pw;
+            const dispR=isPrev?ps.r:pr;
+            const inpClass=sd.c?'done-inp':(isPrev?'prev-inp':'');
             return `<div class="set-row ${sd.c?'done-row':''}">
               <span class="set-lbl">S${si+1}</span>
               <div class="set-inputs">
-                <input type="text" inputmode="decimal" placeholder="кг" value="${sd.w}" class="set-inp ${sd.c?'done-inp':''}" onchange="us(${ex.id},${si},'w',this.value)">
-                <input type="text" inputmode="numeric" placeholder="${ex.reps?'повт':'max'}" value="${sd.r}" class="set-inp ${sd.c?'done-inp':''}" onchange="us(${ex.id},${si},'r',this.value)">
+                <input type="text" inputmode="decimal" placeholder="кг" value="${dispW}" class="set-inp ${inpClass}" onchange="us(${ex.id},${si},'w',this.value)">
+                <input type="text" inputmode="numeric" placeholder="${ex.reps?'повт':'max'}" value="${dispR}" class="set-inp ${inpClass}" onchange="us(${ex.id},${si},'r',this.value)">
               </div>
               <button class="chk-btn ${sd.c?'checked':''}" onclick="tc(${ex.id},${si},${ei},${S.day},${isLS},${isLast})">✓</button>
             </div>`;
@@ -507,13 +560,59 @@ function render(){
 
   } else {
     // NUTRITION TAB
+    const MG=getMG();
     const pct=(v,g)=>Math.min(100,g>0?Math.round(v/g*100):0);
-    h+=`<div class="mac-summary"><div class="mac-grid">
-      <div class="mac-item"><div class="mac-val ${mac.cal>MG.cal?'over':''}">${mac.cal}</div><div class="mac-lbl">/ ${MG.cal} ККАЛ</div><div class="mac-bar"><div class="mac-fill ${mac.cal>MG.cal?'over':''}" style="width:${pct(mac.cal,MG.cal)}%"></div></div></div>
-      <div class="mac-item"><div class="mac-val ${mac.prot>MG.prot?'over':''}">${mac.prot}</div><div class="mac-lbl">/ ${MG.prot}Г Б</div><div class="mac-bar"><div class="mac-fill ${mac.prot>MG.prot?'over':''}" style="width:${pct(mac.prot,MG.prot)}%"></div></div></div>
-      <div class="mac-item"><div class="mac-val ${mac.fat>MG.fat?'over':''}">${mac.fat}</div><div class="mac-lbl">/ ${MG.fat}Г Ж</div><div class="mac-bar"><div class="mac-fill ${mac.fat>MG.fat?'over':''}" style="width:${pct(mac.fat,MG.fat)}%"></div></div></div>
-      <div class="mac-item"><div class="mac-val ${mac.carbs>MG.carbs?'over':''}">${mac.carbs}</div><div class="mac-lbl">/ ${MG.carbs}Г У</div><div class="mac-bar"><div class="mac-fill ${mac.carbs>MG.carbs?'over':''}" style="width:${pct(mac.carbs,MG.carbs)}%"></div></div></div>
-    </div></div>`;
+
+    // КАЛЬКУЛЯТОР / ЦЕЛИ
+    if(S.calc.on){
+      const c=S.calc;
+      const preview=calcGoals();
+      h+=`<div class="nut-sec"><div class="nut-sec-head"><span class="nut-sec-t">КАЛЬКУЛЯТОР КБЖУ</span><button class="cancel-btn" style="padding:4px 10px;font-size:11px" onclick="S.calc.on=false;render()">✕</button></div><div class="search-area">
+        <div class="f-grid" style="margin-bottom:8px">
+          <div><div class="f-lbl">ПОЛ</div>
+            <div style="display:flex;gap:6px">
+              <button onclick="S.calc.sex='m';render()" style="flex:1;padding:9px;font-size:13px;font-weight:900;border-radius:0;border:1px solid ${c.sex==='m'?'#ff6b00':'#4a4a4a'};background:${c.sex==='m'?'#ff6b00':'#2a2a2a'};color:${c.sex==='m'?'#000':'#777'}">М</button>
+              <button onclick="S.calc.sex='f';render()" style="flex:1;padding:9px;font-size:13px;font-weight:900;border-radius:0;border:1px solid ${c.sex==='f'?'#ff6b00':'#4a4a4a'};background:${c.sex==='f'?'#ff6b00':'#2a2a2a'};color:${c.sex==='f'?'#000':'#777'}">Ж</button>
+            </div>
+          </div>
+          <div><div class="f-lbl">ВОЗРАСТ</div><input type="text" inputmode="numeric" placeholder="30" class="f-inp" id="calc-age" value="${c.age}"></div>
+          <div><div class="f-lbl">ВЕС (КГ)</div><input type="text" inputmode="decimal" placeholder="80" class="f-inp" id="calc-weight" value="${c.weight}"></div>
+          <div><div class="f-lbl">РОСТ (СМ)</div><input type="text" inputmode="decimal" placeholder="175" class="f-inp" id="calc-height" value="${c.height}"></div>
+        </div>
+        <div class="f-lbl" style="margin-bottom:6px">ЦЕЛЬ</div>
+        <div style="display:flex;gap:6px;margin-bottom:10px">
+          <button onclick="S.calc.goal='cut';render()" style="flex:1;padding:8px 4px;font-size:12px;font-weight:900;letter-spacing:1px;border-radius:0;border:1px solid ${c.goal==='cut'?'#ff6b00':'#4a4a4a'};background:${c.goal==='cut'?'#ff6b00':'#2a2a2a'};color:${c.goal==='cut'?'#000':'#777'}">СУШКА</button>
+          <button onclick="S.calc.goal='maintain';render()" style="flex:1;padding:8px 4px;font-size:12px;font-weight:900;letter-spacing:1px;border-radius:0;border:1px solid ${c.goal==='maintain'?'#ff6b00':'#4a4a4a'};background:${c.goal==='maintain'?'#ff6b00':'#2a2a2a'};color:${c.goal==='maintain'?'#000':'#777'}">ПОДДЕРЖАНИЕ</button>
+          <button onclick="S.calc.goal='bulk';render()" style="flex:1;padding:8px 4px;font-size:12px;font-weight:900;letter-spacing:1px;border-radius:0;border:1px solid ${c.goal==='bulk'?'#ff6b00':'#4a4a4a'};background:${c.goal==='bulk'?'#ff6b00':'#2a2a2a'};color:${c.goal==='bulk'?'#000':'#777'}">НАБОР</button>
+        </div>
+        <div class="f-lbl">АКТИВНОСТЬ</div>
+        <select id="calc-act" class="f-inp" style="background:#2a2a2a;color:#f0f0f0;margin-bottom:10px">
+          <option value="1.2" ${c.activity==='1.2'?'selected':''}>Минимум (сидячий)</option>
+          <option value="1.375" ${c.activity==='1.375'?'selected':''}>Лёгкая (1-2 раза/нед)</option>
+          <option value="1.55" ${c.activity==='1.55'?'selected':''}>Средняя (3-5 раз/нед)</option>
+          <option value="1.725" ${c.activity==='1.725'?'selected':''}>Высокая (6-7 раз/нед)</option>
+          <option value="1.9" ${c.activity==='1.9'?'selected':''}>Очень высокая (2x/день)</option>
+        </select>
+        <button class="add-btn" style="width:100%;margin-bottom:6px" onclick="calcAndSave()">⚡ РАССЧИТАТЬ И СОХРАНИТЬ</button>
+      </div></div>`;
+    } else if(!MG){
+      // Цели не заданы
+      h+=`<div class="nut-sec"><div style="padding:20px;text-align:center">
+        <div style="font-size:13px;color:#777;letter-spacing:1px;margin-bottom:12px;font-family:Arial,sans-serif">ЦЕЛИ ПО КБЖУ НЕ ЗАДАНЫ</div>
+        <button class="add-btn" style="padding:10px 24px" onclick="S.calc.on=true;render()">⚡ РАССЧИТАТЬ</button>
+      </div></div>`;
+    } else {
+      // Макро-сводка
+      h+=`<div class="mac-summary"><div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
+        <span style="font-size:11px;color:#777;letter-spacing:1px;font-family:Arial,sans-serif">СЕГОДНЯ</span>
+        <button onclick="S.calc.on=true;render()" style="background:none;border:1px solid #4a4a4a;color:#777;padding:3px 10px;font-size:11px;letter-spacing:1px;border-radius:0;font-weight:900">✎ ЦЕЛИ</button>
+      </div><div class="mac-grid">
+        <div class="mac-item"><div class="mac-val ${mac.cal>MG.cal?'over':''}">${mac.cal}</div><div class="mac-lbl">/ ${MG.cal} ККАЛ</div><div class="mac-bar"><div class="mac-fill ${mac.cal>MG.cal?'over':''}" style="width:${pct(mac.cal,MG.cal)}%"></div></div></div>
+        <div class="mac-item"><div class="mac-val ${mac.prot>MG.prot?'over':''}">${mac.prot}</div><div class="mac-lbl">/ ${MG.prot}Г Б</div><div class="mac-bar"><div class="mac-fill ${mac.prot>MG.prot?'over':''}" style="width:${pct(mac.prot,MG.prot)}%"></div></div></div>
+        <div class="mac-item"><div class="mac-val ${mac.fat>MG.fat?'over':''}">${mac.fat}</div><div class="mac-lbl">/ ${MG.fat}Г Ж</div><div class="mac-bar"><div class="mac-fill ${mac.fat>MG.fat?'over':''}" style="width:${pct(mac.fat,MG.fat)}%"></div></div></div>
+        <div class="mac-item"><div class="mac-val ${mac.carbs>MG.carbs?'over':''}">${mac.carbs}</div><div class="mac-lbl">/ ${MG.carbs}Г У</div><div class="mac-bar"><div class="mac-fill ${mac.carbs>MG.carbs?'over':''}" style="width:${pct(mac.carbs,MG.carbs)}%"></div></div></div>
+      </div></div>`;
+    }
 
     // ПОИСК ПРОДУКТОВ
     h+=`<div class="nut-sec"><div class="nut-sec-head"><span class="nut-sec-t">ДОБАВИТЬ ПРОДУКТ</span></div><div class="search-area">`;
@@ -554,8 +653,8 @@ function render(){
     } else {
       h+=`<div class="search-row">
         <input type="text" placeholder="Поиск продукта..." class="search-inp" id="si" value="${S.ns.q}"
-          oninput="S.ns.q=this.value"
-          onkeydown="if(event.key==='Enter'){event.preventDefault();sf(S.ns.q);}">
+          oninput="debounceSf(this.value)"
+          onkeydown="if(event.key==='Enter'){event.preventDefault();clearTimeout(_st);sf(S.ns.q);}">
         <button class="srch-btn" onclick="sf(document.getElementById('si').value)">НАЙТИ</button>
       </div>
       <button class="manual-btn" onclick="S.ns.manual=true;S.ns.res=[];render()">+ ДОБАВИТЬ ВРУЧНУЮ</button>`;
@@ -583,10 +682,22 @@ function render(){
     h+=`</div>`;
 
     // ДОБАВКИ
+    const SUPPS=gSupps();
     const sup=nd.sup||{};
     h+=`<div class="nut-sec"><div class="nut-sec-head"><span class="nut-sec-t">ДОБАВКИ</span><span class="nut-sec-c">${SUPPS.filter(s=>sup[s.id]).length}/${SUPPS.length}</span></div>`;
-    SUPPS.forEach(s=>{h+=`<div class="supp-item" onclick="ts('${s.id}')"><div class="supp-chk ${sup[s.id]?'checked':''}">${sup[s.id]?'<svg width="12" height="9" viewBox="0 0 12 9"><polyline points="1,4.5 4,8 11,1" stroke="white" stroke-width="2" fill="none"/></svg>':''}</div><span class="supp-name">${s.name}${s.buy?'<span class="buy-tag">КУПИТЬ</span>':''}</span><span class="supp-time">${s.time}</span></div>`;});
-    h+=`</div>`;
+    SUPPS.forEach(s=>{h+=`<div class="supp-item" onclick="ts('${s.id}')">
+      <div class="supp-chk ${sup[s.id]?'checked':''}">${sup[s.id]?'<svg width="12" height="9" viewBox="0 0 12 9"><polyline points="1,4.5 4,8 11,1" stroke="white" stroke-width="2" fill="none"/></svg>':''}</div>
+      <span class="supp-name">${s.name}</span>
+      <span class="supp-time">${s.time}</span>
+      <button onclick="event.stopPropagation();delSupp('${s.id}')" style="background:none;border:none;color:#555;font-size:18px;padding:0 4px;font-weight:900;line-height:1">×</button>
+    </div>`;});
+    h+=`<div style="padding:10px 12px;border-top:${SUPPS.length?'1px solid #4a4a4a':'none'}">
+      <div style="display:flex;gap:8px;margin-bottom:6px">
+        <input id="supp-name" type="text" placeholder="Название" class="search-inp" style="flex:2">
+        <input id="supp-time" type="text" placeholder="8:00" class="search-inp" style="flex:1">
+      </div>
+      <button class="add-btn" style="width:100%" onclick="addSupp()">+ ДОБАВИТЬ ДОБАВКУ</button>
+    </div></div>`;
   }
 
   h+='</div>';
