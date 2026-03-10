@@ -1,4 +1,4 @@
-const CACHE = 'mt-v3';
+const CACHE = 'mt-v5';
 const ASSETS = ['./index.html', './manifest.json'];
 
 self.addEventListener('install', e => {
@@ -15,14 +15,11 @@ self.addEventListener('activate', e => {
 
 self.addEventListener('fetch', e => {
   const url = e.request.url;
-  // Сеть в первую очередь для API и шрифтов, кэш как запасной
-  if (url.includes('openfoodfacts') || url.includes('fonts.google')) {
-    e.respondWith(
-      fetch(e.request).catch(() => caches.match(e.request))
-    );
-    return;
+  // Не трогаем внешние API — пропускаем напрямую
+  if (url.includes('openfoodfacts') || url.includes('fonts.google') || url.includes('fonts.gstatic')) {
+    return; // браузер сам делает запрос
   }
-  // Кэш в первую очередь для остального
+  // Кэш в первую очередь для локальных файлов
   e.respondWith(
     caches.match(e.request).then(cached => cached || fetch(e.request).then(resp => {
       if (resp && resp.status === 200) {
