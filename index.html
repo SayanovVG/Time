@@ -211,7 +211,7 @@ function debounceSf(v){S.ns.q=v;clearTimeout(_st);if(v.length>=2)_st=setTimeout(
 let S={tab:'training',week:1,day:1,wd:{},cp:{},hints:{},
   timer:{on:false,left:0,max:0,ex:'',eid:null,mod:false,saved:false},
   done:false,
-  ns:{q:'',res:[],loading:false,err:false,sel:null,gram:'',manual:false,
+  ns:{q:'',res:[],loading:false,err:false,errMsg:'',sel:null,gram:'',manual:false,
     mf:{name:'',cal:'',prot:'',fat:'',carbs:'',grams:''}},
   calc:{on:false,weight:'',height:'',age:'',sex:'m',activity:'1.55',goal:'maintain'}
 };
@@ -369,14 +369,13 @@ function ra(){if(confirm('Сбросить ВСЕ данные?')){S.wd={};S.cp=
 // NUTRITION
 async function sf(q){
   if(!q.trim())return;
-  S.ns.loading=true;S.ns.err=false;S.ns.res=[];render();
+  S.ns.loading=true;S.ns.err=false;S.ns.errMsg='';S.ns.res=[];render();
   const custom=gcp().filter(p=>p.name.toLowerCase().includes(q.toLowerCase())).map(p=>({...p,isC:true}));
   try{
-    const ctrl=new AbortController();
-    const tid=setTimeout(()=>ctrl.abort(),8000);
-    const url='https://world.openfoodfacts.org/cgi/search.pl?search_terms='+encodeURIComponent(q)+'&search_simple=1&action=process&json=1&page_size=20&fields=product_name,nutriments';
-    const r=await fetch(url,{signal:ctrl.signal});
-    clearTimeout(tid);
+    const url='https://world.openfoodfacts.org/api/v2/search?search_terms='+encodeURIComponent(q)+'&fields=product_name,nutriments&page_size=20&json=true';
+    const timeout=new Promise((_,rej)=>setTimeout(()=>rej(new Error('Таймаут')),10000));
+    const r=await Promise.race([fetch(url,{method:'GET',mode:'cors',cache:'no-cache'}),timeout]);
+    if(!r.ok)throw new Error('HTTP '+r.status);
     const data=await r.json();
     const prods=(data.products||[])
       .filter(p=>p.product_name&&p.nutriments)
@@ -390,8 +389,10 @@ async function sf(q){
       .filter(p=>p.name&&p.cal>0&&p.cal<1500)
       .slice(0,8);
     S.ns.res=[...custom,...prods].slice(0,10);
+    if(!S.ns.res.length)S.ns.errMsg='Ничего не найдено';
   }catch(e){
     S.ns.err=true;
+    S.ns.errMsg='Ошибка: '+e.message;
     S.ns.res=custom;
   }
   S.ns.loading=false;render();
@@ -666,8 +667,9 @@ function render(){
         <button class="srch-btn" onclick="sf(document.getElementById('si').value)">НАЙТИ</button>
       </div>
       <button class="manual-btn" onclick="S.ns.manual=true;S.ns.res=[];render()">+ ДОБАВИТЬ ВРУЧНУЮ</button>`;
-      if(S.ns.loading)h+=`<div class="srch-status">ПОИСК...</div>`;
-      else if(S.ns.err&&!S.ns.res.length)h+=`<div class="srch-status">ОФЛАЙН — ТОЛЬКО СОХРАНЁННЫЕ ПРОДУКТЫ</div>`;
+      if(S.ns.loading)h+=`<div class="srch-status">Поиск...</div>`;
+      else if(S.ns.errMsg&&!S.ns.res.length)h+=`<div class="srch-status" style="color:#ff453a">${S.ns.errMsg}</div>`;
+      else if(S.ns.err&&S.ns.res.length)h+=`<div class="srch-status" style="color:#ff9f0a">Офлайн — только сохранённые продукты</div>`;
       else if(S.ns.res.length){
         h+=`<div class="search-results">`;
         S.ns.res.forEach(p=>{
