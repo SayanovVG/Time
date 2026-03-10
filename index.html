@@ -372,19 +372,22 @@ async function sf(q){
   S.ns.loading=true;S.ns.err=false;S.ns.res=[];render();
   const custom=gcp().filter(p=>p.name.toLowerCase().includes(q.toLowerCase())).map(p=>({...p,isC:true}));
   try{
-    const url='https://world.openfoodfacts.org/cgi/search.pl?search_terms='+encodeURIComponent(q)+'&search_simple=1&action=process&json=1&page_size=15&fields=product_name,nutriments,languages_codes';
-    const r=await fetch(url,{signal:AbortSignal.timeout(8000)});
+    const ctrl=new AbortController();
+    const tid=setTimeout(()=>ctrl.abort(),8000);
+    const url='https://world.openfoodfacts.org/cgi/search.pl?search_terms='+encodeURIComponent(q)+'&search_simple=1&action=process&json=1&page_size=20&fields=product_name,nutriments';
+    const r=await fetch(url,{signal:ctrl.signal});
+    clearTimeout(tid);
     const data=await r.json();
     const prods=(data.products||[])
-      .filter(p=>p.product_name&&p.nutriments&&(p.nutriments['energy-kcal_100g']||p.nutriments['energy_100g']))
+      .filter(p=>p.product_name&&p.nutriments)
       .map(p=>({
-        name:p.product_name.split(',')[0].substring(0,50),
+        name:p.product_name.split(',')[0].substring(0,50).trim(),
         cal:Math.round(p.nutriments['energy-kcal_100g']||(p.nutriments['energy_100g']||0)/4.184),
         prot:Math.round((p.nutriments['proteins_100g']||0)*10)/10,
         fat:Math.round((p.nutriments['fat_100g']||0)*10)/10,
         carbs:Math.round((p.nutriments['carbohydrates_100g']||0)*10)/10
       }))
-      .filter(p=>p.cal>0&&p.cal<1000)
+      .filter(p=>p.name&&p.cal>0&&p.cal<1500)
       .slice(0,8);
     S.ns.res=[...custom,...prods].slice(0,10);
   }catch(e){
@@ -409,11 +412,18 @@ function calcGoals(){
   return{cal,prot,fat:fat<Math.round(w*0.8)?Math.round(w*0.8):fat,carbs:carbs<0?0:carbs};
 }
 
+function saveDomToCalc(){
+  const w=document.getElementById('calc-weight');
+  const h=document.getElementById('calc-height');
+  const a=document.getElementById('calc-age');
+  const act=document.getElementById('calc-act');
+  if(w)S.calc.weight=w.value;
+  if(h)S.calc.height=h.value;
+  if(a)S.calc.age=a.value;
+  if(act)S.calc.activity=act.value;
+}
 function calcAndSave(){
-  S.calc.weight=document.getElementById('calc-weight').value;
-  S.calc.height=document.getElementById('calc-height').value;
-  S.calc.age=document.getElementById('calc-age').value;
-  S.calc.activity=document.getElementById('calc-act').value;
+  saveDomToCalc();
   const g=calcGoals();
   if(!g){alert('Заполни все поля');return;}
   setMG(g);S.calc.on=false;render();
@@ -565,13 +575,12 @@ function render(){
     // КАЛЬКУЛЯТОР / ЦЕЛИ
     if(S.calc.on){
       const c=S.calc;
-      const preview=calcGoals();
-      h+=`<div class="nut-sec"><div class="nut-sec-head"><span class="nut-sec-t">КАЛЬКУЛЯТОР КБЖУ</span><button class="cancel-btn" style="padding:4px 10px;font-size:11px" onclick="S.calc.on=false;render()">✕</button></div><div class="search-area">
+      h+=`<div class="nut-sec"><div class="nut-sec-head"><span class="nut-sec-t">Калькулятор КБЖУ</span><button class="cancel-btn" style="padding:4px 10px;font-size:11px" onclick="S.calc.on=false;render()">✕</button></div><div class="search-area">
         <div class="f-grid" style="margin-bottom:8px">
           <div><div class="f-lbl">ПОЛ</div>
             <div style="display:flex;gap:6px">
-              <button onclick="S.calc.sex='m';render()" style="flex:1;padding:9px;font-size:13px;font-weight:900;border-radius:0;border:1px solid ${c.sex==='m'?'#ff6b00':'#4a4a4a'};background:${c.sex==='m'?'#ff6b00':'#2a2a2a'};color:${c.sex==='m'?'#000':'#777'}">М</button>
-              <button onclick="S.calc.sex='f';render()" style="flex:1;padding:9px;font-size:13px;font-weight:900;border-radius:0;border:1px solid ${c.sex==='f'?'#ff6b00':'#4a4a4a'};background:${c.sex==='f'?'#ff6b00':'#2a2a2a'};color:${c.sex==='f'?'#000':'#777'}">Ж</button>
+              <button onclick="saveDomToCalc();S.calc.sex='m';render()" style="flex:1;padding:9px;font-size:14px;font-weight:600;border-radius:8px;border:2px solid ${c.sex==='m'?'#0a84ff':'#3a3a3c'};background:${c.sex==='m'?'#0a84ff':'#2c2c2e'};color:${c.sex==='m'?'#fff':'#8e8e93'}">М</button>
+              <button onclick="saveDomToCalc();S.calc.sex='f';render()" style="flex:1;padding:9px;font-size:14px;font-weight:600;border-radius:8px;border:2px solid ${c.sex==='f'?'#0a84ff':'#3a3a3c'};background:${c.sex==='f'?'#0a84ff':'#2c2c2e'};color:${c.sex==='f'?'#fff':'#8e8e93'}">Ж</button>
             </div>
           </div>
           <div><div class="f-lbl">ВОЗРАСТ</div><input type="text" inputmode="numeric" placeholder="30" class="f-inp" id="calc-age" value="${c.age}"></div>
@@ -580,19 +589,19 @@ function render(){
         </div>
         <div class="f-lbl" style="margin-bottom:6px">ЦЕЛЬ</div>
         <div style="display:flex;gap:6px;margin-bottom:10px">
-          <button onclick="S.calc.goal='cut';render()" style="flex:1;padding:8px 4px;font-size:12px;font-weight:900;letter-spacing:1px;border-radius:0;border:1px solid ${c.goal==='cut'?'#ff6b00':'#4a4a4a'};background:${c.goal==='cut'?'#ff6b00':'#2a2a2a'};color:${c.goal==='cut'?'#000':'#777'}">СУШКА</button>
-          <button onclick="S.calc.goal='maintain';render()" style="flex:1;padding:8px 4px;font-size:12px;font-weight:900;letter-spacing:1px;border-radius:0;border:1px solid ${c.goal==='maintain'?'#ff6b00':'#4a4a4a'};background:${c.goal==='maintain'?'#ff6b00':'#2a2a2a'};color:${c.goal==='maintain'?'#000':'#777'}">ПОДДЕРЖАНИЕ</button>
-          <button onclick="S.calc.goal='bulk';render()" style="flex:1;padding:8px 4px;font-size:12px;font-weight:900;letter-spacing:1px;border-radius:0;border:1px solid ${c.goal==='bulk'?'#ff6b00':'#4a4a4a'};background:${c.goal==='bulk'?'#ff6b00':'#2a2a2a'};color:${c.goal==='bulk'?'#000':'#777'}">НАБОР</button>
+          <button onclick="saveDomToCalc();S.calc.goal='cut';render()" style="flex:1;padding:8px 4px;font-size:12px;font-weight:600;border-radius:8px;border:2px solid ${c.goal==='cut'?'#0a84ff':'#3a3a3c'};background:${c.goal==='cut'?'#0a84ff':'#2c2c2e'};color:${c.goal==='cut'?'#fff':'#8e8e93'}">Сушка</button>
+          <button onclick="saveDomToCalc();S.calc.goal='maintain';render()" style="flex:1;padding:8px 4px;font-size:12px;font-weight:600;border-radius:8px;border:2px solid ${c.goal==='maintain'?'#0a84ff':'#3a3a3c'};background:${c.goal==='maintain'?'#0a84ff':'#2c2c2e'};color:${c.goal==='maintain'?'#fff':'#8e8e93'}">Поддержание</button>
+          <button onclick="saveDomToCalc();S.calc.goal='bulk';render()" style="flex:1;padding:8px 4px;font-size:12px;font-weight:600;border-radius:8px;border:2px solid ${c.goal==='bulk'?'#0a84ff':'#3a3a3c'};background:${c.goal==='bulk'?'#0a84ff':'#2c2c2e'};color:${c.goal==='bulk'?'#fff':'#8e8e93'}">Набор</button>
         </div>
         <div class="f-lbl">АКТИВНОСТЬ</div>
-        <select id="calc-act" class="f-inp" style="background:#2a2a2a;color:#f0f0f0;margin-bottom:10px">
+        <select id="calc-act" class="f-inp" style="margin-bottom:10px">
           <option value="1.2" ${c.activity==='1.2'?'selected':''}>Минимум (сидячий)</option>
           <option value="1.375" ${c.activity==='1.375'?'selected':''}>Лёгкая (1-2 раза/нед)</option>
           <option value="1.55" ${c.activity==='1.55'?'selected':''}>Средняя (3-5 раз/нед)</option>
           <option value="1.725" ${c.activity==='1.725'?'selected':''}>Высокая (6-7 раз/нед)</option>
           <option value="1.9" ${c.activity==='1.9'?'selected':''}>Очень высокая (2x/день)</option>
         </select>
-        <button class="add-btn" style="width:100%;margin-bottom:6px" onclick="calcAndSave()">⚡ РАССЧИТАТЬ И СОХРАНИТЬ</button>
+        <button class="add-btn" style="width:100%;margin-bottom:6px" onclick="calcAndSave()">⚡ Рассчитать и сохранить</button>
       </div></div>`;
     } else if(!MG){
       // Цели не заданы
