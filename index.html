@@ -91,7 +91,7 @@ textarea{resize:none;font-size:16px!important}
 
 /* СФЕРЫ */
 .spheres-grid{display:grid;grid-template-columns:1fr 1fr}
-.sph-cell{padding:10px 12px;border-right:1px solid var(--line);border-bottom:1px solid var(--line);cursor:pointer}
+.sph-cell{padding:10px 12px;border-right:1px solid var(--line);border-bottom:1px solid var(--line);cursor:pointer;display:flex;flex-direction:column;justify-content:space-between}
 .sph-cell:nth-child(2n){border-right:none}
 .sph-cell:nth-child(5),.sph-cell:nth-child(6){border-bottom:none}
 .sph-top{display:flex;align-items:center;gap:7px;margin-bottom:5px}
@@ -546,7 +546,7 @@ function render(){
   // ══ ШТАБ ══
   if(S.tab==='today'){
     const dl=gdl();const goals=ggoals();const alerts=getAlerts();
-    h+='<div class="pg" style="padding-top:11px">';
+    h+='<div class="pg" style="padding-top:11px;min-height:calc(100vh - 44px - 60px);display:flex;flex-direction:column">';
     // MIT
     h+='<div class="mit-block sc">';
     h+=`<div class="mit-lbl"><span>ГЛАВНОЕ СЕГОДНЯ</span>${dl.mitSphere?`<span class="mit-sphere-tag">${dl.mitSphere}</span>`:''} ${dl.mitDone?'<span class="badge-done-mit">✓ ВЫПОЛНЕНО</span>':(!dl.mit?'<span class="badge-not-started">НЕ ЗАДАНО</span>':'')}</div>`;
@@ -573,7 +573,7 @@ function render(){
     h+='</div></div>';
     if(!isEvening){
       // ЭНЕРГИЯ
-      h+=`<div class="sc"><div class="nrg-block"><div class="nrg-lbl">ЭНЕРГИЯ</div><div class="nrg-dots">${[1,2,3,4,5,6,7,8,9,10].map(i=>`<div class="nd ${dl.energy>=i?(i>7?'hi':'on'):''}"></div>`).join('')}</div><button class="nrg-n" onclick="setEnergy(${dl.energy<10?dl.energy+1:0})">${dl.energy||'—'}</button></div>`;
+      h+=`<div class="sc" style="flex:1;display:flex;flex-direction:column"><div class="nrg-block"><div class="nrg-lbl">ЭНЕРГИЯ</div><div class="nrg-dots">${[1,2,3,4,5,6,7,8,9,10].map(i=>`<div class="nd ${dl.energy>=i?(i>7?'hi':'on'):''}"></div>`).join('')}</div><button class="nrg-n" onclick="setEnergy(${dl.energy<10?dl.energy+1:0})">${dl.energy||'—'}</button></div>`;
       // ПУЛЬС
       const biz=gbiz();const fin=gfin();const rel=grel();const reld=greld();
       const inc=fin.entries.filter(e=>e.amount>0).reduce((a,e)=>a+e.amount,0);
@@ -582,7 +582,7 @@ function render(){
       h+=`<div class="pulse-row"><div class="pc"><div class="p-l">ТОННАЖ</div><div class="p-v a">${tonnage>0?Math.round(tonnage):'—'}</div><div class="p-t">кг · неделя</div></div><div class="pc"><div class="p-l">ВЫРУЧКА</div><div class="p-v g">${inc>0?Math.round(inc/1000)+'к':'—'}</div><div class="p-t">/ ${fin.goal>0?Math.round(fin.goal/1000)+'к':'цель?'}</div></div><div class="pc"><div class="p-l">РИТУАЛ</div><div class="p-v ${ritDone===0?'r':ritDone===rel.checklist.length?'g':'a'}">${ritDone}/${rel.checklist.length}</div><div class="p-t">${ritDone===rel.checklist.length?'выполнен':'сегодня'}</div></div></div></div>`;
     } else {
       // ВЕЧЕР
-      h+='<div class="sc"><div class="eve-block"><div class="eve-lbl">ОЦЕНКА ДНЯ</div><div class="score-row">';
+      h+='<div class="sc" style="flex:1"><div class="eve-block"><div class="eve-lbl">ОЦЕНКА ДНЯ</div><div class="score-row">';
       for(let i=1;i<=10;i++)h+=`<button class="score-btn ${dl.rating===i?'sel':''}" onclick="setRating(${i})">${i}</button>`;
       h+=`</div><textarea class="day-note" placeholder="Главное за день — одна строка..." onchange="saveNote(this.value)">${dl.note||''}</textarea></div></div>`;
     }
