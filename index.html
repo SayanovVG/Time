@@ -127,12 +127,12 @@ textarea{resize:none;font-size:16px!important}
 .p-t.u{color:var(--green)}.p-t.d{color:var(--red)}
 
 /* ВЕЧЕР */
-.eve-block{padding:11px 13px;border-bottom:1px solid var(--line)}
+.eve-block{padding:11px 13px;border-bottom:1px solid var(--line);flex:1;display:flex;flex-direction:column}
 .eve-lbl{font-size:8px;color:var(--muted);letter-spacing:2px;font-weight:700;text-transform:uppercase;margin-bottom:7px}
 .score-row{display:flex;gap:3px;margin-bottom:9px}
 .score-btn{flex:1;padding:6px 0;font-family:'Barlow Condensed',sans-serif;font-size:14px;font-weight:700;color:var(--muted);border:1px solid var(--line2);background:transparent}
 .score-btn.sel{border-color:var(--red);color:var(--red);background:var(--ra10)}
-.day-note{width:100%;background:var(--z3);border:1px solid var(--line2);color:var(--text);padding:9px 11px;font-size:14px;min-height:54px}
+.day-note{width:100%;background:var(--z3);border:1px solid var(--line2);color:var(--text);padding:9px 11px;font-size:14px;min-height:54px;flex:1}
 .day-note:focus{border-color:var(--red)}
 .day-note::placeholder{color:var(--muted);font-weight:300}
 
@@ -546,7 +546,7 @@ function render(){
   // ══ ШТАБ ══
   if(S.tab==='today'){
     const dl=gdl();const goals=ggoals();const alerts=getAlerts();
-    h+='<div class="pg" style="padding-top:11px;min-height:calc(100vh - 44px - 60px);display:flex;flex-direction:column">';
+    h+='<div class="pg" style="padding-top:11px;height:calc(100vh - 44px - 60px);display:flex;flex-direction:column">';
     // MIT
     h+='<div class="mit-block sc">';
     h+=`<div class="mit-lbl"><span>ГЛАВНОЕ СЕГОДНЯ</span>${dl.mitSphere?`<span class="mit-sphere-tag">${dl.mitSphere}</span>`:''} ${dl.mitDone?'<span class="badge-done-mit">✓ ВЫПОЛНЕНО</span>':(!dl.mit?'<span class="badge-not-started">НЕ ЗАДАНО</span>':'')}</div>`;
@@ -582,7 +582,7 @@ function render(){
       h+=`<div class="pulse-row"><div class="pc"><div class="p-l">ТОННАЖ</div><div class="p-v a">${tonnage>0?Math.round(tonnage):'—'}</div><div class="p-t">кг · неделя</div></div><div class="pc"><div class="p-l">ВЫРУЧКА</div><div class="p-v g">${inc>0?Math.round(inc/1000)+'к':'—'}</div><div class="p-t">/ ${fin.goal>0?Math.round(fin.goal/1000)+'к':'цель?'}</div></div><div class="pc"><div class="p-l">РИТУАЛ</div><div class="p-v ${ritDone===0?'r':ritDone===rel.checklist.length?'g':'a'}">${ritDone}/${rel.checklist.length}</div><div class="p-t">${ritDone===rel.checklist.length?'выполнен':'сегодня'}</div></div></div></div>`;
     } else {
       // ВЕЧЕР
-      h+='<div class="sc" style="flex:1"><div class="eve-block"><div class="eve-lbl">ОЦЕНКА ДНЯ</div><div class="score-row">';
+      h+='<div class="sc" style="flex:1;display:flex;flex-direction:column"><div class="eve-block"><div class="eve-lbl">ОЦЕНКА ДНЯ</div><div class="score-row">';
       for(let i=1;i<=10;i++)h+=`<button class="score-btn ${dl.rating===i?'sel':''}" onclick="setRating(${i})">${i}</button>`;
       h+=`</div><textarea class="day-note" placeholder="Главное за день — одна строка..." onchange="saveNote(this.value)">${dl.note||''}</textarea></div></div>`;
     }
