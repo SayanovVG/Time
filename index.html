@@ -1138,10 +1138,10 @@ function render(){
       }
       h+='</div>';
     } else if(!S.addTaskOpen){
-      h+=`<div style="background:var(--ra10);border:1px solid var(--red);padding:20px 14px;text-align:center;margin-bottom:9px">
-        <div style="font-family:'Barlow Condensed',sans-serif;font-size:24px;font-weight:900;color:var(--white);letter-spacing:3px;margin-bottom:4px;-webkit-text-stroke:1px var(--red)">ВСЁ СДЕЛАНО ✓</div>
+      h+=`<div style="background:rgba(212,144,10,.07);border:1px solid rgba(212,144,10,.3);padding:20px 14px;text-align:center;margin-bottom:9px">
+        <div style="font-family:'Barlow Condensed',sans-serif;font-size:26px;font-weight:800;color:var(--amber);letter-spacing:3px;margin-bottom:4px">ВСЁ СДЕЛАНО ✓</div>
         <div style="font-size:11px;color:var(--muted);font-weight:300">на сегодня задач нет</div>
-        <button onclick="S.tab='goals';render()" style="margin-top:12px;background:transparent;border:1px solid var(--red);color:var(--red);padding:7px 16px;font-family:'Barlow Condensed',sans-serif;font-size:11px;font-weight:700;letter-spacing:2px">ЗАПЛАНИРОВАТЬ НЕДЕЛЮ →</button>
+        <button onclick="S.tab='goals';render()" style="margin-top:12px;background:transparent;border:1px solid rgba(212,144,10,.4);color:var(--amber);padding:7px 16px;font-family:'Barlow Condensed',sans-serif;font-size:11px;font-weight:700;letter-spacing:2px">ЗАПЛАНИРОВАТЬ НЕДЕЛЮ →</button>
       </div>`;
     }
 
@@ -1611,16 +1611,15 @@ function render(){
       }
       [...iOwe,...owedMe].forEach(d=>{
         const isOwe=d.dir==='owe';
-        h+=`<div style="padding:9px 13px;border-bottom:1px solid var(--line);display:flex;align-items:center;gap:10px">
-          <div style="width:28px;height:28px;border-radius:50%;background:${isOwe?'var(--ra10)':'var(--z3)'};border:1px solid ${isOwe?'var(--red)':'var(--line2)'};display:flex;align-items:center;justify-content:center;font-family:'Barlow Condensed',sans-serif;font-size:11px;font-weight:800;color:${isOwe?'var(--red)':'var(--muted)'};flex-shrink:0">${isOwe?'ДОЛ':'МНЕ'}</div>
-          <div style="flex:1">
-            <div style="font-size:14px;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:120px">${d.name}</div>
-            ${d.note?`<div style="font-size:11px;color:var(--muted)">${d.note}</div>`:''}
-            ${d.date?`<div style="font-size:11px;color:var(--amber)">до ${d.date}</div>`:''}
+        h+=`<div style="padding:9px 13px;border-bottom:1px solid var(--line)">
+          <div style="display:flex;align-items:center;gap:8px;margin-bottom:${d.note||d.date?'5px':'0'}">
+            <div style="width:26px;height:26px;border-radius:50%;background:${isOwe?'var(--ra10)':'var(--z3)'};border:1px solid ${isOwe?'var(--red)':'var(--line2)'};display:flex;align-items:center;justify-content:center;font-family:'Barlow Condensed',sans-serif;font-size:10px;font-weight:800;color:${isOwe?'var(--red)':'var(--muted)'};flex-shrink:0">${isOwe?'ДОЛ':'МНЕ'}</div>
+            <span style="font-size:14px;color:var(--text);flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${d.name}</span>
+            <span style="font-family:'Barlow Condensed',sans-serif;font-size:16px;font-weight:800;color:${isOwe?'var(--red)':'var(--white)'};flex-shrink:0">${isOwe?'−':'+'}${Math.round(d.amount/1000*10)/10}к</span>
+            <button onclick="markDebtPaid('${d.id}')" style="background:transparent;border:1px solid var(--line2);color:var(--muted);padding:3px 6px;font-family:'Barlow Condensed',sans-serif;font-size:9px;font-weight:700;flex-shrink:0">✓</button>
+            <button class="del-btn" onclick="delDebt('${d.id}')">×</button>
           </div>
-          <span style="font-family:'Barlow Condensed',sans-serif;font-size:16px;font-weight:800;color:${isOwe?'var(--red)':'var(--white)'}">${isOwe?'−':'+'}${Math.round(d.amount/1000*10)/10}к</span>
-          <button onclick="markDebtPaid('${d.id}')" style="background:transparent;border:1px solid var(--line2);color:var(--muted);padding:3px 7px;font-family:'Barlow Condensed',sans-serif;font-size:10px;font-weight:700">ЗАКРЫТ</button>
-          <button class="del-btn" onclick="delDebt('${d.id}')">×</button>
+          ${d.note||d.date?`<div style="font-size:11px;color:var(--muted);padding-left:34px">${d.note}${d.note&&d.date?' · ':''}${d.date?'до '+d.date:''}</div>`:''}
         </div>`;
       });
       if(!iOwe.length&&!owedMe.length)h+='<div style="padding:14px;text-align:center;font-size:12px;color:var(--muted)">Долгов нет</div>';
