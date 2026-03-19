@@ -11,12 +11,12 @@
 <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@400;600;700;800;900&family=IBM+Plex+Mono:wght@300;400;500&display=swap" rel="stylesheet">
 <style>
 :root{
-  --ink:#18171a;--z1:#201f23;--z2:#27262b;--z3:#2f2e33;--z4:#38373d;--z5:#434248;
-  --line:#2c2b30;--line2:#363539;--dim:#5a5960;--muted:#7a7882;
-  --body:#c8c6d0;--text:#eae8f0;--white:#f5f4f8;
-  --red:#e8192c;--amber:#f5a500;--green:#e8192c;
-  --ra10:rgba(232,25,44,.12);--ra20:rgba(232,25,44,.22);
-  --aa10:rgba(245,165,0,.12);--ga10:rgba(232,25,44,.08);--nav-h:60px;
+  --ink:#1a1a1e;--z1:#222226;--z2:#28282d;--z3:#303036;--z4:#3a3a40;--z5:#454548;
+  --line:#2e2e34;--line2:#38383e;--dim:#606066;--muted:#888890;
+  --body:#c4c2cc;--text:#e6e4ee;--white:#f2f0f8;
+  --red:#c0182a;--amber:#d4900a;--green:#c0182a;
+  --ra10:rgba(192,24,42,.1);--ra20:rgba(192,24,42,.18);
+  --aa10:rgba(212,144,10,.1);--ga10:rgba(192,24,42,.07);--nav-h:64px;
 }
 *{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
 html{background:var(--ink)}
@@ -28,23 +28,23 @@ button{cursor:pointer;transition:opacity .15s,transform .1s}
 button:active{transform:scale(.96);opacity:.8}
 textarea{resize:none;font-size:16px!important}
 .bc{font-family:'Barlow Condensed',sans-serif}
-.topbar{position:sticky;top:0;z-index:99;display:flex;align-items:center;justify-content:space-between;padding:9px 14px 8px;background:rgba(8,8,8,.99);border-bottom:1px solid var(--red);backdrop-filter:blur(20px)}
+.topbar{position:sticky;top:0;z-index:99;display:flex;align-items:center;justify-content:space-between;padding:9px 14px 8px;background:rgba(26,26,30,.99);border-bottom:1px solid var(--line2);backdrop-filter:blur(20px)}
 .tb-l{display:flex;align-items:center;gap:10px}
 .tb-logo{font-family:'Barlow Condensed',sans-serif;font-size:26px;font-weight:900;color:var(--white);letter-spacing:5px;line-height:1;-webkit-text-stroke:1.5px var(--red);text-stroke:1.5px var(--red);paint-order:stroke fill;text-transform:uppercase}
 .tb-sub-wrap{margin-left:4px}
 .tb-sub{font-size:9px;color:var(--muted);letter-spacing:.5px;font-weight:300}
 .tb-clk{font-family:'Barlow Condensed',sans-serif;font-size:24px;font-weight:700;color:var(--white);letter-spacing:1px}
-.bnav{position:fixed;bottom:0;left:0;right:0;z-index:98;height:var(--nav-h);background:rgba(8,8,8,.99);border-top:1px solid var(--red);display:flex;align-items:stretch;backdrop-filter:blur(20px)}
-.bn{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;background:none;border:none;padding:5px 1px 7px;position:relative}
+.bnav{position:fixed;bottom:0;left:0;right:0;z-index:98;height:var(--nav-h);background:rgba(26,26,30,.99);border-top:1px solid var(--line2);display:flex;align-items:stretch;backdrop-filter:blur(20px)}
+.bn{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;background:none;border:none;padding:6px 2px 8px;position:relative}
 .bn::before{content:'';position:absolute;top:0;left:0;right:0;height:0;background:var(--red);transition:height .15s}
-.bn.on::before{height:2px;box-shadow:0 0 8px var(--red)}
-.bn-ico{width:18px;height:18px;display:flex;align-items:center;justify-content:center}
+.bn.on::before{height:2px}
+.bn-ico{width:24px;height:24px;display:flex;align-items:center;justify-content:center}
 .bn-ico svg{width:100%;height:100%}
 .bn-lbl{font-family:'Barlow Condensed',sans-serif;font-size:8px;font-weight:600;letter-spacing:.5px;color:var(--muted);text-transform:uppercase}
 .bn.on .bn-lbl{color:var(--red)}
 .pg{padding:0 13px}
 .sc{background:var(--z1);border:1px solid var(--line2);margin-bottom:8px;overflow:hidden}
-.sc-h{display:flex;justify-content:space-between;align-items:center;padding:6px 12px;background:var(--z2);border-bottom:1px solid var(--line);border-left:3px solid var(--red)}
+.sc-h{display:flex;justify-content:space-between;align-items:center;padding:7px 13px;background:var(--z2);border-bottom:1px solid var(--line)}
 .sc-t{font-family:'Barlow Condensed',sans-serif;font-size:14px;font-weight:700;color:var(--white);letter-spacing:2px}
 .sc-m{font-size:10px;color:var(--muted);font-weight:300}
 .f-lbl{font-size:9px;color:var(--muted);letter-spacing:1.5px;margin-bottom:3px;text-transform:uppercase;font-weight:700}
@@ -67,7 +67,7 @@ textarea{resize:none;font-size:16px!important}
 .mit-block{padding:11px 13px 10px}
 .mit-lbl{font-size:10px;color:var(--muted);letter-spacing:1.5px;font-weight:700;margin-bottom:5px;text-transform:uppercase;display:flex;align-items:center;gap:6px;flex-wrap:wrap}
 .mit-sphere-tag{border:1px solid var(--line2);color:var(--muted);font-family:'Barlow Condensed',sans-serif;font-size:8px;font-weight:700;letter-spacing:1px;padding:1px 6px}
-.mit-txt{font-family:'Barlow Condensed',sans-serif;font-size:20px;font-weight:900;color:var(--white);line-height:1.2;letter-spacing:1px;margin-bottom:8px;cursor:pointer;border-left:3px solid var(--red);padding-left:10px;text-transform:uppercase}
+.mit-txt{font-family:'Barlow Condensed',sans-serif;font-size:21px;font-weight:800;color:var(--white);line-height:1.2;letter-spacing:.5px;margin-bottom:8px;cursor:pointer}
 .mit-inp{width:100%;background:transparent;border:none;border-bottom:1px solid var(--line2);color:var(--white);padding:3px 0 5px;font-family:'Barlow Condensed',sans-serif;font-size:19px;font-weight:700;letter-spacing:.3px;margin-bottom:8px}
 .mit-inp:focus{border-bottom-color:var(--red)}
 .mit-inp::placeholder{color:var(--dim);font-weight:400}
@@ -1614,7 +1614,7 @@ function render(){
         h+=`<div style="padding:9px 13px;border-bottom:1px solid var(--line);display:flex;align-items:center;gap:10px">
           <div style="width:28px;height:28px;border-radius:50%;background:${isOwe?'var(--ra10)':'var(--z3)'};border:1px solid ${isOwe?'var(--red)':'var(--line2)'};display:flex;align-items:center;justify-content:center;font-family:'Barlow Condensed',sans-serif;font-size:11px;font-weight:800;color:${isOwe?'var(--red)':'var(--muted)'};flex-shrink:0">${isOwe?'ДОЛ':'МНЕ'}</div>
           <div style="flex:1">
-            <div style="font-size:14px;color:var(--text)">${d.name}</div>
+            <div style="font-size:14px;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:120px">${d.name}</div>
             ${d.note?`<div style="font-size:11px;color:var(--muted)">${d.note}</div>`:''}
             ${d.date?`<div style="font-size:11px;color:var(--amber)">до ${d.date}</div>`:''}
           </div>
