@@ -11,16 +11,16 @@
 <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@400;600;700;800;900&family=IBM+Plex+Mono:wght@300;400;500&display=swap" rel="stylesheet">
 <style>
 :root{
-  --ink:#080808;--z1:#111;--z2:#191919;--z3:#212121;--z4:#2a2a2a;--z5:#303030;
-  --line:#1e1e1e;--line2:#2a2a2a;--dim:#3a3a3a;--muted:#555;
-  --body:#a8a8a8;--text:#e0e0e0;--white:#f0f0f0;
+  --ink:#18171a;--z1:#201f23;--z2:#27262b;--z3:#2f2e33;--z4:#38373d;--z5:#434248;
+  --line:#2c2b30;--line2:#363539;--dim:#5a5960;--muted:#7a7882;
+  --body:#c8c6d0;--text:#eae8f0;--white:#f5f4f8;
   --red:#e8192c;--amber:#f5a500;--green:#e8192c;
   --ra10:rgba(232,25,44,.12);--ra20:rgba(232,25,44,.22);
   --aa10:rgba(245,165,0,.12);--ga10:rgba(232,25,44,.08);--nav-h:60px;
 }
 *{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
 html{background:var(--ink)}
-body{font-family:'IBM Plex Mono',monospace;background:var(--ink);color:var(--body);min-height:100vh;overflow-x:hidden;padding-bottom:calc(var(--nav-h)+4px)}
+body{font-family:'IBM Plex Mono',monospace;font-size:14px;background:var(--ink);color:var(--body);min-height:100vh;overflow-x:hidden;padding-bottom:calc(var(--nav-h)+4px)}
 input,button,select,textarea{font-family:'IBM Plex Mono',monospace}
 input{font-size:16px!important}
 input:focus,select:focus,textarea:focus{outline:none}
@@ -45,9 +45,9 @@ textarea{resize:none;font-size:16px!important}
 .pg{padding:0 13px}
 .sc{background:var(--z1);border:1px solid var(--line2);margin-bottom:8px;overflow:hidden}
 .sc-h{display:flex;justify-content:space-between;align-items:center;padding:6px 12px;background:var(--z2);border-bottom:1px solid var(--line);border-left:3px solid var(--red)}
-.sc-t{font-family:'Barlow Condensed',sans-serif;font-size:13px;font-weight:700;color:var(--white);letter-spacing:2px}
+.sc-t{font-family:'Barlow Condensed',sans-serif;font-size:14px;font-weight:700;color:var(--white);letter-spacing:2px}
 .sc-m{font-size:10px;color:var(--muted);font-weight:300}
-.f-lbl{font-size:8px;color:var(--muted);letter-spacing:1.5px;margin-bottom:3px;text-transform:uppercase;font-weight:700}
+.f-lbl{font-size:9px;color:var(--muted);letter-spacing:1.5px;margin-bottom:3px;text-transform:uppercase;font-weight:700}
 .f-inp{width:100%;background:var(--z3);border:1px solid var(--line2);color:var(--white);padding:8px 10px;font-size:15px;margin-bottom:8px;font-weight:400}
 .f-inp:focus{border-color:var(--red)}
 .f-inp::placeholder{color:var(--muted);font-weight:300}
@@ -55,7 +55,7 @@ textarea{resize:none;font-size:16px!important}
 .add-btn{flex:1;background:transparent;color:var(--red);border:1px solid var(--red);padding:9px;font-size:13px;font-weight:500;letter-spacing:.5px}
 .add-btn:active{background:var(--ra10)}
 .cancel-btn{background:var(--z3);border:1px solid var(--line2);color:var(--muted);padding:9px 12px;font-size:12px;font-weight:400}
-.row{display:flex;align-items:center;justify-content:space-between;padding:9px 13px;border-bottom:1px solid var(--line)}
+.row{display:flex;align-items:center;justify-content:space-between;padding:10px 13px;border-bottom:1px solid var(--line)}
 .row:last-child{border-bottom:none}
 .del-btn{background:none;border:none;color:var(--dim);font-size:18px;padding:0 4px;line-height:1}
 .del-btn:active{color:var(--red)}
@@ -65,7 +65,7 @@ textarea{resize:none;font-size:16px!important}
 .pomo-bar-wrap{height:3px;background:var(--z5)}
 .pomo-bar-fill{height:100%;transition:width 1s linear}
 .mit-block{padding:11px 13px 10px}
-.mit-lbl{font-size:8px;color:var(--muted);letter-spacing:2px;font-weight:700;margin-bottom:5px;text-transform:uppercase;display:flex;align-items:center;gap:6px;flex-wrap:wrap}
+.mit-lbl{font-size:10px;color:var(--muted);letter-spacing:1.5px;font-weight:700;margin-bottom:5px;text-transform:uppercase;display:flex;align-items:center;gap:6px;flex-wrap:wrap}
 .mit-sphere-tag{border:1px solid var(--line2);color:var(--muted);font-family:'Barlow Condensed',sans-serif;font-size:8px;font-weight:700;letter-spacing:1px;padding:1px 6px}
 .mit-txt{font-family:'Barlow Condensed',sans-serif;font-size:20px;font-weight:900;color:var(--white);line-height:1.2;letter-spacing:1px;margin-bottom:8px;cursor:pointer;border-left:3px solid var(--red);padding-left:10px;text-transform:uppercase}
 .mit-inp{width:100%;background:transparent;border:none;border-bottom:1px solid var(--line2);color:var(--white);padding:3px 0 5px;font-family:'Barlow Condensed',sans-serif;font-size:19px;font-weight:700;letter-spacing:.3px;margin-bottom:8px}
@@ -114,7 +114,7 @@ textarea{resize:none;font-size:16px!important}
 .pomo-num-inp:focus{border-color:var(--red);outline:none}
 .t-chk{width:15px;height:15px;border:1px solid var(--line2);display:flex;align-items:center;justify-content:center;font-size:9px;color:transparent;flex-shrink:0;cursor:pointer;background:none}
 .t-chk.on{border-color:var(--red);color:var(--red)}
-.t-txt{font-size:12px;color:var(--body);flex:1;font-weight:400;line-height:1.4;letter-spacing:-.2px}
+.t-txt{font-size:14px;color:var(--body);flex:1;font-weight:400;line-height:1.4}
 .t-txt.done{color:var(--muted);text-decoration:line-through}
 .t-mit-btn{background:none;border:none;font-size:13px;padding:0 3px;color:var(--dim);flex-shrink:0;line-height:1}
 .t-mit-btn.active{color:var(--amber)}
@@ -169,7 +169,7 @@ textarea{resize:none;font-size:16px!important}
 .ex-card{background:var(--z1);border:1px solid var(--line);margin-bottom:8px;overflow:hidden}
 .ex-head{display:flex;justify-content:space-between;align-items:flex-start;padding:9px 12px 8px;border-bottom:1px solid var(--line)}
 .ex-name{font-family:'Barlow Condensed',sans-serif;font-size:14px;font-weight:700;color:var(--white);letter-spacing:.3px}
-.ex-meta{font-size:10px;color:var(--muted);margin-top:2px;font-weight:300}
+.ex-meta{font-size:12px;color:var(--muted);margin-top:2px;font-weight:300}
 .ex-meta .hl{color:var(--red);font-weight:400}
 .ex-badges{display:flex;gap:5px;align-items:center;flex-shrink:0;margin-left:6px}
 .badge-done{border:1px solid var(--red);color:var(--red);font-size:8px;padding:2px 6px;letter-spacing:1px;font-weight:700;font-family:'Barlow Condensed',sans-serif}
@@ -177,7 +177,7 @@ textarea{resize:none;font-size:16px!important}
 .hint-btn{background:transparent;border:1px solid var(--line2);color:var(--muted);font-size:10px;padding:2px 7px;font-weight:400}
 .hint-box{background:var(--z3);border-top:1px solid var(--line);padding:8px 12px}
 .hint-t{font-size:8px;color:var(--red);letter-spacing:2px;margin-bottom:2px;font-weight:700;text-transform:uppercase}
-.hint-txt{font-size:11px;color:var(--body);line-height:1.6;font-weight:300}
+.hint-txt{font-size:13px;color:var(--body);line-height:1.6;font-weight:300}
 .set-row{display:flex;align-items:center;gap:7px;padding:7px 12px;border-top:1px solid var(--line)}
 .set-row.done-row{background:rgba(196,16,32,.06)}
 .set-lbl{font-family:'Barlow Condensed',sans-serif;font-size:11px;font-weight:700;color:var(--muted);width:16px;flex-shrink:0}
@@ -232,7 +232,7 @@ textarea{resize:none;font-size:16px!important}
 .supp-item:last-child{border-bottom:none}
 .supp-chk{width:18px;height:18px;border:1px solid var(--line2);border-radius:50%;display:flex;align-items:center;justify-content:center;margin-right:10px;flex-shrink:0;cursor:pointer}
 .supp-chk.checked{border-color:var(--red)}
-.supp-name{font-size:12px;color:var(--body);flex:1;font-weight:400}
+.supp-name{font-size:14px;color:var(--body);flex:1;font-weight:400}
 .supp-time{font-size:10px;color:var(--muted);font-weight:300}
 .biz-metrics{display:grid;grid-template-columns:repeat(4,1fr);border-bottom:1px solid var(--line)}
 .bm{padding:8px 8px;border-right:1px solid var(--line)}
@@ -256,7 +256,7 @@ textarea{resize:none;font-size:16px!important}
 .task:last-child{border-bottom:none}
 .task-box{width:15px;height:15px;border:1px solid var(--line2);display:flex;align-items:center;justify-content:center;font-size:9px;color:transparent;flex-shrink:0;cursor:pointer;background:none}
 .task-box.on{border-color:var(--red);color:var(--red)}
-.task-txt{font-size:12px;color:var(--body);flex:1;font-weight:400}
+.task-txt{font-size:14px;color:var(--body);flex:1;font-weight:400}
 .task-txt.done{color:var(--muted);text-decoration:line-through}
 .add-row{display:flex;gap:6px;padding:8px 12px;background:var(--z2);border-top:1px solid var(--line)}
 .add-inp{flex:1;background:var(--z3);border:1px solid var(--line2);color:var(--white);padding:7px 9px;font-size:13px}
@@ -284,7 +284,7 @@ textarea{resize:none;font-size:16px!important}
 .fs-fill.r{background:var(--red)}
 .fin-row{display:flex;align-items:center;justify-content:space-between;padding:8px 12px;border-bottom:1px solid var(--line)}
 .fin-row:last-child{border-bottom:none}
-.fin-name{font-size:12px;color:var(--text);font-weight:400}
+.fin-name{font-size:14px;color:var(--text);font-weight:400}
 .fin-cat{font-size:9px;color:var(--muted);margin-top:1px;font-weight:300}
 .fin-amount{font-family:'Barlow Condensed',sans-serif;font-size:15px;font-weight:700}
 .fin-amount.pos{color:var(--green)}.fin-amount.neg{color:var(--red)}
@@ -292,7 +292,7 @@ textarea{resize:none;font-size:16px!important}
 .rel-check:last-child{border-bottom:none}
 .rel-chk{width:20px;height:20px;border:1px solid var(--line2);border-radius:50%;display:flex;align-items:center;justify-content:center;flex-shrink:0}
 .rel-chk.on{border-color:var(--red)}
-.rel-txt{font-size:12px;color:var(--body);flex:1;font-weight:400}
+.rel-txt{font-size:14px;color:var(--body);flex:1;font-weight:400}
 .rel-txt.done{color:var(--muted);text-decoration:line-through}
 .dev-item{padding:10px 12px;border-bottom:1px solid var(--line)}
 .dev-item:last-child{border-bottom:none}
@@ -435,6 +435,8 @@ function gRecurring(){return LS.get('mt_fin_recurring',[]);}
 function sRecurring(a){LS.set('mt_fin_recurring',a);}
 function gSavings(){return LS.get('mt_fin_savings',[]);}
 function sSavings(a){LS.set('mt_fin_savings',a);}
+function gDebts(){return LS.get('mt_fin_debts',[]);}
+function sDebts(a){LS.set('mt_fin_debts',a);}
 function gFinBudgets(){return LS.get('mt_fin_budgets',{});}
 function sFinBudgets(d){LS.set('mt_fin_budgets',d);}
 function gFinBalance(){return LS.get('mt_fin_balance',0);}
@@ -478,10 +480,12 @@ let S={tab:'today',htab:'training',week:1,day:1,wd:{},cp:{},hints:{},
   timer:{on:false,left:0,max:0,ex:'',eid:null,mod:false,saved:false},done:false,
   ns:{q:'',res:[],sel:null,gram:'',manual:false,mf:{name:'',cal:'',prot:'',fat:'',carbs:'',grams:''}},
   calc:{on:false,weight:'',height:'',age:'',sex:'m',activity:'1.55',goal:'maintain'},
-  mitEdit:false,hypoAdd:false,finAdd:false,finType:'income',finTab:'overview',finCatAdd:{show:false,type:'',name:''},finRecAdd:false,finSavAdd:false,relAddItem:false,relAddDate:false,devAdd:false,
+  mitEdit:false,hypoAdd:false,finAdd:false,finType:'income',finTab:'overview',finCatAdd:{show:false,type:'',name:''},finRecAdd:false,finSavAdd:false,finDebtAdd:false,relAddItem:false,relAddDate:false,devAdd:false,
   openSpheres:{},
   addTaskOpen:false,
   taskFilter:'all',
+  editTask:{sid:null,id:null,txt:''},
+
   hqForm:{txt:'',sid:'health',day:''},
   calPicker:{open:false,sid:null},
   pomo:{on:false,phase:'focus',left:1500,max:1500,showOverlay:false},
@@ -526,6 +530,26 @@ function savePomoSettings(){
   S.pomo.showSettings=false;render();
 }
 let pomoTi=null;
+function startEditTask(sid,id){
+  const t=gtasks(sid).find(x=>x.id===id);
+  if(!t)return;
+  S.editTask={sid,id,txt:t.txt};render();
+  setTimeout(()=>{const el=document.getElementById('edit-task-inp');if(el){el.focus();el.setSelectionRange(el.value.length,el.value.length);}},50);
+}
+function saveEditTask(){
+  const {sid,id,txt}=S.editTask;
+  if(!txt.trim()){S.editTask={sid:null,id:null,txt:''};render();return;}
+  const tasks=gtasks(sid);
+  const t=tasks.find(x=>x.id===id);
+  if(t)t.txt=txt.trim();
+  stasks(sid,tasks);
+  // update MIT if this was the MIT task
+  const dl=gdl();
+  if(dl.mit===S.editTask.txt){dl.mit=txt.trim();sdl(dl);}
+  S.editTask={sid:null,id:null,txt:''};render();
+}
+function cancelEditTask(){S.editTask={sid:null,id:null,txt:''};render();}
+
 function startPomo(){
   if(S.pomo.on){stopPomo();return;}
   const cfg=gPomoSettings();
@@ -706,6 +730,23 @@ function updateSavings(id,v){
   if(s)s.saved=parseFloat(v)||0;
   sSavings(savs);
 }
+function addDebt(){
+  const name=document.getElementById('debt-name')?.value?.trim()||'';
+  const amt=parseFloat(document.getElementById('debt-amt')?.value)||0;
+  const dir=document.getElementById('debt-dir')?.value||'owe';
+  const note=document.getElementById('debt-note')?.value?.trim()||'';
+  const ddate=document.getElementById('debt-date')?.value?.trim()||'';
+  if(!name||!amt)return;
+  const debts=gDebts();
+  debts.push({id:'d'+Date.now(),name,amount:amt,dir,note,date:ddate,paid:false});
+  sDebts(debts);S.finDebtAdd=false;render();
+}
+function markDebtPaid(id){
+  const debts=gDebts();const d=debts.find(x=>x.id===id);
+  if(d)d.paid=!d.paid;sDebts(debts);render();
+}
+function delDebt(id){sDebts(gDebts().filter(d=>d.id!==id));render();}
+
 function addFinCatUI(type){
   const inp=document.getElementById('new-cat-inp');
   if(!inp||!inp.value.trim())return;
@@ -1065,12 +1106,21 @@ function render(){
       filtered.forEach(t=>{
         const priColor=t.priority==='r'?'var(--red)':t.priority==='a'?'var(--amber)':'var(--dim)';
         const isMIT=dl.mit===t.txt;
-        h+=`<div class="t-row">
-          <button onclick="cyclePri('${t.sid}','${t.id}')" title="Приоритет" style="width:22px;height:22px;border-radius:50%;border:2px solid ${priColor};background:${t.priority!=='w'?priColor:'transparent'};flex-shrink:0;cursor:pointer"></button>
-          <span class="t-txt" style="flex:1">${t.txt}<span style="font-size:9px;color:var(--dim);margin-left:6px;font-family:'Barlow Condensed',sans-serif;font-weight:700">${t.spName}</span></span>
-          <button class="t-mit-btn ${isMIT?'active':''}" onclick="setMITfromTask('${t.sid}','${t.id}')" title="Задача дня">★</button>
-          <button onclick="toggleTask('${t.sid}','${t.id}')" title="Выполнено" style="background:transparent;border:1px solid var(--line2);color:var(--muted);padding:3px 8px;font-family:'Barlow Condensed',sans-serif;font-size:10px;font-weight:700;letter-spacing:.5px;flex-shrink:0">ГОТОВО</button>
-        </div>`;
+        const isEditing=S.editTask.sid===t.sid&&S.editTask.id===t.id;
+        if(isEditing){
+          h+=`<div class="t-row">
+            <input id="edit-task-inp" type="text" value="${S.editTask.txt.replace(/"/g,'&quot;')}" oninput="S.editTask.txt=this.value" onkeydown="if(event.key==='Enter')saveEditTask();if(event.key==='Escape')cancelEditTask();" style="flex:1;background:var(--z3);border:1px solid var(--red);color:var(--white);padding:6px 9px;font-size:14px;outline:none">
+            <input id="edit-task-inp" type="text" value="${S.editTask.txt}" oninput="S.editTask.txt=this.value" onkeydown="if(event.key==='Enter')saveEditTask();if(event.key==='Escape')cancelEditTask();" style="flex:1;background:var(--z3);border:1px solid var(--red);color:var(--white);padding:6px 9px;font-size:14px;outline:none">
+            <button onclick="cancelEditTask()" style="background:none;border:none;color:var(--muted);font-size:18px;padding:0 4px;flex-shrink:0">×</button>
+          </div>`;
+        } else {
+          h+=`<div class="t-row">
+            <button onclick="cyclePri('${t.sid}','${t.id}')" title="Приоритет" style="width:22px;height:22px;border-radius:50%;border:2px solid ${priColor};background:${t.priority!=='w'?priColor:'transparent'};flex-shrink:0;cursor:pointer"></button>
+            <span class="t-txt" style="flex:1;cursor:pointer" onclick="startEditTask('${t.sid}','${t.id}')">${t.txt}<span style="font-size:9px;color:var(--dim);margin-left:6px;font-family:'Barlow Condensed',sans-serif;font-weight:700">${t.spName}</span></span>
+            <span class="t-txt" style="flex:1;cursor:pointer" onclick="startEditTask('${t.sid}','${t.id}')">${t.txt}<span style="font-size:9px;color:var(--dim);margin-left:6px;font-family:'Barlow Condensed',sans-serif;font-weight:700">${t.spName}</span></span>
+            <button onclick="toggleTask('${t.sid}','${t.id}')" title="Выполнено" style="background:transparent;border:1px solid var(--line2);color:var(--muted);padding:3px 8px;font-family:'Barlow Condensed',sans-serif;font-size:10px;font-weight:700;flex-shrink:0">ГОТОВО</button>
+          </div>`;
+        }
       });
       // DONE TASKS — strikethrough at bottom
       if(doneTodayAll.length>0){
@@ -1245,6 +1295,7 @@ function render(){
       <button class="htab ${S.finTab==='expense'?'on':''}" onclick="S.finTab='expense';render()">РАСХОДЫ</button>
       <button class="htab ${S.finTab==='recurring'?'on':''}" onclick="S.finTab='recurring';render()">РЕГУЛЯРНЫЕ</button>
       <button class="htab ${S.finTab==='savings'?'on':''}" onclick="S.finTab='savings';render()">НАКОПЛЕНИЯ</button>
+      <button class="htab ${S.finTab==='debts'?'on':''}" onclick="S.finTab='debts';render()">ДОЛГИ</button>
     </div>`;
     h+='<div class="pg" style="padding-top:0">';
 
@@ -1512,6 +1563,82 @@ function render(){
       h+='</div></div>';
     }
 
+    // ── ДОЛГИ ──────────────────────────────────────────────────────────────
+    else if(S.finTab==='debts'){
+      const debts=gDebts();
+      const iOwe=debts.filter(d=>d.dir==='owe'&&!d.paid);
+      const owedMe=debts.filter(d=>d.dir==='owed'&&!d.paid);
+      const paid=debts.filter(d=>d.paid);
+      const totalOwe=iOwe.reduce((a,d)=>a+d.amount,0);
+      const totalOwed=owedMe.reduce((a,d)=>a+d.amount,0);
+      h+=`<div style="margin-top:9px">`;
+      h+=`<div class="sc"><div style="display:grid;grid-template-columns:1fr 1fr;border-bottom:1px solid var(--line)">
+        <div style="padding:10px 12px;border-right:1px solid var(--line)">
+          <div style="font-size:9px;color:var(--muted);letter-spacing:1px;text-transform:uppercase;margin-bottom:2px">Я ДОЛЖЕН</div>
+          <div style="font-family:'Barlow Condensed',sans-serif;font-size:26px;font-weight:800;color:var(--red);line-height:1">−${Math.round(totalOwe/1000*10)/10||0}к</div>
+        </div>
+        <div style="padding:10px 12px">
+          <div style="font-size:9px;color:var(--muted);letter-spacing:1px;text-transform:uppercase;margin-bottom:2px">МНЕ ДОЛЖНЫ</div>
+          <div style="font-family:'Barlow Condensed',sans-serif;font-size:26px;font-weight:800;color:var(--white);line-height:1">+${Math.round(totalOwed/1000*10)/10||0}к</div>
+        </div>
+      </div></div>`;
+
+      h+=`<div class="sc"><div class="sc-h"><span class="sc-t">ДОЛГИ</span>
+        <button onclick="S.finDebtAdd=!S.finDebtAdd;render()" style="background:transparent;border:1px solid var(--red);color:var(--red);padding:2px 8px;font-size:10px">+ ДОБАВИТЬ</button>
+      </div>`;
+      if(S.finDebtAdd){
+        h+=`<div style="padding:10px 12px;background:var(--z2);border-bottom:1px solid var(--line)">
+          <div class="f-grid">
+            <div><div class="f-lbl">КТО / КОМУ</div><input id="debt-name" type="text" class="f-inp" placeholder="Имя, банк..."></div>
+            <div><div class="f-lbl">СУММА ₽</div><input id="debt-amt" type="text" inputmode="decimal" class="f-inp"></div>
+          </div>
+          <div class="f-grid">
+            <div><div class="f-lbl">ТИП</div>
+              <select id="debt-dir" class="f-inp" style="background:var(--z3);color:var(--white)">
+                <option value="owe">Я ДОЛЖЕН</option>
+                <option value="owed">МНЕ ДОЛЖНЫ</option>
+              </select>
+            </div>
+            <div><div class="f-lbl">СРОК (опц.)</div><input id="debt-date" type="text" class="f-inp" placeholder="15 апр"></div>
+          </div>
+          <div class="f-lbl">ЗАМЕТКА</div>
+          <input id="debt-note" type="text" class="f-inp" placeholder="За что...">
+          <div style="display:flex;gap:7px">
+            <button onclick="addDebt()" class="add-btn">ДОБАВИТЬ</button>
+            <button onclick="S.finDebtAdd=false;render()" class="cancel-btn">ОТМЕНА</button>
+          </div>
+        </div>`;
+      }
+      [...iOwe,...owedMe].forEach(d=>{
+        const isOwe=d.dir==='owe';
+        h+=`<div style="padding:9px 13px;border-bottom:1px solid var(--line);display:flex;align-items:center;gap:10px">
+          <div style="width:28px;height:28px;border-radius:50%;background:${isOwe?'var(--ra10)':'var(--z3)'};border:1px solid ${isOwe?'var(--red)':'var(--line2)'};display:flex;align-items:center;justify-content:center;font-family:'Barlow Condensed',sans-serif;font-size:11px;font-weight:800;color:${isOwe?'var(--red)':'var(--muted)'};flex-shrink:0">${isOwe?'ДОЛ':'МНЕ'}</div>
+          <div style="flex:1">
+            <div style="font-size:14px;color:var(--text)">${d.name}</div>
+            ${d.note?`<div style="font-size:11px;color:var(--muted)">${d.note}</div>`:''}
+            ${d.date?`<div style="font-size:11px;color:var(--amber)">до ${d.date}</div>`:''}
+          </div>
+          <span style="font-family:'Barlow Condensed',sans-serif;font-size:16px;font-weight:800;color:${isOwe?'var(--red)':'var(--white)'}">${isOwe?'−':'+'}${Math.round(d.amount/1000*10)/10}к</span>
+          <button onclick="markDebtPaid('${d.id}')" style="background:transparent;border:1px solid var(--line2);color:var(--muted);padding:3px 7px;font-family:'Barlow Condensed',sans-serif;font-size:10px;font-weight:700">ЗАКРЫТ</button>
+          <button class="del-btn" onclick="delDebt('${d.id}')">×</button>
+        </div>`;
+      });
+      if(!iOwe.length&&!owedMe.length)h+='<div style="padding:14px;text-align:center;font-size:12px;color:var(--muted)">Долгов нет</div>';
+      h+='</div>';
+      if(paid.length){
+        h+='<div class="sc"><div class="sc-h"><span class="sc-t" style="color:var(--dim)">ЗАКРЫТЫЕ</span></div>';
+        paid.forEach(d=>{
+          h+=`<div style="padding:8px 13px;border-bottom:1px solid var(--line);display:flex;align-items:center;gap:10px;opacity:.5">
+            <span style="font-size:13px;color:var(--muted);flex:1;text-decoration:line-through">${d.name}</span>
+            <span style="font-family:'Barlow Condensed',sans-serif;font-size:14px;color:var(--muted)">${Math.round(d.amount/1000*10)/10}к</span>
+            <button onclick="markDebtPaid('${d.id}')" style="background:none;border:none;color:var(--dim);font-size:10px">↩</button>
+            <button class="del-btn" onclick="delDebt('${d.id}')">×</button>
+          </div>`;
+        });
+        h+='</div>';
+      }
+      h+='</div>';
+    }
     h+='</div>';
   }
 
