@@ -1218,9 +1218,10 @@ function render(){
           const mitCls=isMIT?'active':'';
           var tsid=t.sid,tid2=t.id;
           h+='<div class="t-row">';
-          h+='<button onclick="cyclePri(\'' + tsid + '\',\'' + tid2 + '\')" style="width:11px;height:11px;border-radius:50%;border:1.5px solid ' + priColor + ';background:' + (t.priority!=='w'?priColor:'transparent') + ';flex-shrink:0;cursor:pointer"></button>';
-          h+='<span class="t-txt" style="flex:1;cursor:pointer" onclick="startEditTask(\'' + tsid + '\',\'' + tid2 + '\')">' + t.txt + '<span style="font-size:9px;color:var(--dim);margin-left:5px;font-weight:700">' + t.spName + '</span></span>';
-          h+='<button class="t-mit-btn ' + mitCls + '" onclick="setMITfromTask(\'' + tsid + '\',\'' + tid2 + '\')" style="font-size:16px;padding:0 4px">★</button>';
+          h+='<div onclick="cyclePri(\''+tsid+'\',\''+tid2+'\')" style="width:10px;height:10px;border-radius:50%;border:1.5px solid '+priColor+';background:'+(t.priority!=='w'?priColor:'transparent')+';flex-shrink:0;cursor:pointer"></div>';
+          h+='<button class="t-mit-btn '+mitCls+'" onclick="setMITfromTask(\''+tsid+'\',\''+tid2+'\')" style="font-size:15px;padding:0 3px;flex-shrink:0">★</button>';
+          h+='<span class="t-txt" style="flex:1;cursor:pointer" onclick="startEditTask(\''+tsid+'\',\''+tid2+'\')">'+ t.txt +'<span style="font-size:9px;color:var(--dim);margin-left:5px;font-weight:700">'+ t.spName +'</span></span>';
+          h+='<button onclick="toggleTask(\''+tsid+'\',\''+tid2+'\')" style="width:26px;height:26px;border-radius:50%;border:1.5px solid var(--line2);background:transparent;flex-shrink:0;cursor:pointer;color:var(--dim);font-size:14px;font-weight:700">✓</button>';
           h+='</div>';
         } // close else
       }); // close filtered.forEach
