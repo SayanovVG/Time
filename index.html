@@ -1216,28 +1216,30 @@ function render(){
            +'</div>';
         } else {
           const mitCls=isMIT?'active':'';
-          h+='<div class="t-row">'
-           +'<button onclick="cyclePri('+JSON.stringify(t.sid)+','+JSON.stringify(t.id)+')" style="width:11px;height:11px;border-radius:50%;border:1.5px solid '+priColor+';background:'+(t.priority!=='w'?priColor:'transparent')+';flex-shrink:0;cursor:pointer"></button>'
-           +'<span class="t-txt" style="flex:1;cursor:pointer" onclick="startEditTask('+JSON.stringify(t.sid)+','+JSON.stringify(t.id)+')">'+t.txt+'<span style="font-size:9px;color:var(--dim);margin-left:5px;font-weight:700">'+t.spName+'</span></span>'
-           +'<button class="t-mit-btn '+mitCls+'" onclick="setMITfromTask('+JSON.stringify(t.sid)+','+JSON.stringify(t.id)+')">★</button>'
-           +'<button onclick="toggleTask('+JSON.stringify(t.sid)+','+JSON.stringify(t.id)+')" style="background:transparent;border:1px solid var(--line2);color:var(--muted);padding:3px 8px;font-size:10px;font-weight:700;flex-shrink:0">ГОТОВО</button>'
-           +'</div>';
-        }
+          var tsid=t.sid,tid2=t.id;
+          h+='<div class="t-row">';
+          h+='<button onclick="cyclePri(\'' + tsid + '\',\'' + tid2 + '\')" style="width:11px;height:11px;border-radius:50%;border:1.5px solid ' + priColor + ';background:' + (t.priority!=='w'?priColor:'transparent') + ';flex-shrink:0;cursor:pointer"></button>';
+          h+='<span class="t-txt" style="flex:1;cursor:pointer" onclick="startEditTask(\'' + tsid + '\',\'' + tid2 + '\')">' + t.txt + '<span style="font-size:9px;color:var(--dim);margin-left:5px;font-weight:700">' + t.spName + '</span></span>';
+          h+='<button class="t-mit-btn ' + mitCls + '" onclick="setMITfromTask(\'' + tsid + '\',\'' + tid2 + '\')" style="font-size:16px;padding:0 4px">★</button>';
+          h+='</div>';
+        } // close else
       }); // close filtered.forEach
-      // DONE TASKS
+      // done tasks
       if(doneTodayAll.length>0){
         h+='<div style="padding:4px 12px 2px;border-top:1px solid var(--line);display:flex;justify-content:space-between;align-items:center">'
-          +'<span style="font-size:8px;color:var(--dim);letter-spacing:1px;font-weight:700">ВЫПОЛНЕНО '+doneTodayAll.length+'</span>'
-          +'<button onclick="clearDoneTasks()" style="background:none;border:none;color:var(--dim);font-size:10px;font-weight:700">ОЧИСТИТЬ</button>'
-          +'</div>';
-        doneTodayAll.forEach(t=>{
+         +'<span style="font-size:8px;color:var(--dim);letter-spacing:1px;font-weight:700">ВЫПОЛНЕНО '+doneTodayAll.length+'</span>'
+         +'<button onclick="clearDoneTasks()" style="background:none;border:none;color:var(--dim);font-size:10px;font-weight:700">ОЧИСТИТЬ</button>'
+         +'</div>';
+        doneTodayAll.forEach(function(dt){
+          var dsid=dt.sid,dtid=dt.id;
           h+='<div class="t-row" style="opacity:.45">'
-           +'<div style="width:10px;height:10px;border-radius:50%;border:1.5px solid var(--dim);flex-shrink:0"></div>'
-           +'<span class="t-txt done" style="flex:1">'+t.txt+'<span style="font-size:9px;color:var(--dim);margin-left:5px;font-weight:700">'+t.spName+'</span></span>'
-           +'<button onclick="toggleTask('+JSON.stringify(t.sid)+','+JSON.stringify(t.id)+')" style="background:transparent;border:1px solid var(--line);color:var(--dim);padding:3px 8px;font-size:10px;font-weight:700;flex-shrink:0">ОТМЕНИТЬ</button>'
+           +'<div style="width:10px;height:10px;border-radius:50%;border:1px solid var(--dim);flex-shrink:0"></div>'
+           +'<span class="t-txt done" style="flex:1">'+dt.txt+'<span style="font-size:9px;color:var(--dim);margin-left:5px;font-weight:700">'+dt.spName+'</span></span>'
+           +'<button onclick="toggleTask(\''+dsid+'\',\''+dtid+'\')" style="background:transparent;border:1px solid var(--line);color:var(--dim);padding:3px 8px;font-size:10px;font-weight:700;flex-shrink:0">ОТМЕНИТЬ</button>'
            +'</div>';
         });
       }
+      h+='</div>';
       h+='</div>';
     } else if(!S.addTaskOpen){
       h+=`<div style="background:rgba(212,144,10,.07);border:1px solid rgba(212,144,10,.3);padding:20px 14px;text-align:center;margin-bottom:9px">
