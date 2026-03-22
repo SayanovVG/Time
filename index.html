@@ -100,9 +100,9 @@ textarea{resize:none;font-size:16px!important}
 .t-pri-a{background:var(--amber);border-color:var(--amber)}
 .t-pri-r{background:var(--red);border-color:var(--red)}
 /* POMO FLOATING */
-.pomo-fab{position:fixed;bottom:calc(var(--nav-h) + 14px);right:0;z-index:95;height:44px;padding:0 14px 0 11px;border-radius:22px 0 0 22px;background:var(--z2);border:1px solid var(--line2);border-right:none;color:var(--muted);display:flex;align-items:center;gap:8px;box-shadow:-3px 3px 16px rgba(0,0,0,.6);cursor:pointer}
-.pomo-fab.active{border-color:var(--red);color:var(--red);background:rgba(224,32,48,.08)}
-.pomo-fab.brk{border-color:var(--green);color:var(--green);background:rgba(46,204,128,.08)}
+.pomo-fab{position:fixed;bottom:calc(var(--nav-h) + 58px);right:14px;z-index:95;width:56px;height:56px;border-radius:50%;background:var(--z3);border:2px solid var(--amber);color:var(--amber);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;box-shadow:0 2px 12px rgba(0,0,0,.5);cursor:pointer}
+.pomo-fab.active{border-color:var(--red);color:var(--white);background:var(--red)}
+.pomo-fab.brk{border-color:var(--amber);color:var(--ink);background:var(--amber)}
 .pomo-fab-t{font-family:'Barlow Condensed',sans-serif;font-size:18px;font-weight:800;line-height:1;letter-spacing:.5px}
 .pomo-fab-l{font-size:8px;letter-spacing:1px;font-weight:700;text-transform:uppercase;font-family:'Barlow Condensed',sans-serif;opacity:.7}
 .pomo-fab-icon{width:16px;height:16px;flex-shrink:0}
@@ -489,11 +489,13 @@ let S={tab:'today',htab:'training',week:1,day:1,wd:{},cp:{},hints:{},
   timer:{on:false,left:0,max:0,ex:'',eid:null,mod:false,saved:false},done:false,
   ns:{q:'',res:[],sel:null,gram:'',manual:false,mf:{name:'',cal:'',prot:'',fat:'',carbs:'',grams:''}},
   calc:{on:false,weight:'',height:'',age:'',sex:'m',activity:'1.55',goal:'maintain'},
-  mitEdit:false,hypoAdd:false,finAdd:false,finType:'income',finTab:'overview',finCatAdd:{show:false,type:'',name:''},finRecAdd:false,finSavAdd:false,finDebtAdd:false,relAddItem:false,relAddDate:false,devAdd:false,
+  mitEdit:false,hypoAdd:false,finAdd:false,finType:'income',finTab:'income',finCatAdd:{show:false,type:'',name:''},finRecAdd:false,finSavAdd:false,finDebtAdd:false,relAddItem:false,relAddDate:false,devAdd:false,
   openSpheres:{},
   addTaskOpen:false,
   taskFilter:'all',
   dayNoteOpen:false,
+  search:{open:false,q:''},
+
   editTask:{sid:null,id:null,txt:''},
 
   hqForm:{txt:'',sid:'health',day:''},
@@ -559,6 +561,52 @@ function saveEditTask(){
   S.editTask={sid:null,id:null,txt:''};render();
 }
 function cancelEditTask(){S.editTask={sid:null,id:null,txt:''};render();}
+
+// ── ЭКСПОРТ / ИМПОРТ ─────────────────────────────────────────────────────
+function exportData(){
+  const keys=Object.keys(localStorage).filter(k=>k.startsWith('mt_'));
+  const data={};keys.forEach(k=>data[k]=localStorage.getItem(k));
+  const json=JSON.stringify(data,null,2);
+  const blob=new Blob([json],{type:'application/json'});
+  const url=URL.createObjectURL(blob);
+  const a=document.createElement('a');
+  a.href=url;a.download='maxtime_backup_'+new Date().toISOString().slice(0,10)+'.json';
+  a.click();URL.revokeObjectURL(url);
+}
+function importData(file){
+  if(!file)return;
+  const r=new FileReader();
+  r.onload=e=>{
+    try{
+      const data=JSON.parse(e.target.result);
+      let count=0;
+      Object.entries(data).forEach(([k,v])=>{if(k.startsWith('mt_')){localStorage.setItem(k,v);count++;}});
+      alert('Импортировано '+count+' записей. Перезагрузка...');
+      location.reload();
+    }catch(err){alert('Ошибка импорта: '+err.message);}
+  };r.readAsText(file);
+}
+
+// ── ПОИСК ────────────────────────────────────────────────────────────────
+function getSearchResults(q){
+  if(!q||q.length<2)return[];
+  const lq=q.toLowerCase();const results=[];
+  SPHERES.forEach(sp=>{
+    gtasks(sp.id).forEach(t=>{
+      if(t.txt.toLowerCase().includes(lq))
+        results.push({type:'task',txt:t.txt,sub:sp.name,sid:sp.id,id:t.id,done:t.done,priority:t.priority});
+    });
+  });
+  // search diary notes
+  for(let i=0;i<30;i++){
+    const d=new Date();d.setDate(d.getDate()-i);
+    const key=d.getFullYear()+'-'+(d.getMonth()+1)+'-'+d.getDate();
+    const entry=LS.get('mt_dl_'+key,null);
+    if(entry&&entry.note&&entry.note.toLowerCase().includes(lq))
+      results.push({type:'note',txt:entry.note.slice(0,60),sub:key,date:key});
+  }
+  return results.slice(0,20);
+}
 
 function startPomo(){
   if(S.pomo.on){stopPomo();return;}
@@ -850,9 +898,11 @@ function addTaskFromHQ(){
   if(sphEl)S.hqForm.sid=sphEl.value;
   if(!S.hqForm.txt.trim())return;
   const tasks=gtasks(S.hqForm.sid);
-  tasks.unshift({id:'t'+Date.now(),txt:S.hqForm.txt.trim(),priority:'r',done:false,day:S.hqForm.day});
+  // if no date chosen, default to today
+  const taskDay=S.hqForm.day.trim()||'сегодня';
+  tasks.unshift({id:'t'+Date.now(),txt:S.hqForm.txt.trim(),priority:'r',done:false,day:taskDay});
   stasks(S.hqForm.sid,tasks);
-  S.addTaskOpen=false;S.hqForm={txt:'',sid:'health',day:''};render();
+  S.addTaskOpen=false;S.calPicker={open:false,sid:null};S.hqForm={txt:'',sid:'health',day:''};render();
 }
 function openAssignDate(sid,id){
   S.calPicker={open:true,sid:'assign_'+sid+'_'+id};render();
@@ -982,7 +1032,32 @@ function render(){
   }
 
   const tabLabels={today:'ШТАБ',health:'ЗДОРОВЬЕ',biz:'БИЗНЕС',fin:'ФИНАНСЫ',rel:'СЕМЬЯ',dev:'РАЗВИТИЕ',goals:'ЦЕЛИ',diary:'ДНЕВНИК'};
-  h+=`<div class="topbar"><div class="tb-l"><div class="tb-logo">MAX TIME</div><div style="margin-left:8px"><div style="font-size:9px;color:var(--muted);letter-spacing:.8px;text-transform:uppercase;font-weight:500">${dayName} · ${tabLabels[S.tab]}</div><div style="font-size:8px;color:var(--dim);letter-spacing:.5px;margin-top:1px">${isEvening?'ВЕЧЕР':'УТРО'}</div></div></div><span id="clk" class="tb-clk">${clk}</span></div>`;
+  h+=`<div class="topbar"><div class="tb-l"><div class="tb-logo">MAX TIME</div><div style="margin-left:8px"><div style="font-size:9px;color:var(--muted);letter-spacing:.8px;text-transform:uppercase;font-weight:500">${dayName} · ${tabLabels[S.tab]}</div><div style="font-size:8px;color:var(--dim);letter-spacing:.5px;margin-top:1px">${isEvening?'ВЕЧЕР':'УТРО'}</div></div></div>
+    <div style="display:flex;align-items:center;gap:12px">
+      <button onclick="S.search={open:!S.search.open,q:''};render()" style="background:none;border:none;color:${S.search.open?'var(--amber)':'var(--muted)'};font-size:20px;padding:0;line-height:1;cursor:pointer">⌕</button>
+      <span id="clk" class="tb-clk">${clk}</span>
+    </div></div>`;
+  if(S.search.open){
+    const results=getSearchResults(S.search.q);
+    let sRows='';
+    results.forEach(r=>{
+      if(r.type==='task'){
+        const pc=r.priority==='r'?'var(--red)':r.priority==='a'?'var(--amber)':'var(--dim)';
+        sRows+='<div style="padding:7px 0;border-bottom:1px solid var(--line);display:flex;align-items:center;gap:8px">'
+          +'<div style="width:8px;height:8px;border-radius:50%;background:'+pc+';flex-shrink:0"></div>'
+          +'<span style="flex:1;font-size:13px;color:'+(r.done?'var(--muted)':'var(--text)')+'">'+(r.done?'<s>':'')+r.txt+(r.done?'</s>':'')+'</span>'
+          +'<span style="font-size:10px;color:var(--dim)">'+r.sub+'</span></div>';
+      } else {
+        sRows+='<div style="padding:7px 0;border-bottom:1px solid var(--line)">'
+          +'<div style="font-size:9px;color:var(--amber);margin-bottom:2px">'+r.sub+' · ДНЕВНИК</div>'
+          +'<div style="font-size:12px;color:var(--muted)">'+r.txt+'...</div></div>';
+      }
+    });
+    h+='<div style="padding:7px 13px;background:var(--z2);border-bottom:1px solid var(--line);position:sticky;top:52px;z-index:89">';
+    h+='<input type="text" placeholder="Поиск..." value="'+S.search.q+'" oninput="S.search.q=this.value;render()" style="width:100%;background:var(--z3);border:1px solid var(--amber);color:var(--white);padding:8px 11px;font-size:14px;outline:none">';
+    if(sRows)h+='<div style="margin-top:6px">'+sRows+'</div>';
+    h+='</div>';
+  }
 
   // ══ ШТАБ ══
   if(S.tab==='today'){
@@ -1114,15 +1189,18 @@ function render(){
       // FILTER BUTTONS
       const fCounts={all:allToday.length,r:allToday.filter(t=>t.priority==='r'&&!t.done).length,a:allToday.filter(t=>t.priority==='a'&&!t.done).length,w:allToday.filter(t=>t.priority==='w'&&!t.done).length};
       h+='<div class="sc" style="margin-bottom:9px">';
-      h+=`<div class="sc-h" style="flex-wrap:wrap;gap:6px">
-        <span class="sc-t">СЕГОДНЯ</span>
-        <div style="display:flex;gap:4px;margin-left:auto">
-          <button onclick="S.taskFilter='all';render()" style="background:${S.taskFilter==='all'?'var(--red)':'transparent'};border:1px solid ${S.taskFilter==='all'?'var(--red)':'var(--line2)'};color:${S.taskFilter==='all'?'var(--white)':'var(--muted)'};padding:2px 7px;font-family:'Barlow Condensed',sans-serif;font-size:10px;font-weight:700">ВСЕ ${fCounts.all}</button>
-          <button onclick="S.taskFilter='r';render()" style="background:${S.taskFilter==='r'?'var(--red)':'transparent'};border:1px solid ${S.taskFilter==='r'?'var(--red)':'rgba(224,32,48,.4)'};color:${S.taskFilter==='r'?'var(--white)':'var(--red)'};padding:2px 7px;font-family:'Barlow Condensed',sans-serif;font-size:10px;font-weight:700">● ${fCounts.r}</button>
-          <button onclick="S.taskFilter='a';render()" style="background:${S.taskFilter==='a'?'var(--amber)':'transparent'};border:1px solid ${S.taskFilter==='a'?'var(--amber)':'rgba(240,168,0,.4)'};color:${S.taskFilter==='a'?'var(--ink)':'var(--amber)'};padding:2px 7px;font-family:'Barlow Condensed',sans-serif;font-size:10px;font-weight:700">● ${fCounts.a}</button>
-          <button onclick="S.taskFilter='w';render()" style="background:${S.taskFilter==='w'?'var(--z3)':'transparent'};border:1px solid ${S.taskFilter==='w'?'var(--body)':'var(--line2)'};color:${S.taskFilter==='w'?'var(--white)':'var(--muted)'};padding:2px 7px;font-family:'Barlow Condensed',sans-serif;font-size:10px;font-weight:700">● ${fCounts.w}</button>
-        </div>
-      </div>`;
+      let fHtml='<div class="sc-h" style="flex-wrap:wrap;gap:6px">';
+      fHtml+='<span class="sc-t">СЕГОДНЯ</span><div style="display:flex;gap:4px;margin-left:auto">';
+      [['all','ВСЕ '+fCounts.all],['r','● '+fCounts.r],['a','● '+fCounts.a],['w','● '+fCounts.w]].forEach(function(pair){
+        const f=pair[0],lbl=pair[1];
+        const on=S.taskFilter===f;
+        const bg=on?(f==='a'?'var(--amber)':(f==='w'?'var(--z3)':'var(--red)')):'transparent';
+        const bd=on?(f==='a'?'var(--amber)':(f==='w'?'var(--body)':'var(--red)')):'var(--line2)';
+        const cl=on?(f==='a'?'var(--ink)':'var(--white)'):(f==='r'?'var(--red)':(f==='a'?'var(--amber)':'var(--muted)'));
+        fHtml+='<button onclick="S.taskFilter='+JSON.stringify(f)+';render()" style="background:'+bg+';border:1px solid '+bd+';color:'+cl+';padding:2px 7px;font-size:10px;font-weight:700">'+lbl+'</button>';
+      });
+      fHtml+='</div></div>';
+      h+=fHtml;
       const priOrder={r:0,a:1,w:2};
       let filtered=openTodayAll.filter(t=>S.taskFilter==='all'||t.priority===S.taskFilter);
       filtered.sort((a,b)=>(priOrder[a.priority]||2)-(priOrder[b.priority]||2));
@@ -1131,32 +1209,33 @@ function render(){
         const isMIT=dl.mit===t.txt;
         const isEditing=S.editTask.sid===t.sid&&S.editTask.id===t.id;
         if(isEditing){
-          h+=`<div class="t-row">
-            <input id="edit-task-inp" type="text" value="${S.editTask.txt.replace(/"/g,'&quot;')}" oninput="S.editTask.txt=this.value" onkeydown="if(event.key==='Enter')saveEditTask();if(event.key==='Escape')cancelEditTask();" style="flex:1;background:var(--z3);border:1px solid var(--red);color:var(--white);padding:6px 9px;font-size:14px;outline:none">
-            <input id="edit-task-inp" type="text" value="${S.editTask.txt}" oninput="S.editTask.txt=this.value" onkeydown="if(event.key==='Enter')saveEditTask();if(event.key==='Escape')cancelEditTask();" style="flex:1;background:var(--z3);border:1px solid var(--red);color:var(--white);padding:6px 9px;font-size:14px;outline:none">
-            <button onclick="cancelEditTask()" style="background:none;border:none;color:var(--muted);font-size:18px;padding:0 4px;flex-shrink:0">×</button>
-          </div>`;
+          h+='<div class="t-row">'
+           +'<input id="edit-task-inp" type="text" value="'+S.editTask.txt.replace(/"/g,'&quot;')+'" oninput="S.editTask.txt=this.value" onkeydown="if(event.key===String.fromCharCode(13))saveEditTask();if(event.key===String.fromCharCode(27))cancelEditTask();" style="flex:1;background:var(--z3);border:1px solid var(--amber);color:var(--white);padding:6px 9px;font-size:14px;outline:none">'
+           +'<button onclick="saveEditTask()" style="background:var(--amber);color:var(--ink);border:none;padding:6px 10px;font-size:12px;font-weight:700;flex-shrink:0">OK</button>'
+           +'<button onclick="cancelEditTask()" style="background:none;border:none;color:var(--muted);font-size:18px;padding:0 4px;flex-shrink:0">×</button>'
+           +'</div>';
         } else {
-          h+=`<div class="t-row">
-            <button onclick="cyclePri('${t.sid}','${t.id}')" title="Приоритет" style="width:11px;height:11px;border-radius:50%;border:1.5px solid ${priColor};background:${t.priority!=='w'?priColor:'transparent'};flex-shrink:0;cursor:pointer"></button>
-            <span class="t-txt" style="flex:1;cursor:pointer" onclick="startEditTask('${t.sid}','${t.id}')">${t.txt}<span style="font-size:9px;color:var(--dim);margin-left:6px;font-family:'Barlow Condensed',sans-serif;font-weight:700">${t.spName}</span></span>
-            <span class="t-txt" style="flex:1;cursor:pointer" onclick="startEditTask('${t.sid}','${t.id}')">${t.txt}<span style="font-size:9px;color:var(--dim);margin-left:6px;font-family:'Barlow Condensed',sans-serif;font-weight:700">${t.spName}</span></span>
-            <button onclick="toggleTask('${t.sid}','${t.id}')" title="Выполнено" style="background:transparent;border:1px solid var(--line2);color:var(--muted);padding:3px 8px;font-family:'Barlow Condensed',sans-serif;font-size:10px;font-weight:700;flex-shrink:0">ГОТОВО</button>
-          </div>`;
+          const mitCls=isMIT?'active':'';
+          h+='<div class="t-row">'
+           +'<button onclick="cyclePri('+JSON.stringify(t.sid)+','+JSON.stringify(t.id)+')" style="width:11px;height:11px;border-radius:50%;border:1.5px solid '+priColor+';background:'+(t.priority!=='w'?priColor:'transparent')+';flex-shrink:0;cursor:pointer"></button>'
+           +'<span class="t-txt" style="flex:1;cursor:pointer" onclick="startEditTask('+JSON.stringify(t.sid)+','+JSON.stringify(t.id)+')">'+t.txt+'<span style="font-size:9px;color:var(--dim);margin-left:5px;font-weight:700">'+t.spName+'</span></span>'
+           +'<button class="t-mit-btn '+mitCls+'" onclick="setMITfromTask('+JSON.stringify(t.sid)+','+JSON.stringify(t.id)+')">★</button>'
+           +'<button onclick="toggleTask('+JSON.stringify(t.sid)+','+JSON.stringify(t.id)+')" style="background:transparent;border:1px solid var(--line2);color:var(--muted);padding:3px 8px;font-size:10px;font-weight:700;flex-shrink:0">ГОТОВО</button>'
+           +'</div>';
         }
-      });
-      // DONE TASKS — strikethrough at bottom
+      }); // close filtered.forEach
+      // DONE TASKS
       if(doneTodayAll.length>0){
-        h+=`<div style="padding:4px 12px 2px;border-top:1px solid var(--line);display:flex;justify-content:space-between;align-items:center">
-          <span style="font-size:8px;color:var(--dim);letter-spacing:1px;font-weight:700">ВЫПОЛНЕНО ${doneTodayAll.length}</span>
-          <button onclick="clearDoneTasks()" style="background:none;border:none;color:var(--dim);font-size:10px;letter-spacing:.5px;font-weight:700">ОЧИСТИТЬ</button>
-        </div>`;
+        h+='<div style="padding:4px 12px 2px;border-top:1px solid var(--line);display:flex;justify-content:space-between;align-items:center">'
+          +'<span style="font-size:8px;color:var(--dim);letter-spacing:1px;font-weight:700">ВЫПОЛНЕНО '+doneTodayAll.length+'</span>'
+          +'<button onclick="clearDoneTasks()" style="background:none;border:none;color:var(--dim);font-size:10px;font-weight:700">ОЧИСТИТЬ</button>'
+          +'</div>';
         doneTodayAll.forEach(t=>{
-          h+=`<div class="t-row" style="opacity:.45">
-            <div style="width:22px;height:22px;border-radius:50%;border:1px solid var(--dim);flex-shrink:0"></div>
-            <span class="t-txt done" style="flex:1">${t.txt}<span style="font-size:9px;color:var(--dim);margin-left:6px;font-family:'Barlow Condensed',sans-serif;font-weight:700">${t.spName}</span></span>
-            <button onclick="toggleTask('${t.sid}','${t.id}')" style="background:transparent;border:1px solid var(--line);color:var(--dim);padding:3px 8px;font-family:'Barlow Condensed',sans-serif;font-size:10px;font-weight:700;flex-shrink:0">ОТМЕНИТЬ</button>
-          </div>`;
+          h+='<div class="t-row" style="opacity:.45">'
+           +'<div style="width:10px;height:10px;border-radius:50%;border:1.5px solid var(--dim);flex-shrink:0"></div>'
+           +'<span class="t-txt done" style="flex:1">'+t.txt+'<span style="font-size:9px;color:var(--dim);margin-left:5px;font-weight:700">'+t.spName+'</span></span>'
+           +'<button onclick="toggleTask('+JSON.stringify(t.sid)+','+JSON.stringify(t.id)+')" style="background:transparent;border:1px solid var(--line);color:var(--dim);padding:3px 8px;font-size:10px;font-weight:700;flex-shrink:0">ОТМЕНИТЬ</button>'
+           +'</div>';
         });
       }
       h+='</div>';
@@ -1199,8 +1278,7 @@ function render(){
       h+='</div>';
     }
 
-    // Кнопка дневника
-    h+=`<button onclick="S.tab='diary';render()" style="width:100%;background:var(--z1);border:1px solid var(--line2);color:var(--dim);padding:8px 13px;font-family:'Barlow Condensed',sans-serif;font-size:10px;font-weight:700;letter-spacing:2px;text-align:center;margin-bottom:9px">▤ ОТКРЫТЬ ДНЕВНИК</button>`;
+
 
     h+='</div>'; // pg
   }
@@ -1303,276 +1381,298 @@ function render(){
     const debts=gDebts();
     const expCats=gFinCats('expense');
     const incCats=gFinCats('income');
-    const inc=entries.filter(e=>e.amount>0).reduce((a,e)=>a+e.amount,0);
-    const exp=entries.filter(e=>e.amount<0).reduce((a,e)=>a+Math.abs(e.amount),0);
+    const now2=new Date();
+    const monthName=['Январь','Февраль','Март','Апрель','Май','Июнь','Июль','Август','Сентябрь','Октябрь','Ноябрь','Декабрь'][now2.getMonth()];
+
+    // Calc totals
+    const incFact=entries.filter(e=>e.amount>0).reduce((a,e)=>a+e.amount,0);
+    const expFact=entries.filter(e=>e.amount<0).reduce((a,e)=>a+Math.abs(e.amount),0);
     const recInc=recs.filter(r=>r.amount>0).reduce((a,r)=>a+r.amount,0);
     const recExp=recs.filter(r=>r.amount<0).reduce((a,r)=>a+Math.abs(r.amount),0);
+    const incPlan=fin.incPlan||0;
+    const expPlan=fin.expPlan||0;
+    const totalIncFact=incFact; // recurring tracked separately
+    const totalExpFact=expFact;
+    const incPct=incPlan>0?Math.min(100,Math.round(totalIncFact/incPlan*100)):0;
+    const expPct=expPlan>0?Math.min(100,Math.round(totalExpFact/expPlan*100)):0;
+    const incColor=incPct>=100?'var(--amber)':incPct>=60?'var(--text)':'var(--muted)';
+    const expColor=expPct>=90?'var(--red)':expPct>=60?'var(--amber)':'var(--muted)';
+    const balance=(incPlan||totalIncFact)-(expPlan||totalExpFact);
+    const prevBal=gFinBalance();
 
-    h+=`<div class="htabs">
-      <button class="htab ${S.finTab==='income'?'on':''}" onclick="S.finTab='income';render()">ДОХОДЫ</button>
-      <button class="htab ${S.finTab==='expense'?'on':''}" onclick="S.finTab='expense';render()">РАСХОДЫ</button>
-      <button class="htab ${S.finTab==='savings'?'on':''}" onclick="S.finTab='savings';render()">НАКОПЛЕНИЯ</button>
+    h+='<div class="pg" style="padding-top:9px">';
+
+    // ── СВОДКА МЕСЯЦА ──────────────────────────────────────────────────────
+    h+=`<div class="sc" style="margin-bottom:9px">
+      <div style="padding:8px 13px;border-bottom:1px solid var(--line);display:flex;justify-content:space-between;align-items:center">
+        <span style="font-family:'Barlow Condensed',sans-serif;font-size:13px;font-weight:700;color:var(--white);letter-spacing:2px">${monthName.toUpperCase()} ${now2.getFullYear()}</span>
+        ${prevBal?`<span style="font-size:11px;color:var(--muted)">с прошлого +${Math.round(prevBal/1000*10)/10}к</span>`:''}
+      </div>
+      <div style="padding:10px 13px;display:flex;flex-direction:column;gap:8px">
+        <div style="display:flex;align-items:center;gap:10px">
+          <span style="font-size:10px;color:var(--muted);width:72px;flex-shrink:0">ДОХОДЫ</span>
+          <div style="flex:1;height:4px;background:var(--z5);overflow:hidden">
+            <div style="height:100%;width:${incPct}%;background:${incColor};transition:width .3s"></div>
+          </div>
+          <span style="font-family:'Barlow Condensed',sans-serif;font-size:13px;font-weight:700;color:${incColor};min-width:36px;text-align:right">${Math.round(totalIncFact/1000*10)/10}к</span>
+          <span style="font-size:10px;color:var(--dim)">из</span>
+          <input type="text" inputmode="decimal" value="${incPlan||''}" placeholder="план" onchange="const f=gfin();f.incPlan=parseFloat(this.value)||0;sfin(f);render()" style="background:transparent;border:none;border-bottom:1px solid var(--line2);color:var(--muted);font-family:'Barlow Condensed',sans-serif;font-size:13px;font-weight:700;width:44px;text-align:right;padding:0">
+        </div>
+        <div style="display:flex;align-items:center;gap:10px">
+          <span style="font-size:10px;color:var(--muted);width:72px;flex-shrink:0">РАСХОДЫ</span>
+          <div style="flex:1;height:4px;background:var(--z5);overflow:hidden">
+            <div style="height:100%;width:${expPct}%;background:${expColor};transition:width .3s"></div>
+          </div>
+          <span style="font-family:'Barlow Condensed',sans-serif;font-size:13px;font-weight:700;color:${expColor};min-width:36px;text-align:right">${Math.round(totalExpFact/1000*10)/10}к</span>
+          <span style="font-size:10px;color:var(--dim)">из</span>
+          <input type="text" inputmode="decimal" value="${expPlan||''}" placeholder="план" onchange="const f=gfin();f.expPlan=parseFloat(this.value)||0;sfin(f);render()" style="background:transparent;border:none;border-bottom:1px solid var(--line2);color:var(--muted);font-family:'Barlow Condensed',sans-serif;font-size:13px;font-weight:700;width:44px;text-align:right;padding:0">
+        </div>
+        <div style="display:flex;justify-content:space-between;align-items:center;padding-top:6px;border-top:1px solid var(--line)">
+          <span style="font-size:10px;color:var(--muted)">ОСТАТОК</span>
+          <span style="font-family:'Barlow Condensed',sans-serif;font-size:20px;font-weight:800;color:${balance>=0?'var(--white)':'var(--red)'}">${balance>=0?'+':''}${Math.round(balance/1000*10)/10}к</span>
+        </div>
+      </div>
     </div>`;
-    h+='<div class="pg" style="padding-top:0">';
 
     // ── ДОХОДЫ ─────────────────────────────────────────────────────────────
-    if(S.finTab==='income'){
-      const incEntries=entries.filter(e=>e.amount>0);
-      const totalInc=inc+recInc;
-      h+=`<div class="sc" style="margin-top:9px"><div style="padding:10px 13px;border-bottom:1px solid var(--line);display:flex;justify-content:space-between;align-items:center">
-        <span style="font-size:10px;color:var(--muted);letter-spacing:1px">ИТОГО ДОХОДОВ</span>
-        <span style="font-family:'Barlow Condensed',sans-serif;font-size:24px;font-weight:800;color:var(--white)">+${Math.round(totalInc/1000*10)/10}к</span>
-      </div></div>`;
-
+    const incOpen=!!S.openSpheres['fin_inc'];
+    h+=`<div class="sc" style="margin-bottom:9px">
+      <div style="display:flex;align-items:center;gap:10px;padding:9px 13px;cursor:pointer;background:var(--z2);border-bottom:${incOpen?'1px solid var(--line)':'none'}" onclick="S.openSpheres['fin_inc']=!S.openSpheres['fin_inc'];render()">
+        <span style="font-family:'Barlow Condensed',sans-serif;font-size:13px;font-weight:700;color:var(--white);letter-spacing:1.5px;flex:1">ДОХОДЫ</span>
+        <span style="font-family:'Barlow Condensed',sans-serif;font-size:16px;font-weight:800;color:var(--text)">+${Math.round(totalIncFact/1000*10)/10}к</span>
+        <span style="font-size:12px;color:var(--dim)">${incOpen?'▲':'▼'}</span>
+      </div>`;
+    if(incOpen){
       // Регулярные доходы
       const recIncItems=recs.filter(r=>r.amount>0);
-      if(recIncItems.length||true){
-        h+=`<div class="sc"><div class="sc-h"><span class="sc-t">РЕГУЛЯРНЫЕ</span>
-          <button onclick="S.finRecAdd=!S.finRecAdd;render()" style="background:transparent;border:1px solid var(--amber);color:var(--amber);padding:2px 8px;font-size:10px;font-weight:700">+</button>
-        </div>`;
-        if(S.finRecAdd){
-          h+=`<div style="padding:10px 12px;border-bottom:1px solid var(--line)">
-            <div class="f-grid">
-              <div><div class="f-lbl">НАЗВАНИЕ</div><input id="rec-name" type="text" class="f-inp" placeholder="Зарплата, дивиденды..."></div>
-              <div><div class="f-lbl">СУММА ₽</div><input id="rec-amt" type="text" inputmode="decimal" class="f-inp"></div>
-            </div>
-            <div class="f-grid">
-              <div><div class="f-lbl">ДЕНЬ МЕСЯЦА</div><input id="rec-day" type="text" inputmode="numeric" class="f-inp" placeholder="5"></div>
-              <div><div class="f-lbl">КАТЕГОРИЯ</div>
-                <select id="rec-cat" class="f-inp" style="background:var(--z3);color:var(--white)">
-                  ${incCats.map(c=>'<option>'+c+'</option>').join('')}
-                </select>
-              </div>
-            </div>
-            <input type="hidden" id="rec-type" value="income">
-            <div style="display:flex;gap:7px"><button onclick="addRecurring()" class="add-btn">ДОБАВИТЬ</button><button onclick="S.finRecAdd=false;render()" class="cancel-btn">ОТМЕНА</button></div>
-          </div>`;
-        }
+      if(recIncItems.length){
+        h+=`<div style="padding:5px 13px;border-bottom:1px solid var(--line)"><span style="font-size:9px;color:var(--muted);letter-spacing:1.5px;font-weight:700">РЕГУЛЯРНЫЕ</span></div>`;
         recIncItems.forEach(r=>{
           const done=r.done_month===mdk();
-          h+=`<div style="padding:8px 13px;border-bottom:1px solid var(--line);display:flex;align-items:center;gap:8px">
-            <div style="font-family:'Barlow Condensed',sans-serif;font-size:16px;font-weight:800;color:${done?'var(--dim)':'var(--amber)'};min-width:24px">${r.day}</div>
+          h+=`<div style="padding:7px 13px;border-bottom:1px solid var(--line);display:flex;align-items:center;gap:8px">
+            <span style="font-family:'Barlow Condensed',sans-serif;font-size:15px;font-weight:700;color:${done?'var(--dim)':'var(--amber)'};min-width:22px">${r.day}</span>
             <span style="flex:1;font-size:13px;color:${done?'var(--muted)':'var(--text)'};${done?'text-decoration:line-through':''}">${r.name}</span>
-            <span style="font-family:'Barlow Condensed',sans-serif;font-size:14px;font-weight:700;color:var(--white)">+${Math.round(r.amount/1000*10)/10}к</span>
-            ${!done?`<button onclick="markRecurringDone('${r.id}')" style="border:1px solid var(--line2);background:none;color:var(--muted);padding:2px 6px;font-size:9px;font-weight:700">ПОЛУЧЕН</button>`:'<span style="font-size:10px;color:var(--dim)">✓</span>'}
+            <span style="font-family:'Barlow Condensed',sans-serif;font-size:14px;font-weight:700;color:var(--text)">+${Math.round(r.amount/1000*10)/10}к</span>
+            ${!done?`<button onclick="markRecurringDone('${r.id}')" style="border:1px solid var(--line2);background:none;color:var(--dim);padding:2px 6px;font-family:'Barlow Condensed',sans-serif;font-size:9px">✓</button>`:''}
             <button class="del-btn" onclick="delRecurring('${r.id}')">×</button>
           </div>`;
         });
-        if(!recIncItems.length)h+=`<div style="padding:10px 13px;font-size:12px;color:var(--dim)">Нет регулярных доходов</div>`;
-        h+=`</div>`;
       }
-
-      // Разовые доходы + добавить
-      h+=`<div class="sc"><div class="sc-h"><span class="sc-t">ДОБАВИТЬ ДОХОД</span>
-        <button onclick="S.finCatAdd={show:!S.finCatAdd.show,type:'income',name:''};render()" style="background:transparent;border:1px solid var(--line2);color:var(--muted);padding:2px 8px;font-size:10px">+ КАТ</button>
-      </div>`;
-      if(S.finCatAdd.show&&S.finCatAdd.type==='income'){
-        h+=`<div style="padding:7px 12px;border-bottom:1px solid var(--line);display:flex;gap:6px">
-          <input id="new-cat-inp" type="text" class="add-inp" placeholder="Новая категория...">
-          <button class="add-inp-btn" onclick="addFinCatUI('income')">+</button>
-        </div>`;
-      }
-      h+=`<div style="padding:10px 12px">
-        <div class="f-grid">
-          <div><input id="fin-name" type="text" class="f-inp" placeholder="Откуда..."></div>
-          <div><input id="fin-amt" type="text" inputmode="decimal" class="f-inp" placeholder="Сумма ₽"></div>
-        </div>
-        <select id="fin-cat-sel" class="f-inp" style="background:var(--z3);color:var(--white);width:100%;margin-bottom:8px">
-          ${incCats.map(c=>'<option>'+c+'</option>').join('')}
-        </select>
-        <button onclick="S.finType='income';addFinEntry()" style="width:100%;background:var(--amber);color:var(--ink);border:none;padding:9px;font-family:'Barlow Condensed',sans-serif;font-size:13px;font-weight:800;letter-spacing:2px">+ ДОБАВИТЬ</button>
-      </div></div>`;
-
+      // История доходов
+      const incEntries=entries.filter(e=>e.amount>0);
       if(incEntries.length){
-        h+=`<div class="sc"><div class="sc-h"><span class="sc-t">ИСТОРИЯ</span></div>`;
+        h+=`<div style="padding:5px 13px;border-bottom:1px solid var(--line)"><span style="font-size:9px;color:var(--muted);letter-spacing:1.5px;font-weight:700">ОПЕРАЦИИ</span></div>`;
         incEntries.slice().reverse().forEach(e=>{
-          h+=`<div class="fin-row"><div><div class="fin-name">${e.name}</div>${e.cat?`<div class="fin-cat">${e.cat}</div>`:''}</div>
-            <div style="display:flex;align-items:center;gap:8px">
-              <span style="font-family:'Barlow Condensed',sans-serif;font-size:15px;font-weight:700;color:var(--white)">+${Math.round(e.amount/1000*10)/10}к</span>
-              <button class="del-btn" onclick="delFinEntry('${e.id}')">×</button>
-            </div></div>`;
-        });
-        h+=`</div>`;
-      }
-    }
-
-    // ── РАСХОДЫ ────────────────────────────────────────────────────────────
-    else if(S.finTab==='expense'){
-      const expEntries=entries.filter(e=>e.amount<0);
-      const iOwe=debts.filter(d=>d.dir==='owe'&&!d.paid);
-      const totalExp=exp+recExp+iOwe.reduce((a,d)=>a+d.amount,0);
-      h+=`<div class="sc" style="margin-top:9px"><div style="padding:10px 13px;border-bottom:1px solid var(--line);display:flex;justify-content:space-between;align-items:center">
-        <span style="font-size:10px;color:var(--muted);letter-spacing:1px">ИТОГО РАСХОДОВ</span>
-        <span style="font-family:'Barlow Condensed',sans-serif;font-size:24px;font-weight:800;color:var(--red)">−${Math.round(totalExp/1000*10)/10}к</span>
-      </div></div>`;
-
-      // Регулярные расходы
-      const recExpItems=recs.filter(r=>r.amount<0);
-      h+=`<div class="sc"><div class="sc-h"><span class="sc-t">РЕГУЛЯРНЫЕ</span>
-        <button onclick="S.finRecAdd=!S.finRecAdd;render()" style="background:transparent;border:1px solid var(--amber);color:var(--amber);padding:2px 8px;font-size:10px;font-weight:700">+</button>
-      </div>`;
-      if(S.finRecAdd){
-        h+=`<div style="padding:10px 12px;border-bottom:1px solid var(--line)">
-          <div class="f-grid">
-            <div><div class="f-lbl">НАЗВАНИЕ</div><input id="rec-name" type="text" class="f-inp" placeholder="Аренда, связь..."></div>
-            <div><div class="f-lbl">СУММА ₽</div><input id="rec-amt" type="text" inputmode="decimal" class="f-inp"></div>
-          </div>
-          <div class="f-grid">
-            <div><div class="f-lbl">ДЕНЬ</div><input id="rec-day" type="text" inputmode="numeric" class="f-inp" placeholder="15"></div>
-            <div><div class="f-lbl">КАТЕГОРИЯ</div>
-              <select id="rec-cat" class="f-inp" style="background:var(--z3);color:var(--white)">
-                ${expCats.map(c=>'<option>'+c+'</option>').join('')}
-              </select>
-            </div>
-          </div>
-          <input type="hidden" id="rec-type" value="expense">
-          <div style="display:flex;gap:7px"><button onclick="addRecurring()" class="add-btn">ДОБАВИТЬ</button><button onclick="S.finRecAdd=false;render()" class="cancel-btn">ОТМЕНА</button></div>
-        </div>`;
-      }
-      recExpItems.forEach(r=>{
-        const done=r.done_month===mdk();
-        h+=`<div style="padding:8px 13px;border-bottom:1px solid var(--line);display:flex;align-items:center;gap:8px">
-          <div style="font-family:'Barlow Condensed',sans-serif;font-size:16px;font-weight:800;color:${done?'var(--dim)':'var(--amber)'};min-width:24px">${r.day}</div>
-          <span style="flex:1;font-size:13px;color:${done?'var(--muted)':'var(--text)'};${done?'text-decoration:line-through':''}">${r.name}</span>
-          <span style="font-family:'Barlow Condensed',sans-serif;font-size:14px;font-weight:700;color:var(--red)">−${Math.round(Math.abs(r.amount)/1000*10)/10}к</span>
-          ${!done?`<button onclick="markRecurringDone('${r.id}')" style="border:1px solid var(--line2);background:none;color:var(--muted);padding:2px 6px;font-size:9px;font-weight:700">ОПЛАЧЕН</button>`:'<span style="font-size:10px;color:var(--dim)">✓</span>'}
-          <button class="del-btn" onclick="delRecurring('${r.id}')">×</button>
-        </div>`;
-      });
-      if(!recExpItems.length)h+=`<div style="padding:10px 13px;font-size:12px;color:var(--dim)">Нет регулярных расходов</div>`;
-      h+=`</div>`;
-
-      // Долги
-      h+=`<div class="sc"><div class="sc-h"><span class="sc-t">ДОЛГИ</span>
-        <button onclick="S.finDebtAdd=!S.finDebtAdd;render()" style="background:transparent;border:1px solid var(--amber);color:var(--amber);padding:2px 8px;font-size:10px;font-weight:700">+</button>
-      </div>`;
-      if(S.finDebtAdd){
-        h+=`<div style="padding:10px 12px;border-bottom:1px solid var(--line)">
-          <div class="f-grid">
-            <div><div class="f-lbl">КТО / КОМУ</div><input id="debt-name" type="text" class="f-inp" placeholder="Банк, имя..."></div>
-            <div><div class="f-lbl">СУММА ₽</div><input id="debt-amt" type="text" inputmode="decimal" class="f-inp"></div>
-          </div>
-          <div class="f-grid">
-            <div><div class="f-lbl">ТИП</div>
-              <select id="debt-dir" class="f-inp" style="background:var(--z3);color:var(--white)">
-                <option value="owe">Я ДОЛЖЕН</option><option value="owed">МНЕ ДОЛЖНЫ</option>
-              </select>
-            </div>
-            <div><div class="f-lbl">СРОК</div><input id="debt-date" type="text" class="f-inp" placeholder="15 апр"></div>
-          </div>
-          <input id="debt-note" type="text" class="f-inp" placeholder="Заметка...">
-          <div style="display:flex;gap:7px"><button onclick="addDebt()" class="add-btn">ДОБАВИТЬ</button><button onclick="S.finDebtAdd=false;render()" class="cancel-btn">ОТМЕНА</button></div>
-        </div>`;
-      }
-      [...iOwe,...debts.filter(d=>d.dir==='owed'&&!d.paid)].forEach(d=>{
-        const isOwe=d.dir==='owe';
-        h+=`<div style="padding:8px 13px;border-bottom:1px solid var(--line)">
-          <div style="display:flex;align-items:center;gap:8px">
-            <span style="font-size:9px;font-family:'Barlow Condensed',sans-serif;font-weight:700;color:${isOwe?'var(--red)':'var(--muted)'};border:1px solid ${isOwe?'var(--red)':'var(--line2)'};padding:1px 4px;flex-shrink:0">${isOwe?'ДОЛ':'МНЕ'}</span>
-            <span style="flex:1;font-size:13px;color:var(--text);overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${d.name}</span>
-            <span style="font-family:'Barlow Condensed',sans-serif;font-size:14px;font-weight:700;color:${isOwe?'var(--red)':'var(--white)'};flex-shrink:0">${isOwe?'−':'+'}${Math.round(d.amount/1000*10)/10}к</span>
-            <button onclick="markDebtPaid('${d.id}')" style="background:none;border:1px solid var(--line2);color:var(--dim);padding:2px 6px;font-size:9px;font-weight:700;flex-shrink:0">✓</button>
-            <button class="del-btn" onclick="delDebt('${d.id}')">×</button>
-          </div>
-          ${d.note||d.date?`<div style="font-size:11px;color:var(--muted);margin-top:3px">${d.note}${d.note&&d.date?' · ':''}${d.date?'до '+d.date:''}</div>`:''}
-        </div>`;
-      });
-      if(!iOwe.length&&!debts.filter(d=>d.dir==='owed'&&!d.paid).length)h+=`<div style="padding:10px 13px;font-size:12px;color:var(--dim)">Долгов нет</div>`;
-      h+=`</div>`;
-
-      // Категории + добавить расход
-      h+=`<div class="sc"><div class="sc-h"><span class="sc-t">ДОБАВИТЬ РАСХОД</span>
-        <button onclick="S.finCatAdd={show:!S.finCatAdd.show,type:'expense',name:''};render()" style="background:transparent;border:1px solid var(--line2);color:var(--muted);padding:2px 8px;font-size:10px">+ КАТ</button>
-      </div>`;
-      if(S.finCatAdd.show&&S.finCatAdd.type==='expense'){
-        h+=`<div style="padding:7px 12px;border-bottom:1px solid var(--line);display:flex;gap:6px">
-          <input id="new-cat-inp" type="text" class="add-inp" placeholder="Новая категория...">
-          <button class="add-inp-btn" onclick="addFinCatUI('expense')">+</button>
-        </div>`;
-      }
-      h+=`<div style="padding:10px 12px">
-        <div class="f-grid">
-          <div><input id="fin-name" type="text" class="f-inp" placeholder="На что..."></div>
-          <div><input id="fin-amt" type="text" inputmode="decimal" class="f-inp" placeholder="Сумма ₽"></div>
-        </div>
-        <select id="fin-cat-sel" class="f-inp" style="background:var(--z3);color:var(--white);width:100%;margin-bottom:8px">
-          ${expCats.map(c=>'<option>'+c+'</option>').join('')}
-        </select>
-        <button onclick="S.finType='expense';addFinEntry()" style="width:100%;background:var(--red);color:var(--white);border:none;padding:9px;font-family:'Barlow Condensed',sans-serif;font-size:13px;font-weight:800;letter-spacing:2px">+ ДОБАВИТЬ</button>
-      </div></div>`;
-
-      if(expEntries.length){
-        // by category summary
-        const byCat={};
-        expEntries.forEach(e=>{const c=e.cat||'ПРОЧЕЕ';if(!byCat[c])byCat[c]=0;byCat[c]+=Math.abs(e.amount);});
-        h+=`<div class="sc"><div class="sc-h"><span class="sc-t">ПО КАТЕГОРИЯМ</span></div>`;
-        Object.entries(byCat).sort((a,b)=>b[1]-a[1]).forEach(([cat,amt])=>{
-          const budget=budgets[cat]||0;const pct=budget?Math.min(100,Math.round(amt/budget*100)):0;
-          const pc=pct>=90?'var(--red)':pct>=60?'var(--amber)':'var(--dim)';
-          h+=`<div style="padding:7px 13px;border-bottom:1px solid var(--line)">
-            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:${budget?'4px':'0'}">
-              <span style="font-size:13px;color:var(--text)">${cat}</span>
-              <div style="display:flex;align-items:center;gap:8px">
-                <span style="font-family:'Barlow Condensed',sans-serif;font-size:14px;font-weight:700;color:var(--red)">−${Math.round(amt/1000*10)/10}к</span>
-                ${budget?`<input type="text" inputmode="decimal" value="${budget}" onchange="saveBudget('${cat}',this.value)" style="background:transparent;border:none;border-bottom:1px solid var(--line2);color:var(--muted);font-family:'Barlow Condensed',sans-serif;font-size:11px;width:40px;text-align:right;padding:0">`:'<input type="text" inputmode="decimal" placeholder="бюд" onchange="saveBudget(\''+cat+'\',this.value)" style="background:transparent;border:none;border-bottom:1px solid var(--line2);color:var(--dim);font-family:\'Barlow Condensed\',sans-serif;font-size:11px;width:36px;text-align:right;padding:0">'}
-              </div>
-            </div>
-            ${budget?`<div style="height:2px;background:var(--z5)"><div style="height:100%;width:${pct}%;background:${pc}"></div></div>`:''}
+          h+=`<div style="padding:7px 13px;border-bottom:1px solid var(--line);display:flex;align-items:center;gap:8px">
+            <span style="flex:1;font-size:13px;color:var(--text)">${e.name}${e.cat?` <span style="font-size:10px;color:var(--muted)">${e.cat}</span>`:''}</span>
+            <span style="font-family:'Barlow Condensed',sans-serif;font-size:14px;font-weight:700;color:var(--text)">+${Math.round(e.amount/1000*10)/10}к</span>
+            <button class="del-btn" onclick="delFinEntry('${e.id}')">×</button>
           </div>`;
         });
-        // history
-        h+=`</div><div class="sc"><div class="sc-h"><span class="sc-t">ИСТОРИЯ</span></div>`;
-        expEntries.slice().reverse().forEach(e=>{
-          h+=`<div class="fin-row"><div><div class="fin-name">${e.name}</div>${e.cat?`<div class="fin-cat">${e.cat}</div>`:''}</div>
-            <div style="display:flex;align-items:center;gap:8px">
-              <span style="font-family:'Barlow Condensed',sans-serif;font-size:15px;font-weight:700;color:var(--red)">−${Math.round(Math.abs(e.amount)/1000*10)/10}к</span>
-              <button class="del-btn" onclick="delFinEntry('${e.id}')">×</button>
-            </div></div>`;
-        });
-        h+=`</div>`;
       }
-    }
-
-    // ── НАКОПЛЕНИЯ ─────────────────────────────────────────────────────────
-    else if(S.finTab==='savings'){
-      h+=`<div style="margin-top:9px">`;
-      h+=`<div class="sc"><div class="sc-h"><span class="sc-t">ЦЕЛИ НАКОПЛЕНИЙ</span>
-        <button onclick="S.finSavAdd=!S.finSavAdd;render()" style="background:transparent;border:1px solid var(--amber);color:var(--amber);padding:2px 8px;font-size:10px;font-weight:700">+ ЦЕЛЬ</button>
-      </div>`;
-      if(S.finSavAdd){
-        h+=`<div style="padding:10px 12px;border-bottom:1px solid var(--line)">
-          <div class="f-lbl">НАЗВАНИЕ</div><input id="sav-name" type="text" class="f-inp" placeholder="На что коплю...">
-          <div class="f-grid">
-            <div><div class="f-lbl">ЦЕЛЬ ₽</div><input id="sav-target" type="text" inputmode="decimal" class="f-inp"></div>
-            <div><div class="f-lbl">НАКОПЛЕНО ₽</div><input id="sav-saved" type="text" inputmode="decimal" class="f-inp" placeholder="0"></div>
+      // Добавить доход
+      h+=`<div style="padding:9px 13px;border-top:1px solid var(--line);background:var(--z2)">
+        <div style="font-size:9px;color:var(--muted);letter-spacing:1.5px;font-weight:700;margin-bottom:7px">ДОБАВИТЬ</div>
+        <div style="display:flex;gap:6px;margin-bottom:6px">
+          <input id="fin-name" type="text" class="f-inp" placeholder="Откуда..." style="flex:2;margin-bottom:0">
+          <input id="fin-amt" type="text" inputmode="decimal" class="f-inp" placeholder="₽" style="flex:1;margin-bottom:0">
+        </div>
+        <div style="display:flex;gap:6px;margin-bottom:8px">
+          <select id="fin-cat-sel" class="f-inp" style="flex:1;background:var(--z3);color:var(--white);margin-bottom:0">
+            ${incCats.map(c=>'<option>'+c+'</option>').join('')}
+          </select>
+          <button onclick="S.finCatAdd={show:!S.finCatAdd.show,type:'income'};render()" style="background:none;border:1px solid var(--line2);color:var(--dim);padding:4px 8px;font-size:10px;flex-shrink:0">+ кат</button>
+        </div>
+        ${S.finCatAdd.show&&S.finCatAdd.type==='income'?`<div style="display:flex;gap:6px;margin-bottom:7px"><input id="new-cat-inp" type="text" class="add-inp" placeholder="Новая категория..."><button class="add-inp-btn" onclick="addFinCatUI('income')">+</button></div>`:''}
+        <div style="display:flex;gap:6px">
+          <button onclick="S.finType='income';addFinEntry()" style="flex:1;background:var(--z3);border:1px solid var(--line2);color:var(--text);padding:8px;font-family:'Barlow Condensed',sans-serif;font-size:13px;font-weight:700">+ ДОХОД</button>
+          <button onclick="S.finRecAdd=S.finRecAdd==='inc'?false:'inc';render()" style="flex:1;background:var(--z3);border:1px solid var(--line2);color:var(--muted);padding:8px;font-family:'Barlow Condensed',sans-serif;font-size:12px;font-weight:700">+ РЕГУЛЯРНЫЙ</button>
+        </div>
+        ${S.finRecAdd==='inc'?`<div style="margin-top:8px;padding:8px;background:var(--z1);border:1px solid var(--line2)">
+          <div style="display:flex;gap:6px;margin-bottom:6px">
+            <input id="rec-name" type="text" class="f-inp" placeholder="Название..." style="flex:2;margin-bottom:0">
+            <input id="rec-amt" type="text" inputmode="decimal" class="f-inp" placeholder="₽" style="flex:1;margin-bottom:0">
           </div>
-          <div style="display:flex;gap:7px"><button onclick="addSavingsGoal()" class="add-btn">ДОБАВИТЬ</button><button onclick="S.finSavAdd=false;render()" class="cancel-btn">ОТМЕНА</button></div>
-        </div>`;
+          <div style="display:flex;gap:6px">
+            <input id="rec-day" type="text" inputmode="numeric" class="f-inp" placeholder="день мес." style="flex:1;margin-bottom:0">
+            <input type="hidden" id="rec-type" value="income">
+            <select id="rec-cat" class="f-inp" style="flex:1;background:var(--z3);color:var(--white);margin-bottom:0">${incCats.map(c=>'<option>'+c+'</option>').join('')}</select>
+          </div>
+          <button onclick="addRecurring()" style="width:100%;margin-top:7px;background:var(--z3);border:1px solid var(--amber);color:var(--amber);padding:7px;font-family:'Barlow Condensed',sans-serif;font-size:12px;font-weight:700">ДОБАВИТЬ</button>
+        </div>`:''}
+      </div>`;
+    }
+    h+=`</div>`;
+
+    // ── РАСХОДЫ ─────────────────────────────────────────────────────────────
+    const expOpen=!!S.openSpheres['fin_exp'];
+    const iOweDebts=debts.filter(d=>d.dir==='owe'&&!d.paid);
+    const totalDebt=iOweDebts.reduce((a,d)=>a+d.amount,0);
+    h+=`<div class="sc" style="margin-bottom:9px">
+      <div style="display:flex;align-items:center;gap:10px;padding:9px 13px;cursor:pointer;background:var(--z2);border-bottom:${expOpen?'1px solid var(--line)':'none'}" onclick="S.openSpheres['fin_exp']=!S.openSpheres['fin_exp'];render()">
+        <span style="font-family:'Barlow Condensed',sans-serif;font-size:13px;font-weight:700;color:var(--white);letter-spacing:1.5px;flex:1">РАСХОДЫ</span>
+        <span style="font-family:'Barlow Condensed',sans-serif;font-size:16px;font-weight:800;color:var(--red)">−${Math.round(totalExpFact/1000*10)/10}к</span>
+        <span style="font-size:12px;color:var(--dim)">${expOpen?'▲':'▼'}</span>
+      </div>`;
+    if(expOpen){
+      // Регулярные расходы
+      const recExpItems=recs.filter(r=>r.amount<0);
+      if(recExpItems.length){
+        h+=`<div style="padding:5px 13px;border-bottom:1px solid var(--line)"><span style="font-size:9px;color:var(--muted);letter-spacing:1.5px;font-weight:700">РЕГУЛЯРНЫЕ</span></div>`;
+        recExpItems.forEach(r=>{
+          const done=r.done_month===mdk();
+          h+=`<div style="padding:7px 13px;border-bottom:1px solid var(--line);display:flex;align-items:center;gap:8px">
+            <span style="font-family:'Barlow Condensed',sans-serif;font-size:15px;font-weight:700;color:${done?'var(--dim)':'var(--amber)'};min-width:22px">${r.day}</span>
+            <span style="flex:1;font-size:13px;color:${done?'var(--muted)':'var(--text)'};${done?'text-decoration:line-through':''}">${r.name}</span>
+            <span style="font-family:'Barlow Condensed',sans-serif;font-size:14px;font-weight:700;color:var(--red)">−${Math.round(Math.abs(r.amount)/1000*10)/10}к</span>
+            ${!done?`<button onclick="markRecurringDone('${r.id}')" style="border:1px solid var(--line2);background:none;color:var(--dim);padding:2px 6px;font-family:'Barlow Condensed',sans-serif;font-size:9px">✓</button>`:''}
+            <button class="del-btn" onclick="delRecurring('${r.id}')">×</button>
+          </div>`;
+        });
       }
+      // По категориям
+      const expEntries=entries.filter(e=>e.amount<0);
+      const byCat={};
+      expEntries.forEach(e=>{const c=e.cat||'ПРОЧЕЕ';if(!byCat[c])byCat[c]=0;byCat[c]+=Math.abs(e.amount);});
+      const sortedCats=Object.entries(byCat).sort((a,b)=>b[1]-a[1]);
+      if(sortedCats.length){
+        h+=`<div style="padding:5px 13px;border-bottom:1px solid var(--line)"><span style="font-size:9px;color:var(--muted);letter-spacing:1.5px;font-weight:700">ПО КАТЕГОРИЯМ</span></div>`;
+        sortedCats.forEach(([cat,amt])=>{
+          const bud=budgets[cat]||0;const pct=bud?Math.min(100,Math.round(amt/bud*100)):0;
+          const pc=pct>=90?'var(--red)':pct>=60?'var(--amber)':'var(--dim)';
+          h+=`<div style="padding:7px 13px;border-bottom:1px solid var(--line)">
+            <div style="display:flex;align-items:center;gap:8px;margin-bottom:${bud?'4px':'0'}">
+              <span style="flex:1;font-size:13px;color:var(--text)">${cat}</span>
+              <span style="font-family:'Barlow Condensed',sans-serif;font-size:14px;font-weight:700;color:var(--red)">−${Math.round(amt/1000*10)/10}к</span>
+              <input type="text" inputmode="decimal" value="${bud||''}" placeholder="лимит" onchange="saveBudget('${cat}',this.value)" style="background:transparent;border:none;border-bottom:1px solid var(--line2);color:var(--dim);font-family:'Barlow Condensed',sans-serif;font-size:11px;width:44px;text-align:right;padding:0">
+            </div>
+            ${bud?`<div style="height:2px;background:var(--z5)"><div style="height:100%;width:${pct}%;background:${pc}"></div></div>`:''}
+          </div>`;
+        });
+      }
+      // Долги
+      if(iOweDebts.length||debts.filter(d=>d.dir==='owed'&&!d.paid).length){
+        h+=`<div style="padding:5px 13px;border-bottom:1px solid var(--line)"><span style="font-size:9px;color:var(--muted);letter-spacing:1.5px;font-weight:700">ДОЛГИ</span></div>`;
+        [...iOweDebts,...debts.filter(d=>d.dir==='owed'&&!d.paid)].forEach(d=>{
+          const isOwe=d.dir==='owe';
+          h+=`<div style="padding:7px 13px;border-bottom:1px solid var(--line);display:flex;align-items:center;gap:8px">
+            <span style="font-size:9px;border:1px solid ${isOwe?'var(--red)':'var(--line2)'};color:${isOwe?'var(--red)':'var(--muted)'};padding:1px 4px;font-family:'Barlow Condensed',sans-serif;font-weight:700;flex-shrink:0">${isOwe?'ДОЛ':'МНЕ'}</span>
+            <span style="flex:1;font-size:13px;color:var(--text);overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${d.name}</span>
+            ${d.date?`<span style="font-size:10px;color:var(--muted);flex-shrink:0">до ${d.date}</span>`:''}
+            <span style="font-family:'Barlow Condensed',sans-serif;font-size:14px;font-weight:700;color:${isOwe?'var(--red)':'var(--text)'};flex-shrink:0">${isOwe?'−':'+'}${Math.round(d.amount/1000*10)/10}к</span>
+            <button onclick="markDebtPaid('${d.id}')" style="background:none;border:1px solid var(--line2);color:var(--dim);padding:2px 5px;font-size:9px;flex-shrink:0">✓</button>
+            <button class="del-btn" onclick="delDebt('${d.id}')">×</button>
+          </div>`;
+        });
+      }
+      // История расходов
+      if(expEntries.length){
+        h+=`<div style="padding:5px 13px;border-bottom:1px solid var(--line)"><span style="font-size:9px;color:var(--muted);letter-spacing:1.5px;font-weight:700">ОПЕРАЦИИ</span></div>`;
+        expEntries.slice().reverse().forEach(e=>{
+          h+=`<div style="padding:7px 13px;border-bottom:1px solid var(--line);display:flex;align-items:center;gap:8px">
+            <span style="flex:1;font-size:13px;color:var(--text)">${e.name}${e.cat?` <span style="font-size:10px;color:var(--muted)">${e.cat}</span>`:''}</span>
+            <span style="font-family:'Barlow Condensed',sans-serif;font-size:14px;font-weight:700;color:var(--red)">−${Math.round(Math.abs(e.amount)/1000*10)/10}к</span>
+            <button class="del-btn" onclick="delFinEntry('${e.id}')">×</button>
+          </div>`;
+        });
+      }
+      // Добавить расход
+      h+=`<div style="padding:9px 13px;border-top:1px solid var(--line);background:var(--z2)">
+        <div style="font-size:9px;color:var(--muted);letter-spacing:1.5px;font-weight:700;margin-bottom:7px">ДОБАВИТЬ</div>
+        <div style="display:flex;gap:6px;margin-bottom:6px">
+          <input id="fin-name" type="text" class="f-inp" placeholder="На что..." style="flex:2;margin-bottom:0">
+          <input id="fin-amt" type="text" inputmode="decimal" class="f-inp" placeholder="₽" style="flex:1;margin-bottom:0">
+        </div>
+        <div style="display:flex;gap:6px;margin-bottom:8px">
+          <select id="fin-cat-sel" class="f-inp" style="flex:1;background:var(--z3);color:var(--white);margin-bottom:0">
+            ${expCats.map(c=>'<option>'+c+'</option>').join('')}
+          </select>
+          <button onclick="S.finCatAdd={show:!S.finCatAdd.show,type:'expense'};render()" style="background:none;border:1px solid var(--line2);color:var(--dim);padding:4px 8px;font-size:10px;flex-shrink:0">+ кат</button>
+        </div>
+        ${S.finCatAdd.show&&S.finCatAdd.type==='expense'?`<div style="display:flex;gap:6px;margin-bottom:7px"><input id="new-cat-inp" type="text" class="add-inp" placeholder="Новая категория..."><button class="add-inp-btn" onclick="addFinCatUI('expense')">+</button></div>`:''}
+        <div style="display:flex;gap:6px">
+          <button onclick="S.finType='expense';addFinEntry()" style="flex:1;background:var(--z3);border:1px solid var(--line2);color:var(--text);padding:8px;font-family:'Barlow Condensed',sans-serif;font-size:13px;font-weight:700">+ РАСХОД</button>
+          <button onclick="S.finRecAdd=S.finRecAdd==='exp'?false:'exp';render()" style="flex:1;background:var(--z3);border:1px solid var(--line2);color:var(--muted);padding:8px;font-family:'Barlow Condensed',sans-serif;font-size:12px;font-weight:700">+ РЕГУЛЯРНЫЙ</button>
+          <button onclick="S.finDebtAdd=!S.finDebtAdd;render()" style="flex:1;background:var(--z3);border:1px solid var(--line2);color:var(--muted);padding:8px;font-family:'Barlow Condensed',sans-serif;font-size:12px;font-weight:700">+ ДОЛГ</button>
+        </div>
+        ${S.finRecAdd==='exp'?`<div style="margin-top:8px;padding:8px;background:var(--z1);border:1px solid var(--line2)">
+          <div style="display:flex;gap:6px;margin-bottom:6px">
+            <input id="rec-name" type="text" class="f-inp" placeholder="Аренда, связь..." style="flex:2;margin-bottom:0">
+            <input id="rec-amt" type="text" inputmode="decimal" class="f-inp" placeholder="₽" style="flex:1;margin-bottom:0">
+          </div>
+          <div style="display:flex;gap:6px">
+            <input id="rec-day" type="text" inputmode="numeric" class="f-inp" placeholder="день" style="flex:1;margin-bottom:0">
+            <input type="hidden" id="rec-type" value="expense">
+            <select id="rec-cat" class="f-inp" style="flex:1;background:var(--z3);color:var(--white);margin-bottom:0">${expCats.map(c=>'<option>'+c+'</option>').join('')}</select>
+          </div>
+          <button onclick="addRecurring()" style="width:100%;margin-top:7px;background:var(--z3);border:1px solid var(--amber);color:var(--amber);padding:7px;font-family:'Barlow Condensed',sans-serif;font-size:12px;font-weight:700">ДОБАВИТЬ</button>
+        </div>`:''}
+        ${S.finDebtAdd?`<div style="margin-top:8px;padding:8px;background:var(--z1);border:1px solid var(--line2)">
+          <div style="display:flex;gap:6px;margin-bottom:6px">
+            <input id="debt-name" type="text" class="f-inp" placeholder="Кому/от кого..." style="flex:2;margin-bottom:0">
+            <input id="debt-amt" type="text" inputmode="decimal" class="f-inp" placeholder="₽" style="flex:1;margin-bottom:0">
+          </div>
+          <div style="display:flex;gap:6px">
+            <select id="debt-dir" class="f-inp" style="flex:1;background:var(--z3);color:var(--white);margin-bottom:0">
+              <option value="owe">Я ДОЛЖЕН</option><option value="owed">МНЕ ДОЛЖНЫ</option>
+            </select>
+            <input id="debt-date" type="text" class="f-inp" placeholder="срок" style="flex:1;margin-bottom:0">
+          </div>
+          <input id="debt-note" type="text" class="f-inp" placeholder="Заметка..." style="margin-top:6px">
+          <button onclick="addDebt()" style="width:100%;background:var(--z3);border:1px solid var(--red);color:var(--red);padding:7px;font-family:'Barlow Condensed',sans-serif;font-size:12px;font-weight:700">ДОБАВИТЬ</button>
+        </div>`:''}
+      </div>`;
+    }
+    h+=`</div>`;
+
+    // ── НАКОПЛЕНИЯ ──────────────────────────────────────────────────────────
+    const savOpen=!!S.openSpheres['fin_sav'];
+    const totalSaved=savs.reduce((a,s)=>a+s.saved,0);
+    h+=`<div class="sc" style="margin-bottom:9px">
+      <div style="display:flex;align-items:center;gap:10px;padding:9px 13px;cursor:pointer;background:var(--z2);border-bottom:${savOpen?'1px solid var(--line)':'none'}" onclick="S.openSpheres['fin_sav']=!S.openSpheres['fin_sav'];render()">
+        <span style="font-family:'Barlow Condensed',sans-serif;font-size:13px;font-weight:700;color:var(--white);letter-spacing:1.5px;flex:1">НАКОПЛЕНИЯ</span>
+        <span style="font-family:'Barlow Condensed',sans-serif;font-size:16px;font-weight:800;color:var(--amber)">${Math.round(totalSaved/1000*10)/10}к</span>
+        <span style="font-size:12px;color:var(--dim)">${savOpen?'▲':'▼'}</span>
+      </div>`;
+    if(savOpen){
       savs.forEach(s=>{
         const pct=s.target>0?Math.min(100,Math.round(s.saved/s.target*100)):0;
         const pc=pct>=100?'var(--amber)':pct>=50?'var(--text)':'var(--muted)';
-        h+=`<div style="padding:10px 13px;border-bottom:1px solid var(--line)">
-          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">
+        h+=`<div style="padding:9px 13px;border-bottom:1px solid var(--line)">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:5px">
             <span style="font-size:14px;color:var(--text)">${s.name}</span>
             <button class="del-btn" onclick="delSavingsGoal('${s.id}')">×</button>
           </div>
-          <div style="display:flex;align-items:center;gap:8px;margin-bottom:5px">
+          <div style="display:flex;align-items:center;gap:8px;margin-bottom:4px">
             <div style="flex:1;height:3px;background:var(--z5)"><div style="height:100%;width:${pct}%;background:${pc}"></div></div>
-            <span style="font-family:'Barlow Condensed',sans-serif;font-size:16px;font-weight:800;color:${pc}">${pct}%</span>
+            <span style="font-family:'Barlow Condensed',sans-serif;font-size:15px;font-weight:800;color:${pc}">${pct}%</span>
           </div>
           <div style="display:flex;justify-content:space-between;align-items:center">
             <div style="display:flex;align-items:center;gap:4px">
               <span style="font-size:10px;color:var(--muted)">накоплено</span>
-              <input type="text" inputmode="decimal" value="${s.saved||0}" onchange="updateSavings('${s.id}',this.value)" style="background:transparent;border:none;border-bottom:1px solid var(--line2);color:var(--white);font-family:'Barlow Condensed',sans-serif;font-size:14px;font-weight:700;width:70px;text-align:right;padding:0">
+              <input type="text" inputmode="decimal" value="${s.saved||0}" onchange="updateSavings('${s.id}',this.value)" style="background:transparent;border:none;border-bottom:1px solid var(--line2);color:var(--white);font-family:'Barlow Condensed',sans-serif;font-size:14px;font-weight:700;width:60px;text-align:right;padding:0">
             </div>
-            <span style="font-size:11px;color:var(--muted)">из ${Math.round(s.target/1000*10)/10}к ₽</span>
+            <span style="font-size:11px;color:var(--muted)">из ${Math.round(s.target/1000*10)/10}к</span>
           </div>
         </div>`;
       });
-      if(!savs.length)h+=`<div style="padding:14px;text-align:center;font-size:12px;color:var(--muted)">Нет целей накоплений</div>`;
-      h+=`</div></div>`;
+      if(!savs.length)h+=`<div style="padding:12px 13px;font-size:12px;color:var(--dim)">Нет целей</div>`;
+      h+=`<div style="padding:9px 13px;background:var(--z2);border-top:1px solid var(--line)">
+        ${S.finSavAdd?`<div style="margin-bottom:7px">
+          <input id="sav-name" type="text" class="f-inp" placeholder="На что коплю...">
+          <div style="display:flex;gap:6px">
+            <input id="sav-target" type="text" inputmode="decimal" class="f-inp" placeholder="Цель ₽">
+            <input id="sav-saved" type="text" inputmode="decimal" class="f-inp" placeholder="Накоплено ₽">
+          </div>
+          <div style="display:flex;gap:6px">
+            <button onclick="addSavingsGoal()" class="add-btn">ДОБАВИТЬ</button>
+            <button onclick="S.finSavAdd=false;render()" class="cancel-btn">ОТМЕНА</button>
+          </div>
+        </div>`:''}
+        <button onclick="S.finSavAdd=!S.finSavAdd;render()" style="width:100%;background:var(--z3);border:1px solid var(--line2);color:var(--muted);padding:8px;font-family:'Barlow Condensed',sans-serif;font-size:12px;font-weight:700">+ ЦЕЛЬ НАКОПЛЕНИЯ</button>
+      </div>`;
     }
+    h+=`</div>`;
 
     h+='</div>';
   }
@@ -1734,6 +1834,10 @@ function render(){
   // ══ ДНЕВНИК ══
   else if(S.tab==='diary'){
     h+='<div class="pg" style="padding-top:11px">';
+    h+=`<div style="display:flex;gap:7px;margin-bottom:9px">
+      <button onclick="exportData()" style="flex:1;background:var(--z2);border:1px solid var(--line2);color:var(--muted);padding:9px;font-family:'Barlow Condensed',sans-serif;font-size:11px;font-weight:700;letter-spacing:1px">↓ ЭКСПОРТ ДАННЫХ</button>
+      <label style="flex:1;background:var(--z2);border:1px solid var(--line2);color:var(--muted);padding:9px;font-family:'Barlow Condensed',sans-serif;font-size:11px;font-weight:700;letter-spacing:1px;text-align:center;cursor:pointer">↑ ИМПОРТ<input type="file" accept=".json" onchange="importData(this.files[0])" style="display:none"></label>
+    </div>`;
     const days=[];const now3=new Date();
     for(let i=0;i<30;i++){
       const d=new Date(now3);d.setDate(d.getDate()-i);
@@ -1814,6 +1918,7 @@ function render(){
     for(let i=1;i<=10;i++)h+=`<button class="day-bar-btn ${dlb.rating===i?'sel':''}" onclick="setRating(${i})">${i}</button>`;
     h+=`</div>
       <button onclick="S.dayNoteOpen=!S.dayNoteOpen;render()" style="background:none;border:1px solid var(--line2);color:${S.dayNoteOpen?'var(--amber)':'var(--dim)'};padding:4px 8px;font-family:'Barlow Condensed',sans-serif;font-size:10px;font-weight:700;flex-shrink:0">✎</button>
+      <button onclick="S.tab='diary';render()" style="background:none;border:none;color:var(--dim);font-size:14px;padding:0 2px;flex-shrink:0" title="Дневник">▤</button>
     </div>`;
   }
 
@@ -1822,19 +1927,13 @@ function render(){
     const cfg=gPomoSettings();
     if(S.pomo.on){
       h+=`<button id="pomo-fab" class="pomo-fab ${S.pomo.phase==='focus'?'active':'brk'}" onclick="togglePomoPanel()">
-        <svg class="pomo-fab-icon" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="10" cy="11" r="6.5"/><polyline points="10,8.5 10,11 11.8,12.5"/><path d="M7 2.5L10 1L13 2.5" stroke-width="1.3"/></svg>
-        <div style="display:flex;flex-direction:column;gap:1px">
-          <span class="pomo-fab-t" id="pomo-fab-t">${ft(S.pomo.left)}</span>
-          <span class="pomo-fab-l">${S.pomo.phase==='focus'?'ФОКУС':'ПАУЗА'}</span>
-        </div>
+        <span class="pomo-fab-t" id="pomo-fab-t" style="font-family:'Barlow Condensed',sans-serif;font-size:16px;font-weight:800;line-height:1">${ft(S.pomo.left)}</span>
+        <span style="font-family:'Barlow Condensed',sans-serif;font-size:8px;font-weight:700;letter-spacing:1px;opacity:.7">${S.pomo.phase==='focus'?'ФОКУС':'ПАУЗА'}</span>
       </button>`;
     } else {
       h+=`<button id="pomo-fab" class="pomo-fab" onclick="togglePomoPanel()">
-        <svg class="pomo-fab-icon" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="10" cy="11" r="6.5"/><polyline points="10,8.5 10,11 11.8,12.5"/><path d="M7 2.5L10 1L13 2.5" stroke-width="1.3"/></svg>
-        <div style="display:flex;flex-direction:column;gap:1px">
-          <span class="pomo-fab-t">${cfg.work}<span style="font-size:10px;font-weight:400"> мин</span></span>
-          <span class="pomo-fab-l">ПОМОДОРО</span>
-        </div>
+        <svg width="20" height="20" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><circle cx="10" cy="11" r="7"/><polyline points="10,8 10,11 12,13"/><line x1="7" y1="2" x2="10" y2="4"/><line x1="13" y1="2" x2="10" y2="4"/></svg>
+        <span style="font-family:'Barlow Condensed',sans-serif;font-size:13px;font-weight:800;line-height:1;margin-top:2px">${cfg.work}м</span>
       </button>`;
     }
   }
