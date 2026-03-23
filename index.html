@@ -11,16 +11,16 @@
 <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@400;600;700;800;900&family=IBM+Plex+Mono:wght@300;400;500&display=swap" rel="stylesheet">
 <style>
 :root{
-  --ink:#1a1a1e;--z1:#222226;--z2:#28282d;--z3:#303036;--z4:#3a3a40;--z5:#454548;
-  --line:#2e2e34;--line2:#38383e;--dim:#606066;--muted:#888890;
-  --body:#c4c2cc;--text:#e6e4ee;--white:#f2f0f8;
-  --red:#b8480a;--accent:#C8860A;--amber:#d4900a;--green:#c0182a;
-  --ra10:rgba(184,72,10,.1);--ra20:rgba(184,72,10,.18);
-  --aa10:rgba(212,144,10,.1);--ga10:rgba(192,24,42,.07);--nav-h:64px;
+  --ink:#16161a;--z1:#1e1e23;--z2:#25252b;--z3:#2d2d34;--z4:#38383f;--z5:#46464e;
+  --line:#2a2a32;--line2:#36363e;--dim:#68686f;--muted:#8e8e99;
+  --body:#c8c6d0;--text:#e8e6f0;--white:#f4f2fb;
+  --red:#c0420c;--accent:#C8860A;--amber:#C8860A;--green:#2a9d5c;
+  --ra10:rgba(192,66,12,.12);--ra20:rgba(192,66,12,.22);
+  --aa10:rgba(200,134,10,.12);--ga10:rgba(42,157,92,.08);--nav-h:64px;
 }
 *{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
 html{background:var(--ink)}
-body{font-family:'IBM Plex Mono',monospace;font-size:14px;padding-bottom:calc(var(--nav-h) + 48px);background:var(--ink);color:var(--body);min-height:100vh;overflow-x:hidden;padding-bottom:calc(var(--nav-h)+4px)}
+body{font-family:'IBM Plex Mono',monospace;font-size:14px;padding-bottom:calc(var(--nav-h) + 56px);background:var(--ink);color:var(--body);min-height:100vh;overflow-x:hidden;padding-bottom:calc(var(--nav-h)+4px)}
 input,button,select,textarea{font-family:'IBM Plex Mono',monospace}
 input{font-size:16px!important}
 input:focus,select:focus,textarea:focus{outline:none}
@@ -501,6 +501,7 @@ let S={tab:'today',htab:'training',week:1,day:1,wd:{},cp:{},hints:{},
   taskFilter:'all',
   dayNoteOpen:false,
   search:{open:false,q:''},
+  bizDay:'',bizPid:null,
 
   editTask:{sid:null,id:null,txt:''},
 
@@ -762,6 +763,45 @@ function daysSince(dateStr){
   return Math.floor(diff/86400000);
 }
 
+function saveBizMetric(key,val){const b=gbiz();b.metrics[key]=val;sbiz(b);}
+
+function renameBizProject(pid,name){
+  const b=gbiz();const p=b.projects.find(x=>x.id===pid);
+  if(p){p.name=name.trim().toUpperCase();sbiz(b);}
+}
+function addBizTask(pid){
+  const b=gbiz();const p=b.projects.find(x=>x.id===pid);
+  if(!p)return;
+  const el=document.getElementById('biz-task-txt-'+pid);
+  if(!el||!el.value.trim())return;
+  const day=S.bizPid===pid?S.bizDay:'';
+  p.tasks=p.tasks||[];
+  p.tasks.push({id:'bt'+Date.now(),txt:el.value.trim(),done:false,day:day});
+  // also add to sphere tasks if has date (goes to штаб)
+  if(day){
+    const tasks=gtasks('biz');
+    tasks.unshift({id:'t'+Date.now(),txt:el.value.trim(),priority:'w',done:false,day:day});
+    stasks('biz',tasks);
+  }
+  sbiz(b);
+  S.openSpheres['biz_add_'+pid]=false;
+  S.bizDay='';S.bizPid=null;
+  render();
+}
+function toggleBizTask(pid,tid){
+  const b=gbiz();const p=b.projects.find(x=>x.id===pid);
+  if(!p)return;
+  const t=p.tasks.find(x=>x.id===tid);
+  if(t)t.done=!t.done;
+  sbiz(b);render();
+}
+function delBizTask(pid,tid){
+  const b=gbiz();const p=b.projects.find(x=>x.id===pid);
+  if(!p)return;
+  p.tasks=p.tasks.filter(x=>x.id!==tid);
+  sbiz(b);render();
+}
+
 function addBizProject(){
   const name=prompt('Название проекта:');
   if(!name||!name.trim())return;
@@ -975,6 +1015,11 @@ function selectCalDay(sid,day,month,year){
   S.calPicker.selectedDay=label;
   S.calPicker.open=false;
   S.calPicker.sid=null;
+  if(sid.startsWith('biz_')){
+    const pid=sid.slice(4);
+    S.bizDay=label;S.bizPid=pid;
+    render();return;
+  }
   if(sid.startsWith('assign_')){
     const parts=sid.slice(7).split('_');
     const taskId=parts.pop();const sphereId=parts.join('_');
@@ -1389,18 +1434,109 @@ function render(){
   // ══ БИЗНЕС ══
   else if(S.tab==='biz'){
     const biz=gbiz();
-    h+='<div class="pg" style="padding-top:11px">';
-    h+=`<div class="sc"><div class="biz-metrics">${[{k:'revenue',l:'ВЫРУЧКА'},{k:'expense',l:'РАСХОД'},{k:'leads',l:'ЛИДЫ'},{k:'deals',l:'СДЕЛКИ'}].map(m=>`<div class="bm"><div class="bm-l">${m.l}</div><input class="metric-inp" type="text" inputmode="decimal" value="${biz.metrics[m.k]||''}" placeholder="0" onchange="saveMetric('${m.k}',this.value)"></div>`).join('')}</div></div>`;
-    biz.projects.forEach(proj=>{
-      const done=proj.tasks.filter(t=>t.done).length;
-      h+=`<div class="sc"><div class="proj-head"><div class="proj-name">${proj.name}</div><div class="proj-cnt">${done}/${proj.tasks.length}</div></div>`;
-      proj.tasks.forEach(t=>{h+=`<div class="task"><button class="task-box ${t.done?'on':''}" onclick="toggleBizTask('${proj.id}','${t.id}')">${t.done?'✓':''}</button><span class="task-txt ${t.done?'done':''}">${t.txt}</span><button class="del-btn" onclick="delBizTask('${proj.id}','${t.id}')">×</button></div>`;});
-      h+=`<div class="add-row"><input id="ti_${proj.id}" type="text" class="add-inp" placeholder="Новая задача..."><button class="add-inp-btn" onclick="addBizTask('${proj.id}')">+</button></div></div>`;
+
+    h+='<div class="pg" style="padding-top:9px">';
+
+    // ── МЕТРИКИ ────────────────────────────────────────────────────────────
+    h+=`<div class="sc" style="margin-bottom:9px">
+      <div class="sc-h"><span class="sc-t">ЭТОТ МЕСЯЦ</span></div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:1px;background:var(--line)">`;
+    [['revenue','ВЫРУЧКА','↑','var(--white)'],['expense','РАСХОД','↓','var(--red)'],
+     ['leads','ЛИДЫ','◎','var(--amber)'],['deals','СДЕЛКИ','✓','var(--amber)']].forEach(function(x){
+      const key=x[0],lbl=x[1],ic=x[2],cl=x[3];
+      h+=`<div style="background:var(--z1);padding:10px 12px">
+        <div style="font-size:9px;color:var(--dim);letter-spacing:1.5px;margin-bottom:4px">${ic} ${lbl}</div>
+        <input type="text" inputmode="decimal" value="${biz.metrics[key]||''}" placeholder="—"
+        +' onchange="saveBizMetric(\''+x[0]+'\',this.value)"'
+          style="background:transparent;border:none;border-bottom:1px solid var(--line2);color:${cl};
+          font-family:'Barlow Condensed',sans-serif;font-size:22px;font-weight:800;width:100%;padding:0;outline:none">
+      </div>`;
     });
-    const ideas=biz.ideas||[];
-    h+=`<div class="sc"><div class="sc-h"><span class="sc-t">ИДЕИ</span></div>`;
-    ideas.forEach(i=>{h+=`<div style="display:flex;align-items:flex-start;gap:8px;padding:8px 12px;border-bottom:1px solid var(--line)"><div style="width:4px;height:4px;background:var(--red);flex-shrink:0;margin-top:5px"></div><span style="flex:1;font-size:12px;color:var(--body);line-height:1.5">${i.txt}</span><button class="del-btn" onclick="delIdea('${i.id}')">×</button></div>`;});
-    h+=`<div class="add-row"><input id="idea-inp" type="text" class="add-inp" placeholder="Идея..."><button class="add-inp-btn" onclick="addIdea()">+</button></div></div></div>`;
+    h+=`</div></div>`;
+
+    // ── ПРОЕКТЫ ────────────────────────────────────────────────────────────
+    h+=`<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:7px">
+      <span style="font-family:'Barlow Condensed',sans-serif;font-size:11px;font-weight:700;letter-spacing:2px;color:var(--dim)">ПРОЕКТЫ</span>
+      <button onclick="addBizProject()" style="background:var(--amber);border:none;color:var(--ink);padding:5px 12px;font-family:'Barlow Condensed',sans-serif;font-size:11px;font-weight:700;letter-spacing:1px">+ ПРОЕКТ</button>
+    </div>`;
+
+    if(!biz.projects||!biz.projects.length){
+      h+=`<div style="text-align:center;padding:24px;color:var(--dim);font-size:12px;border:1px dashed var(--line2);margin-bottom:9px">Нажми + ПРОЕКТ чтобы начать</div>`;
+    }
+
+    (biz.projects||[]).forEach(function(proj){
+      const pOpen=!!S.openSpheres['biz_'+proj.id];
+      const tasks=proj.tasks||[];
+      const openT=tasks.filter(t=>!t.done);
+      const doneT=tasks.filter(t=>t.done);
+      // deadline: nearest undone task with date
+      const withDate=openT.filter(t=>t.day).sort((a,b)=>a.day>b.day?1:-1);
+      const nearest=withDate[0];
+
+      h+=`<div class="sc" style="margin-bottom:9px">
+        <div style="display:flex;align-items:center;gap:10px;padding:10px 13px;cursor:pointer;background:var(--z2);border-bottom:${pOpen?'1px solid var(--line)':'none'}" onclick="S.openSpheres['biz_'+${JSON.stringify(proj.id)}]=!pOpen;render()">
+          <div style="flex:1;min-width:0">
+            <div style="font-family:'Barlow Condensed',sans-serif;font-size:16px;font-weight:800;color:var(--white);letter-spacing:1px">${proj.name}</div>
+            ${nearest?`<div style="font-size:10px;color:var(--amber);margin-top:2px">дедлайн ${fmtDay(nearest.day)} · ${nearest.txt}</div>`:''}
+          </div>
+          ${openT.length?`<span style="font-family:'Barlow Condensed',sans-serif;font-size:13px;font-weight:700;color:var(--amber);border:1px solid var(--amber);padding:1px 7px">${openT.length}</span>`:''}
+          <button onclick="event.stopPropagation();delBizProject(${JSON.stringify(proj.id)})" style="background:none;border:none;color:var(--dim);font-size:16px;padding:0 4px;opacity:.5">×</button>
+          <span style="color:var(--dim);font-size:12px">${pOpen?'▲':'▼'}</span>
+        </div>`;
+
+      if(pOpen){
+        // Edit project name
+        h+=`<div style="padding:6px 13px;border-bottom:1px solid var(--line);display:flex;gap:7px;align-items:center">
+          <input type="text" value="${proj.name}" onchange="renameBizProject(${JSON.stringify(proj.id)},this.value)"
+            style="flex:1;background:transparent;border:none;border-bottom:1px solid var(--line2);color:var(--white);
+            font-family:'Barlow Condensed',sans-serif;font-size:14px;font-weight:700;padding:3px 0;outline:none">
+        </div>`;
+
+        // Tasks
+        openT.forEach(function(t){
+          h+=`<div style="display:flex;align-items:center;gap:9px;padding:9px 13px;border-bottom:1px solid var(--line)">
+            <button onclick="toggleBizTask(${JSON.stringify(proj.id)},${JSON.stringify(t.id)})"
+              style="width:22px;height:22px;border-radius:50%;border:1.5px solid var(--line2);background:transparent;
+              flex-shrink:0;cursor:pointer;color:var(--dim);font-size:12px;font-weight:700">✓</button>
+            <span style="flex:1;font-size:13px;color:var(--text)">${t.txt}</span>
+            ${t.day?`<span style="font-family:'Barlow Condensed',sans-serif;font-size:12px;font-weight:700;color:var(--amber);flex-shrink:0">${fmtDay(t.day)}</span>`:''}
+            <button class="del-btn" onclick="delBizTask(${JSON.stringify(proj.id)},${JSON.stringify(t.id)})">×</button>
+          </div>`;
+        });
+
+        if(doneT.length){
+          h+=`<div style="padding:4px 13px;border-bottom:1px solid var(--line)"><span style="font-size:9px;color:var(--dim);letter-spacing:1px">ВЫПОЛНЕНО ${doneT.length}</span></div>`;
+          doneT.forEach(function(t){
+            h+=`<div style="display:flex;align-items:center;gap:9px;padding:7px 13px;border-bottom:1px solid var(--line);opacity:.4">
+              <div style="width:22px;height:22px;border-radius:50%;border:1.5px solid var(--dim);background:var(--dim);
+                flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:11px;color:var(--ink)">✓</div>
+              <span style="flex:1;font-size:13px;color:var(--muted);text-decoration:line-through">${t.txt}</span>
+              <button class="del-btn" onclick="delBizTask(${JSON.stringify(proj.id)},${JSON.stringify(t.id)})">×</button>
+            </div>`;
+          });
+        }
+
+        // Add task form
+        const addOpen=S.openSpheres['biz_add_'+proj.id];
+        if(addOpen){
+          h+=`<div style="padding:10px 13px;background:var(--z2);border-top:1px solid var(--line)">
+            <input id="biz-task-txt-${proj.id}" type="text" class="f-inp" placeholder="Задача...">
+            <div style="display:flex;gap:7px;align-items:center">
+              <button onclick="openCal('biz_${proj.id}')" style="background:var(--z3);border:1px solid var(--line2);color:var(--amber);padding:8px 10px;font-size:13px;flex-shrink:0">📅</button>
+              <span id="biz-day-${proj.id}" style="font-family:'Barlow Condensed',sans-serif;font-size:13px;color:var(--amber);min-width:50px">${S.bizDay&&S.bizPid===proj.id?fmtDay(S.bizDay):''}</span>
+              <button onclick="addBizTask(${JSON.stringify(proj.id)})" style="flex:1;background:var(--amber);border:none;color:var(--ink);padding:9px;font-family:'Barlow Condensed',sans-serif;font-size:13px;font-weight:700">ДОБАВИТЬ</button>
+              <button onclick="S.openSpheres['biz_add_'+${JSON.stringify(proj.id)}]=false;render()" style="background:none;border:1px solid var(--line2);color:var(--muted);padding:9px 12px">×</button>
+            </div>
+            ${S.calPicker.open&&S.calPicker.sid==='biz_'+proj.id?buildCalHTML('biz_'+proj.id):''}
+          </div>`;
+        } else {
+          h+=`<div style="padding:8px 13px"><button onclick="S.openSpheres['biz_add_'+${JSON.stringify(proj.id)}]=true;render()" style="width:100%;background:transparent;border:1px dashed var(--line2);color:var(--muted);padding:8px;font-family:'Barlow Condensed',sans-serif;font-size:12px;font-weight:700">+ ЗАДАЧА</button></div>`;
+        }
+      }
+      h+=`</div>`;
+    });
+
+    h+='</div>';
   }
 
   // ══ ФИНАНСЫ ══
