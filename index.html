@@ -468,9 +468,15 @@ function gdevd(){return LS.get('mt_devd_'+tdk(),{done:{}});}
 function sdevd(d){LS.set('mt_devd_'+tdk(),d);}
 function ggoals(){return LS.get('mt_glife',{health:{month:'',mp:0,week:''},biz:{month:'',mp:0,week:''},fin:{month:'',mp:0,week:''},rel:{month:'',mp:0,week:''},dev:{month:'',mp:0,week:''},goals:{month:'',mp:0,week:''}});}
 function saveGoalWeek(sphere,val){const g=ggoals();g[sphere].week=val;sgoals(g);}
-function getWeekDates(){
-  const now=new Date();const day=now.getDay();const mon=new Date(now);
-  mon.setDate(now.getDate()-(day===0?6:day-1));
+function getWeekDates(forPlanning){
+  const now=new Date();
+  let base=new Date(now);
+  // On Sunday after 17:00 show NEXT week for planning
+  if(forPlanning&&now.getDay()===0&&now.getHours()>=17){
+    base.setDate(base.getDate()+1);
+  }
+  const day=base.getDay();const mon=new Date(base);
+  mon.setDate(base.getDate()-(day===0?6:day-1));
   const sun=new Date(mon);sun.setDate(mon.getDate()+6);
   const fmt=d=>d.getDate()+' '+['янв','фев','мар','апр','май','июн','июл','авг','сен','окт','ноя','дек'][d.getMonth()];
   return fmt(mon)+' — '+fmt(sun);
@@ -518,7 +524,30 @@ async function loadGong(){
     return gongBuffer;
   }catch(e){return null;}
 }
-async function playGong(){try{const ctx=getAC();const buf=await loadGong();if(!buf)return;const src=ctx.createBufferSource();src.buffer=buf;const g=ctx.createGain();g.gain.value=.8;src.connect(g);g.connect(ctx.destination);src.start(0);}catch(e){}}
+async function playGong(){
+  try{
+    const ctx=getAC();
+    const buf=await loadGong();
+    if(buf){
+      const src=ctx.createBufferSource();src.buffer=buf;
+      const g=ctx.createGain();g.gain.value=.8;
+      src.connect(g);g.connect(ctx.destination);src.start(0);
+    } else {
+      // fallback: synth gong
+      const now=ctx.currentTime;
+      const freqs=[80,160,240,320];
+      freqs.forEach((f,i)=>{
+        const o=ctx.createOscillator();const g=ctx.createGain();
+        o.type='sine';o.frequency.value=f;
+        g.gain.setValueAtTime(0,now);
+        g.gain.linearRampToValueAtTime(.4-i*.08,now+.01);
+        g.gain.exponentialRampToValueAtTime(.001,now+2.5);
+        o.connect(g);g.connect(ctx.destination);
+        o.start(now);o.stop(now+2.5);
+      });
+    }
+  }catch(e){}
+}
 function playBell(vol=1){try{const ctx=getAC();const now=ctx.currentTime;[{f:1050,a:.35,d:1.4},{f:2100,a:.18,d:1},{f:3150,a:.1,d:.7},{f:525,a:.12,d:1.2}].forEach(({f,a,d})=>{const o=ctx.createOscillator();const g=ctx.createGain();o.type='sine';o.frequency.value=f;g.gain.setValueAtTime(.001,now);g.gain.linearRampToValueAtTime(a*vol,now+.003);g.gain.exponentialRampToValueAtTime(.001,now+d);o.connect(g);g.connect(ctx.destination);o.start(now);o.stop(now+d+.05);});}catch(e){}}
 function playCountdown(){for(let i=0;i<10;i++)setTimeout(()=>playBell(.25+(i/9)*.75),i*1000);}
 
@@ -941,13 +970,12 @@ function calNav(dir){
 function selectCalDay(sid,day,month,year){
   const today=new Date();
   const isToday=day===today.getDate()&&month===today.getMonth()&&year===today.getFullYear();
-  const label=isToday?'сегодня':String(day);
-  // update the last added task's day or set pending
+  const fullDate=String(day).padStart(2,'0')+'.'+String(month+1).padStart(2,'0')+'.'+year;
+  const label=isToday?'сегодня':fullDate;
   S.calPicker.selectedDay=label;
   S.calPicker.open=false;
   S.calPicker.sid=null;
   if(sid.startsWith('assign_')){
-    // format: assign_<sphereId>_<taskId>
     const parts=sid.slice(7).split('_');
     const taskId=parts.pop();const sphereId=parts.join('_');
     const tasks=gtasks(sphereId);
@@ -960,7 +988,7 @@ function selectCalDay(sid,day,month,year){
   }
   const inputId=sid.startsWith('g_')?'gtadd_day_'+sid.slice(2):'tadd_day_'+sid;
   const inp=document.getElementById(inputId);
-  if(inp){inp.value=label;inp.style.color='var(--amber)';}
+  if(inp){inp.value=label;}
   render();
   setTimeout(()=>{const el=document.getElementById(inputId);if(el)el.value=label;},10);
 }
@@ -989,6 +1017,7 @@ function buildCalHTML(sid){
   return g;
 }
 
+function fmtDay(d){if(!d)return '';if(d==='сегодня'||d==='сег')return 'сег';if(d.length===10&&d[2]==='.'&&d[5]==='.')return d.slice(0,5);return d;}
 function render(){
   const n=new Date();const hour=n.getHours();const isEvening=hour>=17;
   const clk=(n.getHours()<10?'0':'')+n.getHours()+':'+(n.getMinutes()<10?'0':'')+n.getMinutes();
@@ -1098,10 +1127,15 @@ function render(){
         allTasks.push({...t,sid:sp.id,spName:sp.name});
       });
     });
+    const _td=new Date();const _tm=String(_td.getMonth()+1).padStart(2,'0');const _ty=_td.getFullYear();
+    const todayStr2=String(todayDay).padStart(2,'0')+'.'+_tm+'.'+_ty;
+    const todayStr3=String(todayDay).padStart(2,'0')+'.'+_tm; // DD.MM without year (old format)
     const todayTasks=allTasks.filter(t=>{
       if(!t.day||t.day==='')return false;
       if(t.day==='сег'||t.day==='сегодня')return true;
-      return parseInt(t.day)===todayDay;
+      if(t.day===todayStr2)return true; // DD.MM.YYYY
+      if(t.day===todayStr3)return true; // DD.MM legacy
+      return parseInt(t.day)===todayDay; // plain number legacy
     });
     // inject recurring payments due today
     getRecurringToday().forEach(r=>{
@@ -1357,12 +1391,6 @@ function render(){
     const biz=gbiz();
     h+='<div class="pg" style="padding-top:11px">';
     h+=`<div class="sc"><div class="biz-metrics">${[{k:'revenue',l:'ВЫРУЧКА'},{k:'expense',l:'РАСХОД'},{k:'leads',l:'ЛИДЫ'},{k:'deals',l:'СДЕЛКИ'}].map(m=>`<div class="bm"><div class="bm-l">${m.l}</div><input class="metric-inp" type="text" inputmode="decimal" value="${biz.metrics[m.k]||''}" placeholder="0" onchange="saveMetric('${m.k}',this.value)"></div>`).join('')}</div></div>`;
-    const fn=biz.funnel||{};
-    h+=`<div class="sc"><div class="funnel">${[{k:'new',l:'НОВЫЕ'},{k:'kp',l:'КП ОТПР'},{k:'talk',l:'ПЕРЕГОВ',on:true},{k:'closed',l:'ЗАКРЫТО',win:true}].map(f=>`<div class="fn ${f.on?'on':''} ${f.win?'win':''}"><input class="fn-inp" style="color:${f.win?'var(--green)':f.on?'var(--red)':'var(--white)'}" type="text" inputmode="numeric" value="${fn[f.k]||0}" onchange="saveFunnel('${f.k}',this.value)"><div class="fn-l">${f.l}</div></div>`).join('')}</div></div>`;
-    // Add project button
-    h+=`<div style="display:flex;justify-content:flex-end;margin-bottom:6px">
-      <button onclick="addBizProject()" style="background:transparent;border:1px solid var(--amber);color:var(--amber);padding:4px 10px;font-family:'Barlow Condensed',sans-serif;font-size:11px;font-weight:700">+ ПРОЕКТ</button>
-    </div>`;
     biz.projects.forEach(proj=>{
       const done=proj.tasks.filter(t=>t.done).length;
       h+=`<div class="sc"><div class="proj-head"><div class="proj-name">${proj.name}</div><div class="proj-cnt">${done}/${proj.tasks.length}</div></div>`;
@@ -1747,7 +1775,7 @@ function render(){
     const goals=ggoals();
     const now2=new Date();
     const monthName=['Январь','Февраль','Март','Апрель','Май','Июнь','Июль','Август','Сентябрь','Октябрь','Ноябрь','Декабрь'][now2.getMonth()];
-    const weekRange=getWeekDates();
+    const weekRange=getWeekDates(true);
     h+='<div class="pg" style="padding-top:11px">';
 
     SPHERES.forEach(sp=>{
@@ -1764,7 +1792,7 @@ function render(){
         <div style="display:flex;align-items:center;gap:10px;padding:9px 12px;border-bottom:1px solid var(--line);cursor:pointer;background:var(--z2)" onclick="S.openSpheres['g_'+'${sp.id}']=!S.openSpheres['g_'+'${sp.id}'];render()">
           <div style="color:var(--muted);width:18px;height:18px;display:flex;align-items:center;justify-content:center;flex-shrink:0">${SICONS[sp.id]}</div>
           <span style="font-family:'Barlow Condensed',sans-serif;font-size:14px;font-weight:800;color:var(--white);letter-spacing:1px;flex:1">${sp.name}</span>
-          ${openTasks.length?`<span style="font-size:9px;color:var(--muted)">${openTasks.length}</span>`:''}
+          ${openTasks.length?`<span style="font-size:10px;font-family:'Barlow Condensed',sans-serif;font-weight:700;color:var(--amber);border:1px solid var(--amber);padding:1px 6px">${openTasks.length}</span>`:''}
           <span style="font-family:'Barlow Condensed',sans-serif;font-size:18px;font-weight:800;color:${pctColor}">${pct2}%</span>
           <span style="font-size:11px;color:var(--dim);margin-left:2px;transition:transform .2s;display:inline-block;${openGoalSph?'transform:rotate(90deg)':''}">›</span>
         </div>
@@ -1796,7 +1824,7 @@ function render(){
             sorted.forEach(t=>{
               const priClass=t.priority==='r'?'t-pri-r':t.priority==='a'?'t-pri-a':'';
               const isMIT=gdl().mit===t.txt;
-              const dayLabel=t.day?`<span style="font-family:'Barlow Condensed',sans-serif;font-size:13px;font-weight:800;color:var(--amber);min-width:22px;text-align:right;flex-shrink:0">${t.day}</span>`:'<span style="min-width:22px"></span>';
+              const dayLabel=t.day?'<span style="font-family:\'Barlow Condensed\',sans-serif;font-size:13px;font-weight:800;color:var(--amber);min-width:22px;text-align:right;flex-shrink:0">'+fmtDay(t.day)+'</span>':'<span style="min-width:22px"></span>';
               rows+='<div class="t-row">'+
                 '<div class="t-pri '+priClass+'" onclick="cyclePri(\''+sp.id+'\',\''+t.id+'\')"></div>'+
                 '<div class="t-chk" onclick="toggleTask(\''+sp.id+'\',\''+t.id+'\')"></div>'+
