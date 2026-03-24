@@ -1,4 +1,4 @@
-const CACHE = 'mt-v35';
+const CACHE = 'mt-v36';
 const ASSETS = ['./index.html', './manifest.json'];
 self.addEventListener('install', e => {
   e.waitUntil(caches.open(CACHE).then(c => c.addAll(ASSETS)));
