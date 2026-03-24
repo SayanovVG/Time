@@ -1063,6 +1063,66 @@ function buildCalHTML(sid){
 }
 
 function fmtDay(d){if(!d)return '';if(d==='сегодня'||d==='сег')return 'сег';if(d.length===10&&d[2]==='.'&&d[5]==='.')return d.slice(0,5);return d;}
+function initFinanceIfEmpty(){
+  // Only init if no recurring payments exist yet
+  const recs=gRecurring();
+  if(recs.length>0)return;
+
+  // ── РЕГУЛЯРНЫЕ ДОХОДЫ ──────────────────────────────────────────────────
+  const incRecs=[
+    {id:'ri1',name:'ПЕНСИЯ',amount:23000,day:6,cat:'Пенсия'},
+    {id:'ri2',name:'ПРЕМИЯ',amount:20000,day:18,cat:'Премия'},
+    // Зарплата по пятницам ~4 раза в месяц
+    {id:'ri3',name:'ЗАРПЛАТА',amount:14000,day:5,cat:'Зарплата'},
+    {id:'ri4',name:'ЗАРПЛАТА',amount:14000,day:12,cat:'Зарплата'},
+    {id:'ri5',name:'ЗАРПЛАТА',amount:14000,day:19,cat:'Зарплата'},
+    {id:'ri6',name:'ЗАРПЛАТА',amount:14000,day:26,cat:'Зарплата'},
+  ];
+  // ── РЕГУЛЯРНЫЕ РАСХОДЫ ─────────────────────────────────────────────────
+  const expRecs=[
+    {id:'re1',name:'АЛИМЕНТЫ',amount:-25000,day:6,cat:'Обязательные'},
+    {id:'re2',name:'КВАРТПЛАТА',amount:-10000,day:30,cat:'Жильё'},
+    {id:'re3',name:'ИНТЕРНЕТ',amount:-1200,day:30,cat:'Связь'},
+    {id:'re4',name:'СВЯЗЬ',amount:-1400,day:10,cat:'Связь'},
+    {id:'re5',name:'ПИТАНИЕ (неделя)',amount:-7000,day:5,cat:'Питание'},
+    {id:'re6',name:'ПИТАНИЕ (неделя)',amount:-7000,day:12,cat:'Питание'},
+    {id:'re7',name:'ПИТАНИЕ (неделя)',amount:-7000,day:19,cat:'Питание'},
+    {id:'re8',name:'ПИТАНИЕ (неделя)',amount:-7000,day:26,cat:'Питание'},
+    {id:'re9',name:'КОРМ СОБАКЕ',amount:-1000,day:1,cat:'Питомец'},
+    {id:'re10',name:'КОРМ СОБАКЕ',amount:-1000,day:11,cat:'Питомец'},
+    {id:'re11',name:'КОРМ СОБАКЕ',amount:-1000,day:21,cat:'Питомец'},
+    {id:'re12',name:'БЫТОВАЯ ХИМИЯ',amount:-2000,day:7,cat:'Быт'},
+    {id:'re13',name:'БЫТОВАЯ ХИМИЯ',amount:-2000,day:21,cat:'Быт'},
+    {id:'re14',name:'БЕНЗИН',amount:-1000,day:8,cat:'Транспорт'},
+    {id:'re15',name:'БЕНЗИН',amount:-1000,day:22,cat:'Транспорт'},
+  ];
+  sRecurring([...incRecs,...expRecs]);
+
+  // ── ДОЛГИ ──────────────────────────────────────────────────────────────
+  const debts=gDebts();
+  if(!debts.length){
+    sDebts([
+      {id:'d1',name:'КРЕДИТ',amount:5000,dir:'owe',date:'20.01.2026',note:'1/3 выплаты',paid:false},
+      {id:'d2',name:'КРЕДИТ',amount:5000,dir:'owe',date:'03.02.2026',note:'2/3 выплаты',paid:false},
+      {id:'d3',name:'КРЕДИТ',amount:5000,dir:'owe',date:'17.02.2026',note:'3/3 выплаты',paid:false},
+      {id:'d4',name:'ЗАЛОГ',amount:9000,dir:'owe',note:'Долг залог',date:'',paid:false},
+    ]);
+  }
+
+  // ── НАКОПЛЕНИЯ — ЗАПЛАТИ СЕБЕ ──────────────────────────────────────────
+  const savs=gSavings();
+  if(!savs.length){
+    sSavings([
+      {id:'s1',name:'ЗАПЛАТИ СЕБЕ (10%)',target:10300,saved:0,note:'10% от 103к в месяц'},
+      {id:'s2',name:'ПОДУШКА БЕЗОПАСНОСТИ',target:100000,saved:0},
+    ]);
+  }
+
+  // ── ПЛАН МЕСЯЦА ────────────────────────────────────────────────────────
+  const fin=gfin();
+  if(!fin.incPlan){fin.incPlan=103000;fin.expPlan=78000;sfin(fin);}
+}
+
 function render(){
   const n=new Date();const hour=n.getHours();const isEvening=hour>=17;
   const clk=(n.getHours()<10?'0':'')+n.getHours()+':'+(n.getMinutes()<10?'0':'')+n.getMinutes();
