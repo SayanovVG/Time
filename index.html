@@ -10,6 +10,7 @@
 <title>MAX TIME</title>
 <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Oswald:wght@300;400;600;700&display=swap" rel="stylesheet">
 <style>
+:root{--a:#c97a45;--a15:rgba(201,122,69,.15);--a30:rgba(201,122,69,.30);--a40:rgba(201,122,69,.40)}
 *{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
 body{font-family:'Oswald',sans-serif;background:#1a1917;min-height:100vh;color:#f0ede8;padding-bottom:40px;overflow-x:hidden}
 input,button{font-family:'Oswald',sans-serif}
@@ -18,18 +19,20 @@ input:focus{outline:none}
 button{cursor:pointer;border:none}
 button:active{opacity:.8}
 
+/* STICKY TOP */
+.sticky-top{position:sticky;top:0;z-index:90;background:#1a1917}
 /* TOPBAR */
 .topbar{display:flex;align-items:center;justify-content:space-between;padding:14px 16px 10px;border-bottom:1px solid #2a2825}
 .topbar-left{display:flex;align-items:center;gap:10px}
-.week-badge{width:36px;height:36px;background:#ff6200;border-radius:3px;display:flex;align-items:center;justify-content:center;font-family:'Bebas Neue',sans-serif;font-size:22px;color:#fff;flex-shrink:0}
+.week-badge{width:36px;height:36px;background:var(--a);border-radius:3px;display:flex;align-items:center;justify-content:center;font-family:'Bebas Neue',sans-serif;font-size:22px;color:#fff;flex-shrink:0}
 .topbar-title{font-family:'Bebas Neue',sans-serif;font-size:24px;letter-spacing:1px;color:#f0ede8;line-height:1}
-.topbar-sub{font-size:11px;color:#888884;letter-spacing:1px;margin-top:1px}
-.clock{font-family:'Bebas Neue',sans-serif;font-size:20px;color:#888884;letter-spacing:2px}
+.topbar-sub{font-size:12px;color:#888884;letter-spacing:1px;margin-top:1px;font-weight:600}
+.clock{font-family:'Bebas Neue',sans-serif;font-size:30px;color:#f0ede8;letter-spacing:2px}
 
 /* TABS */
 .tabs{display:flex;border-bottom:2px solid #2a2825}
 .tab-btn{flex:1;padding:12px;font-family:'Bebas Neue',sans-serif;font-size:18px;letter-spacing:2px;background:none;color:#555450;border:none;border-bottom:2px solid transparent;margin-bottom:-2px;transition:all .2s}
-.tab-btn.active{color:#ff6200;border-bottom-color:#ff6200}
+.tab-btn.active{color:var(--a);border-bottom-color:var(--a)}
 
 /* CONTENT */
 .content{padding:0 14px}
@@ -37,48 +40,48 @@ button:active{opacity:.8}
 /* HEADER CARD */
 .hdr{padding:16px 0 14px;border-bottom:1px solid #2a2825;margin-bottom:14px}
 .hdr-label{font-size:11px;color:#888884;letter-spacing:2px;margin-bottom:3px}
-.hdr-title{font-family:'Bebas Neue',sans-serif;font-size:30px;color:#ff6200;letter-spacing:1px;line-height:1.1}
+.hdr-title{font-family:'Bebas Neue',sans-serif;font-size:30px;color:var(--a);letter-spacing:1px;line-height:1.1}
 .day-btns{display:flex;gap:8px;margin-top:12px}
 .day-btn{flex:1;padding:9px 4px;border-radius:2px;font-family:'Bebas Neue',sans-serif;font-size:16px;letter-spacing:1px;border:1px solid #3a3733;background:none;color:#888884;transition:all .2s}
-.day-btn.active{background:#ff6200;border-color:#ff6200;color:#fff}
+.day-btn.active{background:var(--a);border-color:var(--a);color:#fff}
 
 /* EXERCISE CARD */
 .ex-card{background:#242220;border:1px solid #2e2c29;border-radius:3px;margin-bottom:10px;overflow:hidden}
 .ex-head{display:flex;justify-content:space-between;align-items:flex-start;padding:12px 12px 8px}
-.ex-name{font-family:'Bebas Neue',sans-serif;font-size:19px;letter-spacing:1px;color:#f0ede8}
-.ex-meta{font-size:11px;color:#888884;letter-spacing:1px;margin-top:2px}
-.ex-meta .hl{color:#ff6200}
+.ex-name{font-family:'Bebas Neue',sans-serif;font-size:21px;letter-spacing:1px;color:#f0ede8}
+.ex-meta{font-size:12px;color:#888884;letter-spacing:1px;margin-top:2px;font-weight:600}
+.ex-meta .hl{color:var(--a)}
 .ex-badges{display:flex;gap:6px;align-items:center;flex-shrink:0}
-.badge-done{border:1px solid #ff6200;color:#ff6200;font-family:'Bebas Neue',sans-serif;font-size:12px;padding:2px 8px;letter-spacing:1px}
-.hint-btn{background:rgba(255,98,0,.15);border:1px solid rgba(255,98,0,.3);color:#ff6200;font-size:11px;padding:3px 8px;border-radius:2px}
-.hint-box{background:#1e1c1a;border-left:2px solid #ff6200;padding:10px 12px;margin-bottom:8px}
-.hint-t{font-family:'Bebas Neue',sans-serif;font-size:12px;color:#ff6200;letter-spacing:1px;margin-bottom:3px}
+.badge-done{border:1px solid var(--a);color:var(--a);font-family:'Bebas Neue',sans-serif;font-size:12px;padding:2px 8px;letter-spacing:1px}
+.hint-btn{background:var(--a15);border:1px solid var(--a30);color:var(--a);font-size:11px;padding:3px 8px;border-radius:2px}
+.hint-box{background:#1e1c1a;border-left:2px solid var(--a);padding:10px 12px;margin-bottom:8px}
+.hint-t{font-family:'Bebas Neue',sans-serif;font-size:12px;color:var(--a);letter-spacing:1px;margin-bottom:3px}
 .hint-txt{font-size:12px;color:#aaa8a4;line-height:1.6}
 
 /* SET ROW */
 .set-row{display:flex;align-items:center;gap:8px;padding:9px 12px;border-top:1px solid #2a2825;transition:background .2s}
-.set-row.done-row{background:rgba(255,98,0,.08)}
+.set-row.done-row{background:rgba(201,122,69,.08)}
 .set-lbl{font-family:'Bebas Neue',sans-serif;font-size:15px;color:#555450;width:24px;flex-shrink:0}
-.set-row.done-row .set-lbl{color:#ff6200}
+.set-row.done-row .set-lbl{color:var(--a)}
 .set-inputs{flex:1;display:flex;gap:6px}
 .set-inp{background:#1a1917;border:1px solid #3a3733;color:#f0ede8;padding:7px 8px;font-size:14px;width:76px;border-radius:2px}
 .set-inp::placeholder{color:#444240}
-.set-inp:focus{border-color:#ff6200}
-.set-inp.done-inp{border-color:rgba(255,98,0,.4)}
+.set-inp:focus{border-color:var(--a)}
+.set-inp.done-inp{border-color:var(--a40)}
 .chk-btn{width:34px;height:34px;border-radius:2px;border:1px solid #3a3733;background:#1a1917;color:#555450;font-size:15px;display:flex;align-items:center;justify-content:center;flex-shrink:0;transition:all .2s}
-.chk-btn.checked{background:#ff6200;border-color:#ff6200;color:#fff}
+.chk-btn.checked{background:var(--a);border-color:var(--a);color:#fff}
 
 /* TIMER ROW */
 .tmr-row{padding:0 12px 12px}
-.tmr-start{width:100%;background:#ff6200;color:#fff;border:none;padding:11px;font-family:'Bebas Neue',sans-serif;font-size:19px;letter-spacing:3px;border-radius:2px;display:flex;align-items:center;justify-content:center;gap:8px}
+.tmr-start{width:100%;background:var(--a);color:#fff;border:none;padding:11px;font-family:'Bebas Neue',sans-serif;font-size:19px;letter-spacing:3px;border-radius:2px;display:flex;align-items:center;justify-content:center;gap:8px}
 
 /* WEEK NAV */
 .week-nav{display:flex;gap:8px;margin:14px 0}
 .wn-btn{background:#242220;border:1px solid #3a3733;color:#888884;padding:10px 12px;font-family:'Bebas Neue',sans-serif;font-size:14px;letter-spacing:1px;border-radius:2px}
 .wn-btn:disabled{opacity:.3;cursor:default}
-.wn-cur{flex:1;background:#242220;border:1px solid #ff6200;color:#ff6200;padding:10px;font-family:'Bebas Neue',sans-serif;font-size:15px;letter-spacing:2px;border-radius:2px;text-align:center}
-.next-wk{width:100%;background:#ff6200;color:#fff;border:none;padding:12px;font-family:'Bebas Neue',sans-serif;font-size:17px;letter-spacing:2px;border-radius:2px;margin-bottom:14px}
-.final-wk{background:rgba(255,98,0,.15);border:1px solid #ff6200;padding:14px;text-align:center;margin-bottom:14px;font-family:'Bebas Neue',sans-serif;font-size:18px;color:#ff6200;letter-spacing:2px}
+.wn-cur{flex:1;background:#242220;border:1px solid var(--a);color:var(--a);padding:10px;font-family:'Bebas Neue',sans-serif;font-size:15px;letter-spacing:2px;border-radius:2px;text-align:center}
+.next-wk{width:100%;background:var(--a);color:#fff;border:none;padding:12px;font-family:'Bebas Neue',sans-serif;font-size:17px;letter-spacing:2px;border-radius:2px;margin-bottom:14px}
+.final-wk{background:var(--a15);border:1px solid var(--a);padding:14px;text-align:center;margin-bottom:14px;font-family:'Bebas Neue',sans-serif;font-size:18px;color:var(--a);letter-spacing:2px}
 .rest-day{text-align:center;padding:50px 20px}
 .rest-icon{font-size:56px;margin-bottom:14px}
 .rest-t{font-family:'Bebas Neue',sans-serif;font-size:26px;color:#f0ede8;letter-spacing:2px}
@@ -87,40 +90,40 @@ button:active{opacity:.8}
 .footer{padding:14px 14px 6px;border-top:1px solid #2a2825;margin-top:14px}
 .footer-txt{font-size:12px;color:#555450;line-height:1.7;margin-bottom:10px;font-style:italic}
 .tags{display:flex;gap:8px;flex-wrap:wrap}
-.tag{border:1px solid rgba(255,98,0,.4);color:#ff6200;font-family:'Bebas Neue',sans-serif;font-size:12px;padding:2px 10px;letter-spacing:1px}
+.tag{border:1px solid var(--a40);color:var(--a);font-family:'Bebas Neue',sans-serif;font-size:12px;padding:2px 10px;letter-spacing:1px}
 
 /* OVERLAY */
 .overlay{position:fixed;inset:0;background:rgba(0,0,0,.85);display:flex;align-items:center;justify-content:center;z-index:100;padding:16px}
-.tmr-card{background:#242220;border:2px solid #ff6200;border-radius:4px;padding:26px 20px 18px;text-align:center;width:100%;max-width:320px;position:relative}
+.tmr-card{background:#242220;border:2px solid var(--a);border-radius:4px;padding:26px 20px 18px;text-align:center;width:100%;max-width:320px;position:relative}
 .tmr-close{position:absolute;top:12px;right:14px;background:none;border:none;color:#888884;font-size:22px;line-height:1}
 .tmr-label{font-family:'Bebas Neue',sans-serif;font-size:15px;color:#888884;letter-spacing:3px;margin-bottom:4px}
 .tmr-time{font-family:'Bebas Neue',sans-serif;font-size:76px;color:#f0ede8;line-height:1;margin-bottom:4px}
-.tmr-time.warn{color:#ff6200}
+.tmr-time.warn{color:var(--a)}
 .tmr-ex{font-size:12px;color:#888884;margin-bottom:14px;letter-spacing:1px}
 .tmr-progress{height:3px;background:#2a2825;border-radius:2px;margin-bottom:16px;overflow:hidden}
-.tmr-bar{height:100%;background:#ff6200;transition:width 1s linear}
+.tmr-bar{height:100%;background:var(--a);transition:width 1s linear}
 .tmr-bar.warn{background:#ffaa00}
 .tmr-adj{display:flex;gap:10px;justify-content:center;margin-bottom:10px}
 .adj-btn{background:#1a1917;border:1px solid #3a3733;color:#f0ede8;padding:8px 16px;font-family:'Bebas Neue',sans-serif;font-size:15px;letter-spacing:1px;border-radius:2px}
 .tmr-save-row{min-height:28px;display:flex;justify-content:center;align-items:center;margin-bottom:10px}
-.save-btn{background:#ff6200;color:#fff;border:none;padding:6px 18px;font-family:'Bebas Neue',sans-serif;font-size:13px;letter-spacing:1px;border-radius:2px}
-.saved-txt{color:#ff6200;font-size:13px;letter-spacing:1px}
+.save-btn{background:var(--a);color:#fff;border:none;padding:6px 18px;font-family:'Bebas Neue',sans-serif;font-size:13px;letter-spacing:1px;border-radius:2px}
+.saved-txt{color:var(--a);font-size:13px;letter-spacing:1px}
 .skip-btn{background:none;border:1px solid #3a3733;color:#888884;padding:9px 28px;font-family:'Bebas Neue',sans-serif;font-size:15px;letter-spacing:2px;border-radius:2px}
-.comp-card{background:#242220;border:2px solid #ff6200;border-radius:4px;padding:38px 22px;text-align:center;width:100%;max-width:320px}
+.comp-card{background:#242220;border:2px solid var(--a);border-radius:4px;padding:38px 22px;text-align:center;width:100%;max-width:320px}
 .comp-icon{font-size:68px;margin-bottom:14px}
-.comp-t{font-family:'Bebas Neue',sans-serif;font-size:30px;color:#ff6200;letter-spacing:2px;margin-bottom:6px}
+.comp-t{font-family:'Bebas Neue',sans-serif;font-size:30px;color:var(--a);letter-spacing:2px;margin-bottom:6px}
 .comp-s{font-size:14px;color:#888884;margin-bottom:22px}
-.comp-btn{background:#ff6200;color:#fff;border:none;padding:11px 34px;font-family:'Bebas Neue',sans-serif;font-size:17px;letter-spacing:2px;border-radius:2px}
+.comp-btn{background:var(--a);color:#fff;border:none;padding:11px 34px;font-family:'Bebas Neue',sans-serif;font-size:17px;letter-spacing:2px;border-radius:2px}
 
 /* NUTRITION */
 .mac-summary{background:#242220;border:1px solid #2e2c29;border-radius:3px;padding:14px;margin:12px 0}
 .mac-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:8px}
 .mac-item{text-align:center}
 .mac-val{font-family:'Bebas Neue',sans-serif;font-size:20px;color:#f0ede8;line-height:1}
-.mac-val.over{color:#ff6200}
+.mac-val.over{color:var(--a)}
 .mac-lbl{font-size:10px;color:#888884;letter-spacing:1px;margin:2px 0}
 .mac-bar{height:3px;background:#2a2825;border-radius:2px;overflow:hidden;margin-top:2px}
-.mac-fill{height:100%;background:#ff6200;border-radius:2px;transition:width .3s}
+.mac-fill{height:100%;background:var(--a);border-radius:2px;transition:width .3s}
 .mac-fill.over{background:#cc3300}
 
 .nut-sec{background:#242220;border:1px solid #2e2c29;border-radius:3px;margin-bottom:10px;overflow:hidden}
@@ -129,29 +132,30 @@ button:active{opacity:.8}
 .nut-sec-c{font-size:12px;color:#888884}
 .search-area{padding:10px 12px}
 .search-row{display:flex;gap:8px;margin-bottom:8px}
-.search-inp{flex:1;background:#1a1917;border:1px solid #3a3733;color:#f0ede8;padding:9px 10px;font-size:14px;border-radius:2px}
+.search-inp{flex:1;background:#1a1917;border:1px solid #3a3733;color:#f0ede8;padding:9px 10px;font-size:14px;border-radius:2px;font-family:'Oswald',sans-serif;font-weight:400}
 .search-inp::placeholder{color:#444240}
-.search-inp:focus{border-color:#ff6200;outline:none}
-.srch-btn{background:#ff6200;color:#fff;border:none;padding:9px 14px;font-family:'Bebas Neue',sans-serif;font-size:14px;letter-spacing:1px;border-radius:2px;white-space:nowrap}
-.manual-btn{background:none;border:1px solid #3a3733;color:#888884;padding:9px 12px;font-family:'Bebas Neue',sans-serif;font-size:13px;letter-spacing:1px;border-radius:2px;width:100%}
+.search-inp:focus{border-color:var(--a);outline:none}
+.f-sel{width:100%;background:#1a1917;border:1px solid #3a3733;color:#f0ede8;padding:9px 10px;font-size:15px;border-radius:2px;margin-bottom:8px;font-family:'Oswald',sans-serif;font-weight:600;-webkit-appearance:none;appearance:none}
+.f-sel:focus{border-color:var(--a);outline:none}
+.manual-btn{background:none;border:1px solid #3a3733;color:#888884;padding:9px 12px;font-family:'Bebas Neue',sans-serif;font-size:14px;letter-spacing:1px;border-radius:2px;width:100%}
 .search-results{margin-top:8px}
 .sri{display:flex;justify-content:space-between;align-items:center;padding:9px 0;border-bottom:1px solid #2a2825;cursor:pointer}
 .sri:last-child{border-bottom:none}
 .sri-name{font-size:13px;color:#f0ede8;font-weight:500}
 .sri-mac{font-size:11px;color:#888884;margin-top:1px}
-.sri-arr{color:#ff6200;font-size:20px}
+.sri-arr{color:var(--a);font-size:20px}
 .srch-status{text-align:center;color:#888884;font-size:12px;padding:14px 0;letter-spacing:1px}
-.portion-form{background:#1a1917;border:1px solid #ff6200;border-radius:2px;padding:12px;margin-top:4px}
-.pf-t{font-family:'Bebas Neue',sans-serif;font-size:15px;color:#ff6200;letter-spacing:1px;margin-bottom:4px}
-.pf-prev{font-size:12px;color:#ff6200;min-height:16px;letter-spacing:1px;margin-bottom:8px}
+.portion-form{background:#1a1917;border:1px solid var(--a);border-radius:2px;padding:12px;margin-top:4px}
+.pf-t{font-family:'Bebas Neue',sans-serif;font-size:15px;color:var(--a);letter-spacing:1px;margin-bottom:4px}
+.pf-prev{font-size:12px;color:var(--a);min-height:16px;letter-spacing:1px;margin-bottom:8px}
 .f-lbl{font-size:11px;color:#888884;letter-spacing:1px;margin-bottom:3px}
 .f-inp{width:100%;background:#242220;border:1px solid #3a3733;color:#f0ede8;padding:8px 10px;font-size:16px;border-radius:2px;margin-bottom:8px}
-.f-inp:focus{border-color:#ff6200;outline:none}
+.f-inp:focus{border-color:var(--a);outline:none}
 .f-inp::placeholder{color:#444240}
 .f-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px}
 .f-note{font-size:11px;color:#555450;margin-bottom:6px}
 .pf-actions{display:flex;gap:8px;margin-top:4px}
-.add-btn{flex:1;background:#ff6200;color:#fff;border:none;padding:9px;font-family:'Bebas Neue',sans-serif;font-size:15px;letter-spacing:1px;border-radius:2px}
+.add-btn{flex:1;background:var(--a);color:#fff;border:none;padding:9px;font-family:'Bebas Neue',sans-serif;font-size:15px;letter-spacing:1px;border-radius:2px}
 .cancel-btn{background:none;border:1px solid #3a3733;color:#888884;padding:9px 14px;font-family:'Bebas Neue',sans-serif;font-size:14px;letter-spacing:1px;border-radius:2px}
 .manual-form{background:#1a1917;border:1px solid #3a3733;border-radius:2px;padding:12px;margin-top:4px}
 .mf-t{font-family:'Bebas Neue',sans-serif;font-size:15px;color:#f0ede8;letter-spacing:1px;margin-bottom:6px}
@@ -162,16 +166,16 @@ button:active{opacity:.8}
 .fli-name{font-size:13px;color:#f0ede8;font-weight:500}
 .fli-mac{font-size:11px;color:#888884;margin-top:1px}
 .fli-del{background:none;border:none;color:#555450;font-size:20px;padding:0 4px;line-height:1}
-.fli-del:active{color:#ff6200}
+.fli-del:active{color:var(--a)}
 .empty-log{padding:14px;text-align:center;color:#555450;font-size:12px;letter-spacing:1px}
 
 .supp-item{display:flex;align-items:center;padding:9px 12px;border-bottom:1px solid #2a2825;cursor:pointer}
 .supp-item:last-child{border-bottom:none}
 .supp-chk{width:22px;height:22px;border:1px solid #3a3733;border-radius:2px;display:flex;align-items:center;justify-content:center;margin-right:10px;flex-shrink:0;transition:all .2s}
-.supp-chk.checked{background:#ff6200;border-color:#ff6200}
+.supp-chk.checked{background:var(--a);border-color:var(--a)}
 .supp-name{font-size:13px;color:#f0ede8;flex:1}
 .supp-time{font-size:11px;color:#888884}
-.buy-tag{font-size:10px;color:#ff6200;border:1px solid rgba(255,98,0,.4);padding:1px 6px;margin-left:6px;letter-spacing:1px}
+.buy-tag{font-size:10px;color:var(--a);border:1px solid var(--a40);padding:1px 6px;margin-left:6px;letter-spacing:1px}
 </style>
 </head>
 <body>
@@ -209,25 +213,18 @@ const PROGRAM={
 };
 const WC={1:{n:'АДАПТАЦИЯ',s:3},2:{n:'АДАПТАЦИЯ',s:3},3:{n:'ОБЪЁМ',s:4},4:{n:'ОБЪЁМ',s:4},5:{n:'ПИК',s:4},6:{n:'ПИК',s:4},7:{n:'РАЗГРУЗКА',s:3}};
 const DN=['Вс','Пн','Вт','Ср','Чт','Пт','Сб'];
-const MG={cal:2800,prot:218,fat:84,carbs:266};
-const SUPPS=[
-  {id:'collagen',name:'Коллаген',time:'5:30'},
-  {id:'caffeine',name:'Кофеин',time:'5:30'},
-  {id:'creatine',name:'Креатин 5г',time:'7:00'},
-  {id:'vitd',name:'Витамин D3',time:'7:40',buy:true},
-  {id:'omega',name:'Омега-3',time:'7:40',buy:true},
-  {id:'zinc',name:'Цинк',time:'7:40',buy:true},
-  {id:'protein',name:'Протеин',time:'16:00'},
-  {id:'magnesium',name:'Магний',time:'22:00'}
-];
 
 let S={tab:'training',week:1,day:1,wd:{},cp:{},hints:{},
   timer:{on:false,left:0,max:0,ex:'',eid:null,mod:false,saved:false},
   done:false,
-  ns:{q:'',res:[],loading:false,err:false,sel:null,gram:'',manual:false,
-    mf:{name:'',cal:'',prot:'',fat:'',carbs:'',grams:''}}
+  ns:{sel:null,gram:'',manual:false,sq:'',
+    mf:{name:'',cal:'',prot:'',fat:'',carbs:'',grams:''},
+    ck:false,ckname:'',ckitems:[],
+    ckaf:{name:'',cal:'',prot:'',fat:'',carbs:'',grams:''},
+    prof:false}
 };
 
+// --- ХРАНИЛИЩЕ ---
 function load(){try{const d=JSON.parse(localStorage.getItem('mt_v12')||'{}');S.wd=d.wd||{};S.week=d.week||1;S.cp=d.cp||{};}catch(e){}}
 function sv(){try{localStorage.setItem('mt_v12',JSON.stringify({wd:S.wd,week:S.week,cp:S.cp}));}catch(e){}}
 function tdk(){const d=new Date();return d.getFullYear()+'-'+(d.getMonth()+1)+'-'+d.getDate();}
@@ -235,6 +232,64 @@ function gnd(){try{return JSON.parse(localStorage.getItem('mt_n_'+tdk())||'{}')}
 function snd(d){try{localStorage.setItem('mt_n_'+tdk(),JSON.stringify(d));}catch(e){}}
 function gcp(){try{return JSON.parse(localStorage.getItem('mt_cp')||'[]');}catch(e){return [];}}
 function scp(p){try{localStorage.setItem('mt_cp',JSON.stringify(p));}catch(e){}}
+
+// --- ПРОФИЛЬ ТЕЛА ---
+function gprof(){try{return JSON.parse(localStorage.getItem('mt_prof')||'null');}catch(e){return null;}}
+function sprof(p){try{localStorage.setItem('mt_prof',JSON.stringify(p));}catch(e){}}
+function calcMacros(p){
+  if(!p||!p.weight||!p.height||!p.age)return null;
+  const bmr=10*p.weight+6.25*p.height-5*p.age+5;
+  const act={1:1.2,2:1.375,3:1.55,4:1.725}[p.act||2]||1.375;
+  const tdee=Math.round(bmr*act);
+  const adj={cut:-300,maintain:0,bulk:300}[p.goal||'maintain']||0;
+  const cal=tdee+adj;
+  const prot=Math.round(p.weight*2.2);
+  const fat=Math.round(cal*0.25/9);
+  const carbs=Math.round((cal-prot*4-fat*9)/4);
+  return{cal,prot,fat,carbs};
+}
+
+// --- ЭКСПОРТ / ИМПОРТ ---
+function exportData(){
+  const data={
+    v:'mt13',
+    train:{wd:S.wd,week:S.week,cp:S.cp},
+    prof:gprof(),
+    products:gcp(),
+    days:{}
+  };
+  for(let i=0;i<30;i++){
+    const d=new Date();d.setDate(d.getDate()-i);
+    const k='mt_n_'+d.getFullYear()+'-'+(d.getMonth()+1)+'-'+d.getDate();
+    const v=localStorage.getItem(k);
+    if(v)data.days[k]=JSON.parse(v);
+  }
+  const blob=new Blob([JSON.stringify(data,null,2)],{type:'application/json'});
+  const url=URL.createObjectURL(blob);
+  const a=document.createElement('a');
+  a.href=url;a.download='maxtime_backup_'+tdk()+'.json';
+  document.body.appendChild(a);a.click();
+  document.body.removeChild(a);URL.revokeObjectURL(url);
+}
+function importData(){
+  const inp=document.createElement('input');
+  inp.type='file';inp.accept='.json';
+  inp.onchange=e=>{
+    const f=e.target.files[0];if(!f)return;
+    const r=new FileReader();
+    r.onload=ev=>{
+      try{
+        const data=JSON.parse(ev.target.result);
+        if(data.train){S.wd=data.train.wd||{};S.week=data.train.week||1;S.cp=data.train.cp||{};sv();}
+        if(data.prof)sprof(data.prof);
+        if(data.products)scp(data.products);
+        if(data.days){Object.entries(data.days).forEach(([k,v])=>{localStorage.setItem(k,JSON.stringify(v));});}
+        alert('Данные восстановлены!');render();
+      }catch(e){alert('Ошибка файла');}
+    };r.readAsText(f);
+  };
+  document.body.appendChild(inp);inp.click();document.body.removeChild(inp);
+}
 
     let audioCtx = null;
     let gongBuffer = null;
@@ -379,21 +434,55 @@ function gnw(){if(S.week<7){const nw=S.week+1;[1,3,5].forEach(d=>{const p=PROGRA
 function ra(){if(confirm('Сбросить ВСЕ данные?')){S.wd={};S.cp={};S.week=1;localStorage.removeItem('mt_v12');render();}}
 
 // NUTRITION
-async function sf(q){if(!q.trim())return;S.ns.loading=true;S.ns.err=false;S.ns.res=[];render();
-try{const url='https://world.openfoodfacts.org/cgi/search.pl?search_terms='+encodeURIComponent(q)+'&json=1&fields=product_name,nutriments&page_size=8&action=process&search_simple=1';
-const r=await fetch(url);const data=await r.json();
-const prods=(data.products||[]).filter(p=>p.product_name&&p.nutriments);
-const custom=gcp().filter(p=>p.name.toLowerCase().includes(q.toLowerCase()));
-S.ns.res=[...custom.map(p=>({...p,isC:true})),...prods.map(p=>({name:p.product_name,cal:Math.round(p.nutriments['energy-kcal_100g']||p.nutriments['energy_100g']/4.184||0),prot:Math.round((p.nutriments['proteins_100g']||0)*10)/10,fat:Math.round((p.nutriments['fat_100g']||0)*10)/10,carbs:Math.round((p.nutriments['carbohydrates_100g']||0)*10)/10}))].slice(0,10);
-}catch(e){S.ns.err=true;S.ns.res=gcp().filter(p=>p.name.toLowerCase().includes(q.toLowerCase())).map(p=>({...p,isC:true}));}
-S.ns.loading=false;render();}
-
-function selp(p){S.ns.sel=p;S.ns.gram='';S.ns.manual=false;render();setTimeout(()=>{const el=document.getElementById('gi');if(el)el.focus();},100);}
-function ap(){const g=parseFloat(S.ns.gram);if(!g||g<=0)return;const p=S.ns.sel;const e={id:Date.now(),name:p.name,grams:g,cal:Math.round(p.cal*g/100),prot:Math.round(p.prot*g/100*10)/10,fat:Math.round(p.fat*g/100*10)/10,carbs:Math.round(p.carbs*g/100*10)/10};const nd=gnd();if(!nd.log)nd.log=[];nd.log.push(e);snd(nd);S.ns.sel=null;S.ns.gram='';S.ns.q='';S.ns.res=[];render();}
-function am(){const m=S.ns.mf;if(!m.name.trim()||!m.grams)return;const g=parseFloat(m.grams)||100;const e={id:Date.now(),name:m.name.trim(),grams:g,cal:Math.round((parseFloat(m.cal)||0)*g/100),prot:Math.round((parseFloat(m.prot)||0)*g/100*10)/10,fat:Math.round((parseFloat(m.fat)||0)*g/100*10)/10,carbs:Math.round((parseFloat(m.carbs)||0)*g/100*10)/10};const cp=gcp();if(!cp.find(p=>p.name.toLowerCase()===m.name.trim().toLowerCase())){cp.push({id:'c'+Date.now(),name:m.name.trim(),cal:parseFloat(m.cal)||0,prot:parseFloat(m.prot)||0,fat:parseFloat(m.fat)||0,carbs:parseFloat(m.carbs)||0,isC:true});scp(cp);}const nd=gnd();if(!nd.log)nd.log=[];nd.log.push(e);snd(nd);S.ns.manual=false;S.ns.mf={name:'',cal:'',prot:'',fat:'',carbs:'',grams:''};render();}
+function selp(p){S.ns.sel=p;S.ns.gram='';S.ns.manual=false;S.ns.ck=false;render();setTimeout(()=>{const el=document.getElementById('gi');if(el)el.focus();},100);}
+function ap(){
+  const g=parseFloat(S.ns.gram);if(!g||g<=0)return;
+  const p=S.ns.sel;
+  const e={id:Date.now(),name:p.name,grams:g,cal:Math.round(p.cal*g/100),prot:Math.round(p.prot*g/100*10)/10,fat:Math.round(p.fat*g/100*10)/10,carbs:Math.round(p.carbs*g/100*10)/10};
+  const nd=gnd();if(!nd.log)nd.log=[];nd.log.push(e);snd(nd);
+  S.ns.sel=null;S.ns.gram='';render();
+}
+function am(){
+  const m=S.ns.mf;if(!m.name.trim()||!m.grams)return;
+  const g=parseFloat(m.grams)||100;
+  const e={id:Date.now(),name:m.name.trim(),grams:g,cal:Math.round((parseFloat(m.cal)||0)*g/100),prot:Math.round((parseFloat(m.prot)||0)*g/100*10)/10,fat:Math.round((parseFloat(m.fat)||0)*g/100*10)/10,carbs:Math.round((parseFloat(m.carbs)||0)*g/100*10)/10};
+  const cp=gcp();
+  if(!cp.find(p=>p.name.toLowerCase()===m.name.trim().toLowerCase())){
+    cp.push({id:'c'+Date.now(),name:m.name.trim(),cal:parseFloat(m.cal)||0,prot:parseFloat(m.prot)||0,fat:parseFloat(m.fat)||0,carbs:parseFloat(m.carbs)||0});
+    scp(cp);
+  }
+  const nd=gnd();if(!nd.log)nd.log=[];nd.log.push(e);snd(nd);
+  S.ns.manual=false;S.ns.mf={name:'',cal:'',prot:'',fat:'',carbs:'',grams:''};render();
+}
 function dl(id){const nd=gnd();nd.log=(nd.log||[]).filter(e=>e.id!==id);snd(nd);render();}
-function ts(id){const nd=gnd();if(!nd.sup)nd.sup={};nd.sup[id]=!nd.sup[id];snd(nd);render();}
+function dcp(id){const cp=gcp().filter(p=>p.id!==id);scp(cp);render();}
 function cm(log){let c=0,p=0,f=0,ca=0;(log||[]).forEach(e=>{c+=e.cal;p+=e.prot;f+=e.fat;ca+=e.carbs;});return{cal:Math.round(c),prot:Math.round(p*10)/10,fat:Math.round(f*10)/10,carbs:Math.round(ca*10)/10};}
+
+// КОКТЕЙЛИ
+function ckAddItem(){
+  const m=S.ns.ckaf;if(!m.name.trim()||!m.grams)return;
+  const g=parseFloat(m.grams)||100;
+  S.ns.ckitems.push({name:m.name.trim(),grams:g,cal:Math.round((parseFloat(m.cal)||0)*g/100),prot:Math.round((parseFloat(m.prot)||0)*g/100*10)/10,fat:Math.round((parseFloat(m.fat)||0)*g/100*10)/10,carbs:Math.round((parseFloat(m.carbs)||0)*g/100*10)/10});
+  S.ns.ckaf={name:'',cal:'',prot:'',fat:'',carbs:'',grams:''};render();
+}
+function ckSave(){
+  if(!S.ns.ckname.trim()||!S.ns.ckitems.length)return;
+  const tot=S.ns.ckitems.reduce((a,i)=>({cal:a.cal+i.cal,prot:a.prot+i.prot,fat:a.fat+i.fat,carbs:a.carbs+i.carbs,grams:a.grams+i.grams}),{cal:0,prot:0,fat:0,carbs:0,grams:0});
+  const per100=tot.grams>0?{cal:Math.round(tot.cal/tot.grams*100),prot:Math.round(tot.prot/tot.grams*100*10)/10,fat:Math.round(tot.fat/tot.grams*100*10)/10,carbs:Math.round(tot.carbs/tot.grams*100*10)/10}:{cal:0,prot:0,fat:0,carbs:0};
+  const cp=gcp();
+  cp.push({id:'ck'+Date.now(),name:S.ns.ckname.trim(),isCk:true,...per100});
+  scp(cp);
+  S.ns.ck=false;S.ns.ckname='';S.ns.ckitems=[];S.ns.ckaf={name:'',cal:'',prot:'',fat:'',carbs:'',grams:''};
+  render();
+}
+
+// ПРОФИЛЬ
+function saveProf(){
+  const p=S.ns.pf;
+  if(!p||!p.weight||!p.height||!p.age)return;
+  sprof({weight:parseFloat(p.weight),height:parseFloat(p.height),age:parseInt(p.age),act:p.act||'2',goal:p.goal||'maintain'});
+  S.ns.prof=false;S.ns.pf=null;render();
+}
 
 // RENDER
 function render(){
@@ -433,7 +522,7 @@ function render(){
   </div></div>`;}
 
   // TOPBAR
-  h+=`<div class="topbar">
+  h+=`<div class="sticky-top"><div class="topbar">
     <div class="topbar-left">
       <div class="week-badge">${S.week}</div>
       <div><div class="topbar-title">MAX TIME</div><div class="topbar-sub">${wc.n} · НЕД.${S.week}/7</div></div>
@@ -443,7 +532,7 @@ function render(){
   <div class="tabs">
     <button class="tab-btn ${S.tab==='training'?'active':''}" onclick="S.tab='training';render()">ТРЕНИРОВКА</button>
     <button class="tab-btn ${S.tab==='nutrition'?'active':''}" onclick="S.tab='nutrition';render()">ПИТАНИЕ</button>
-  </div>
+  </div></div>
   <div class="content">`;
 
   if(S.tab==='training'){
@@ -509,36 +598,70 @@ function render(){
 
   } else {
     // NUTRITION TAB
+    const prof=gprof();
+    const MG=calcMacros(prof)||{cal:2500,prot:180,fat:70,carbs:250};
     const pct=(v,g)=>Math.min(100,g>0?Math.round(v/g*100):0);
+
+    // КБЖУ СВОДКА
     h+=`<div class="mac-summary"><div class="mac-grid">
       <div class="mac-item"><div class="mac-val ${mac.cal>MG.cal?'over':''}">${mac.cal}</div><div class="mac-lbl">/ ${MG.cal} ККАЛ</div><div class="mac-bar"><div class="mac-fill ${mac.cal>MG.cal?'over':''}" style="width:${pct(mac.cal,MG.cal)}%"></div></div></div>
       <div class="mac-item"><div class="mac-val ${mac.prot>MG.prot?'over':''}">${mac.prot}</div><div class="mac-lbl">/ ${MG.prot}Г Б</div><div class="mac-bar"><div class="mac-fill ${mac.prot>MG.prot?'over':''}" style="width:${pct(mac.prot,MG.prot)}%"></div></div></div>
       <div class="mac-item"><div class="mac-val ${mac.fat>MG.fat?'over':''}">${mac.fat}</div><div class="mac-lbl">/ ${MG.fat}Г Ж</div><div class="mac-bar"><div class="mac-fill ${mac.fat>MG.fat?'over':''}" style="width:${pct(mac.fat,MG.fat)}%"></div></div></div>
       <div class="mac-item"><div class="mac-val ${mac.carbs>MG.carbs?'over':''}">${mac.carbs}</div><div class="mac-lbl">/ ${MG.carbs}Г У</div><div class="mac-bar"><div class="mac-fill ${mac.carbs>MG.carbs?'over':''}" style="width:${pct(mac.carbs,MG.carbs)}%"></div></div></div>
+    </div>
+    <div style="display:flex;gap:8px;margin-top:10px">
+      <button class="manual-btn" style="flex:1" onclick="S.ns.prof=!S.ns.prof;if(S.ns.prof&&!S.ns.pf){const p=gprof();S.ns.pf=p?{...p}:{weight:'',height:'',age:'',act:'2',goal:'maintain'};}render()">⚙ ПАРАМЕТРЫ ТЕЛА</button>
+      <button class="manual-btn" style="flex:1;border-color:#3a3733" onclick="exportData()">💾 БЭКАП</button>
+      <button class="manual-btn" style="flex:1;border-color:#3a3733" onclick="importData()">📂 ЗАГРУЗИТЬ</button>
     </div></div>`;
 
-    // ПОИСК ПРОДУКТОВ
-    h+=`<div class="nut-sec"><div class="nut-sec-head"><span class="nut-sec-t">ДОБАВИТЬ ПРОДУКТ</span></div><div class="search-area">`;
+    // ПРОФИЛЬ ТЕЛА
+    if(S.ns.prof){
+      const pf=S.ns.pf||{};
+      h+=`<div class="nut-sec"><div class="nut-sec-head"><span class="nut-sec-t">ПАРАМЕТРЫ ТЕЛА</span></div><div style="padding:10px 12px">
+        <div class="f-grid" style="grid-template-columns:1fr 1fr 1fr">
+          <div><div class="f-lbl">ВОЗРАСТ</div><input type="text" inputmode="numeric" placeholder="35" class="f-inp" value="${pf.age||''}" oninput="S.ns.pf.age=this.value"></div>
+          <div><div class="f-lbl">ВЕС КГ</div><input type="text" inputmode="decimal" placeholder="85" class="f-inp" value="${pf.weight||''}" oninput="S.ns.pf.weight=this.value"></div>
+          <div><div class="f-lbl">РОСТ СМ</div><input type="text" inputmode="numeric" placeholder="178" class="f-inp" value="${pf.height||''}" oninput="S.ns.pf.height=this.value"></div>
+        </div>
+        <div class="f-lbl">АКТИВНОСТЬ</div>
+        <select class="f-sel" onchange="S.ns.pf.act=this.value">
+          <option value="1" ${pf.act==='1'?'selected':''}>Сидячий образ жизни</option>
+          <option value="2" ${(!pf.act||pf.act==='2')?'selected':''}>Лёгкая активность (1-3 трен/нед)</option>
+          <option value="3" ${pf.act==='3'?'selected':''}>Средняя активность (3-5 трен/нед)</option>
+          <option value="4" ${pf.act==='4'?'selected':''}>Высокая активность (6-7 трен/нед)</option>
+        </select>
+        <div class="f-lbl">ЦЕЛЬ</div>
+        <select class="f-sel" onchange="S.ns.pf.goal=this.value">
+          <option value="cut" ${pf.goal==='cut'?'selected':''}>Похудение (−300 ккал)</option>
+          <option value="maintain" ${(!pf.goal||pf.goal==='maintain')?'selected':''}>Поддержание веса</option>
+          <option value="bulk" ${pf.goal==='bulk'?'selected':''}>Набор массы (+300 ккал)</option>
+        </select>
+        <div style="display:flex;gap:8px">
+          <button class="add-btn" style="flex:1" onclick="saveProf()">СОХРАНИТЬ</button>
+          <button class="cancel-btn" onclick="S.ns.prof=false;render()">ОТМЕНА</button>
+        </div>
+      </div></div>`;
+    }
+
+    // ДОБАВИТЬ ПРОДУКТ
+    h+=`<div class="nut-sec"><div class="nut-sec-head"><span class="nut-sec-t">ДОБАВИТЬ</span></div><div style="padding:10px 12px">`;
+
     if(S.ns.sel){
       const p=S.ns.sel;
-      h+=`<div class="portion-form">
-        <div class="pf-t">${p.name.substring(0,42).toUpperCase()}</div>
-        <div style="font-size:11px;color:#888884;margin-bottom:8px;letter-spacing:1px">НА 100Г: ${p.cal} ККАЛ · Б${p.prot} Ж${p.fat} У${p.carbs}</div>
+      h+=`<div class="pf-t" style="font-family:'Bebas Neue',sans-serif;font-size:15px;color:var(--a);letter-spacing:1px;margin-bottom:4px">${p.name.substring(0,42).toUpperCase()}</div>
+        <div style="font-size:12px;color:#888884;margin-bottom:8px;letter-spacing:1px;font-weight:600">НА 100Г: ${p.cal} ККАЛ · Б${p.prot} Ж${p.fat} У${p.carbs}</div>
         <div class="f-lbl">ГРАММЫ</div>
         <input id="gi" type="text" inputmode="decimal" placeholder="100" class="f-inp" value="${S.ns.gram}"
           oninput="S.ns.gram=this.value;const g=parseFloat(this.value)||0;const el=document.getElementById('pp');if(el)el.textContent=g?Math.round(${p.cal}*g/100)+' ККАЛ · Б'+Math.round(${p.prot}*g/100*10)/10+' Ж'+Math.round(${p.fat}*g/100*10)/10+' У'+Math.round(${p.carbs}*g/100*10)/10:'';">
-        <div id="pp" class="pf-prev"></div>
-        <div class="pf-actions">
-          <button class="add-btn" onclick="ap()">ДОБАВИТЬ</button>
+        <div id="pp" style="font-size:13px;color:var(--a);min-height:16px;letter-spacing:1px;margin-bottom:8px;font-weight:600"></div>
+        <div style="display:flex;gap:8px">
+          <button class="add-btn" style="flex:1" onclick="ap()">ДОБАВИТЬ</button>
           <button class="cancel-btn" onclick="S.ns.sel=null;render()">ОТМЕНА</button>
-        </div>
-      </div>`;
+        </div>`;
     } else if(S.ns.manual){
       const m=S.ns.mf;
-      h+=`<div class="manual-form">
-        <div class="mf-t">ДОБАВИТЬ ВРУЧНУЮ</div>
-        <div class="f-note">БЖУК на 100г, затем съеденные граммы</div>
-        <div class="f-lbl">НАЗВАНИЕ</div>
+      h+=`<div class="f-lbl">НАЗВАНИЕ</div>
         <input type="text" placeholder="Куриная грудь" class="f-inp" value="${m.name}" oninput="S.ns.mf.name=this.value">
         <div class="f-grid">
           <div><div class="f-lbl">ККАЛ/100Г</div><input type="text" inputmode="decimal" placeholder="165" class="f-inp" value="${m.cal}" oninput="S.ns.mf.cal=this.value"></div>
@@ -548,31 +671,77 @@ function render(){
         </div>
         <div class="f-lbl">ГРАММЫ СЪЕДЕНО</div>
         <input type="text" inputmode="decimal" placeholder="200" class="f-inp" value="${m.grams}" oninput="S.ns.mf.grams=this.value">
-        <div class="pf-actions">
-          <button class="add-btn" onclick="am()">ДОБАВИТЬ</button>
+        <div style="display:flex;gap:8px">
+          <button class="add-btn" style="flex:1" onclick="am()">ДОБАВИТЬ И СОХРАНИТЬ</button>
           <button class="cancel-btn" onclick="S.ns.manual=false;render()">ОТМЕНА</button>
-        </div>
-      </div>`;
-    } else {
-      h+=`<div class="search-row">
-        <input type="text" placeholder="Поиск продукта..." class="search-inp" id="si" value="${S.ns.q}"
-          oninput="S.ns.q=this.value"
-          onkeydown="if(event.key==='Enter'){event.preventDefault();sf(S.ns.q);}">
-        <button class="srch-btn" onclick="sf(document.getElementById('si').value)">НАЙТИ</button>
-      </div>
-      <button class="manual-btn" onclick="S.ns.manual=true;S.ns.res=[];render()">+ ДОБАВИТЬ ВРУЧНУЮ</button>`;
-      if(S.ns.loading)h+=`<div class="srch-status">ПОИСК...</div>`;
-      else if(S.ns.err&&!S.ns.res.length)h+=`<div class="srch-status">ОФЛАЙН — ТОЛЬКО СОХРАНЁННЫЕ ПРОДУКТЫ</div>`;
-      else if(S.ns.res.length){
-        h+=`<div class="search-results">`;
-        S.ns.res.forEach(p=>{
-          const ps=JSON.stringify(p).replace(/'/g,"\\'").replace(/"/g,'&quot;');
-          h+=`<div class="sri" onclick="selp(JSON.parse(this.dataset.p))" data-p="${ps}">
-            <div><div class="sri-name">${p.name}${p.isC?' ★':''}</div><div class="sri-mac">${p.cal} ККАЛ · Б${p.prot} Ж${p.fat} У${p.carbs} / 100Г</div></div>
-            <span class="sri-arr">›</span>
+        </div>`;
+    } else if(S.ns.ck){
+      // КОКТЕЙЛЬ
+      const ck=S.ns.ckaf;
+      const tot=S.ns.ckitems.reduce((a,i)=>({cal:a.cal+i.cal,prot:a.prot+i.prot,fat:a.fat+i.fat,carbs:a.carbs+i.carbs}),{cal:0,prot:0,fat:0,carbs:0});
+      h+=`<div class="f-lbl">НАЗВАНИЕ КОКТЕЙЛЯ</div>
+        <input type="text" placeholder="Протеиновый шейк" class="f-inp" value="${S.ns.ckname}" oninput="S.ns.ckname=this.value">`;
+      if(S.ns.ckitems.length){
+        h+=`<div style="background:#1e1c1a;border-left:2px solid var(--a);padding:8px 10px;margin-bottom:8px">`;
+        S.ns.ckitems.forEach((it,i)=>{
+          h+=`<div style="display:flex;align-items:center;padding:4px 0;border-bottom:1px solid #2a2825;font-size:13px">
+            <span style="flex:1;color:#f0ede8;font-weight:600">${it.name} ${it.grams}г</span>
+            <span style="color:#888884;margin-right:8px">${it.cal} кк</span>
+            <button onclick="S.ns.ckitems.splice(${i},1);render()" style="background:none;border:none;color:#555450;font-size:16px;padding:0">×</button>
           </div>`;
         });
+        h+=`<div style="font-size:12px;color:var(--a);margin-top:4px;font-weight:600">ИТОГО: ${tot.cal} ККАЛ · Б${Math.round(tot.prot*10)/10} Ж${Math.round(tot.fat*10)/10} У${Math.round(tot.carbs*10)/10}</div>`;
         h+=`</div>`;
+      }
+      h+=`<div style="font-size:11px;color:#888884;letter-spacing:1px;font-weight:600;margin-bottom:6px">ДОБАВИТЬ ИНГРЕДИЕНТ</div>
+        <input type="text" placeholder="Название" class="f-inp" value="${ck.name}" oninput="S.ns.ckaf.name=this.value">
+        <div class="f-grid">
+          <div><div class="f-lbl">ККАЛ/100Г</div><input type="text" inputmode="decimal" placeholder="0" class="f-inp" value="${ck.cal}" oninput="S.ns.ckaf.cal=this.value"></div>
+          <div><div class="f-lbl">БЕЛКИ/100Г</div><input type="text" inputmode="decimal" placeholder="0" class="f-inp" value="${ck.prot}" oninput="S.ns.ckaf.prot=this.value"></div>
+          <div><div class="f-lbl">ЖИРЫ/100Г</div><input type="text" inputmode="decimal" placeholder="0" class="f-inp" value="${ck.fat}" oninput="S.ns.ckaf.fat=this.value"></div>
+          <div><div class="f-lbl">УГЛЕВОДЫ/100Г</div><input type="text" inputmode="decimal" placeholder="0" class="f-inp" value="${ck.carbs}" oninput="S.ns.ckaf.carbs=this.value"></div>
+        </div>
+        <div class="f-lbl">ГРАММЫ</div>
+        <input type="text" inputmode="decimal" placeholder="100" class="f-inp" value="${ck.grams}" oninput="S.ns.ckaf.grams=this.value">
+        <div style="display:flex;gap:8px;margin-bottom:8px">
+          <button class="add-btn" style="flex:1" onclick="ckAddItem()">+ ИНГРЕДИЕНТ</button>
+        </div>
+        <div style="display:flex;gap:8px">
+          <button class="add-btn" style="flex:1;background:#444" onclick="ckSave()">💾 СОХРАНИТЬ КОКТЕЙЛЬ</button>
+          <button class="cancel-btn" onclick="S.ns.ck=false;S.ns.ckitems=[];S.ns.ckname='';render()">ОТМЕНА</button>
+        </div>`;
+    } else {
+      // ПОИСК ПО СОХРАНЁННЫМ + КНОПКИ
+      const cp=gcp();
+      const sq=S.ns.sq||'';
+      const found=sq?cp.filter(p=>p.name.toLowerCase().includes(sq.toLowerCase())):[];
+      h+=`<div style="display:flex;gap:8px;margin-bottom:8px">
+        <button class="manual-btn" style="flex:1;border-color:var(--a30);color:var(--a)" onclick="S.ns.manual=true;render()">+ НОВЫЙ ПРОДУКТ</button>
+        <button class="manual-btn" style="flex:1" onclick="S.ns.ck=true;S.ns.ckitems=[];S.ns.ckname='';S.ns.ckaf={name:'',cal:'',prot:'',fat:'',carbs:'',grams:''};render()">🥤 КОКТЕЙЛЬ</button>
+      </div>
+      <div style="display:flex;gap:8px">
+        <input type="text" placeholder="Поиск по сохранённым..." class="search-inp" id="sq" value="${sq}" oninput="S.ns.sq=this.value;render()">
+      </div>`;
+      if(sq&&found.length){
+        h+=`<div style="margin-top:6px">`;
+        found.forEach(p=>{
+          const ps=JSON.stringify({name:p.name,cal:p.cal,prot:p.prot,fat:p.fat,carbs:p.carbs}).replace(/"/g,'&quot;');
+          h+=`<div style="display:flex;align-items:center;padding:8px 0;border-bottom:1px solid #2a2825">
+            <div style="flex:1;cursor:pointer" onclick='selp(JSON.parse(this.parentElement.dataset.p))'>
+              <div style="font-size:14px;color:#f0ede8;font-weight:600">${p.name}${p.isCk?' 🥤':''}</div>
+              <div style="font-size:11px;color:#888884">${p.cal} ККАЛ · Б${p.prot} Ж${p.fat} У${p.carbs} / 100Г</div>
+            </div>
+            <button onclick="selp(JSON.parse(this.parentElement.dataset.p))" style="background:none;border:none;color:var(--a);font-size:22px;padding:0 4px;line-height:1">›</button>
+            <button onclick="dcp('${p.id}')" style="background:none;border:none;color:#555450;font-size:18px;padding:0 4px;line-height:1">×</button>
+          </div>` .replace('parentElement.dataset.p', `parentElement.dataset.p`);
+          // patch data-p onto the row
+          h=h.replace(`border-bottom:1px solid #2a2825">`, `border-bottom:1px solid #2a2825" data-p="${ps}">`);
+        });
+        h+=`</div>`;
+      } else if(sq&&!found.length){
+        h+=`<div style="text-align:center;color:#555450;font-size:12px;padding:10px 0;letter-spacing:1px">НИЧЕГО НЕ НАЙДЕНО</div>`;
+      } else if(!sq&&cp.length){
+        h+=`<div style="font-size:11px;color:#555450;padding:6px 0;letter-spacing:1px">СОХРАНЕНО ${cp.length} ПРОДУКТОВ/КОКТЕЙЛЕЙ</div>`;
       }
     }
     h+=`</div></div>`;
@@ -581,13 +750,7 @@ function render(){
     const log=nd.log||[];
     h+=`<div class="nut-sec"><div class="nut-sec-head"><span class="nut-sec-t">СЕГОДНЯ</span><span class="nut-sec-c">${log.length} позиций</span></div>`;
     if(!log.length)h+=`<div class="empty-log">ЕЩЁ НЕТ ЗАПИСЕЙ</div>`;
-    else log.forEach(e=>{h+=`<div class="fli"><div class="fli-info"><div class="fli-name">${e.name} — ${e.grams}г</div><div class="fli-mac">${e.cal} ККАЛ · Б${e.prot} Ж${e.fat} У${e.carbs}</div></div><button class="fli-del" onclick="dl(${e.id})">×</button></div>`;});
-    h+=`</div>`;
-
-    // ДОБАВКИ
-    const sup=nd.sup||{};
-    h+=`<div class="nut-sec"><div class="nut-sec-head"><span class="nut-sec-t">ДОБАВКИ</span><span class="nut-sec-c">${SUPPS.filter(s=>sup[s.id]).length}/${SUPPS.length}</span></div>`;
-    SUPPS.forEach(s=>{h+=`<div class="supp-item" onclick="ts('${s.id}')"><div class="supp-chk ${sup[s.id]?'checked':''}">${sup[s.id]?'<svg width="12" height="9" viewBox="0 0 12 9"><polyline points="1,4.5 4,8 11,1" stroke="white" stroke-width="2" fill="none"/></svg>':''}</div><span class="supp-name">${s.name}${s.buy?'<span class="buy-tag">КУПИТЬ</span>':''}</span><span class="supp-time">${s.time}</span></div>`;});
+    else log.slice().reverse().forEach(e=>{h+=`<div class="fli"><div class="fli-info"><div class="fli-name">${e.name} — ${e.grams}г</div><div class="fli-mac">${e.cal} ККАЛ · Б${e.prot} Ж${e.fat} У${e.carbs}</div></div><button class="fli-del" onclick="dl(${e.id})">×</button></div>`;});
     h+=`</div>`;
   }
 
