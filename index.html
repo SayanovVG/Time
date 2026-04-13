@@ -31,7 +31,7 @@ button:active{opacity:.8}
 
 /* TABS */
 .tabs{display:flex;border-bottom:2px solid #2a2825}
-.tab-btn{flex:1;padding:12px;font-family:'Bebas Neue',sans-serif;font-size:18px;letter-spacing:2px;background:none;color:#555450;border:none;border-bottom:2px solid transparent;margin-bottom:-2px;transition:all .2s}
+.tab-btn{flex:1;padding:11px 4px;font-family:'Bebas Neue',sans-serif;font-size:16px;letter-spacing:1px;background:none;color:#555450;border:none;border-bottom:2px solid transparent;margin-bottom:-2px;transition:all .2s}
 .tab-btn.active{color:var(--a);border-bottom-color:var(--a)}
 
 /* CONTENT */
@@ -214,9 +214,29 @@ const PROGRAM={
 const WC={1:{n:'АДАПТАЦИЯ',s:3},2:{n:'АДАПТАЦИЯ',s:3},3:{n:'ОБЪЁМ',s:4},4:{n:'ОБЪЁМ',s:4},5:{n:'ПИК',s:4},6:{n:'ПИК',s:4},7:{n:'РАЗГРУЗКА',s:3}};
 const DN=['Вс','Пн','Вт','Ср','Чт','Пт','Сб'];
 
+const BONUS={
+  abs:{name:'ПРЕСС',sets:3,exercises:[
+    {id:'b1',name:'Скручивания',reps:20,hint:'Лёжа на спине, колени согнуты. Отрывай только лопатки, не тяни шею.'},
+    {id:'b2',name:'Обратные скручивания',reps:15,hint:'Лёжа на спине. Поднимай таз, скручивая поясницу к груди. Медленно опускай.'},
+    {id:'b3',name:'Велосипед',reps:20,hint:'Попеременно тяни локоть к противоположному колену. Медленно, без рывков.'},
+    {id:'b4',name:'Планка',reps:null,hint:'Локти под плечами. Тело — прямая линия. Не проваливай таз. Держи максимум.'},
+    {id:'b5',name:'Боковая планка',reps:null,hint:'Одна рука, боковое положение. Бёдра не опускай. По 30-60 сек на каждую сторону.'},
+    {id:'b6',name:'Подъём ног лёжа',reps:12,hint:'Лёжа на спине, поясница прижата к полу. Поднимай прямые ноги до 90°, медленно опускай.'}
+  ]},
+  posture:{name:'ОСАНКА',sets:2,exercises:[
+    {id:'p1',name:'Вакуум живота',reps:null,hint:'Выдохни весь воздух, втяни живот максимально глубоко. Держи 20-30 сек. Укрепляет поперечную мышцу.'},
+    {id:'p2',name:'Bird-Dog',reps:10,hint:'На четвереньках. Вытяни одновременно правую руку и левую ногу. Спина прямая. Меняй стороны.'},
+    {id:'p3',name:'Ягодичный мостик',reps:15,hint:'Лёжа на спине, стопы у ягодиц. Поднимай таз до прямой линии бедро-корпус. Сжимай ягодицы наверху.'},
+    {id:'p4',name:'Разгибание грудного отдела',reps:10,hint:'Ляг спиной на валик/свёрнутое полотенце под лопатками. Мягко прогибайся назад, руки за голову.'},
+    {id:'p5',name:'Стретч сгибателей бедра',reps:null,hint:'Выпад вперёд, заднее колено на полу. Подай таз вперёд-вниз. Держи 30-40 сек. Снимает нагрузку с поясницы.'},
+    {id:'p6',name:'Кошка-корова',reps:12,hint:'На четвереньках. Поочерёдно выгибай и прогибай спину. Медленно, дыши. Мобильность позвоночника.'}
+  ]}
+};
+
 let S={tab:'training',week:1,day:1,wd:{},cp:{},hints:{},
   timer:{on:false,left:0,max:0,ex:'',eid:null,mod:false,saved:false},
   done:false,
+  bonus:{block:'abs',sets:{}},
   ns:{sel:null,gram:'',manual:false,sq:'',
     mf:{name:'',cal:'',prot:'',fat:'',carbs:'',grams:''},
     ck:false,ckname:'',ckitems:[],
@@ -434,7 +454,7 @@ function gnw(){if(S.week<7){const nw=S.week+1;[1,3,5].forEach(d=>{const p=PROGRA
 function ra(){if(confirm('Сбросить ВСЕ данные?')){S.wd={};S.cp={};S.week=1;localStorage.removeItem('mt_v12');render();}}
 
 // NUTRITION
-function selp(p){S.ns.sel=p;S.ns.gram='';S.ns.manual=false;S.ns.ck=false;render();setTimeout(()=>{const el=document.getElementById('gi');if(el)el.focus();},100);}
+function selp(p){S.ns.sel=p;S.ns.gram=p.defaultGrams?String(p.defaultGrams):'';S.ns.manual=false;S.ns.ck=false;render();setTimeout(()=>{const el=document.getElementById('gi');if(el)el.focus();},100);}
 function ap(){
   const g=parseFloat(S.ns.gram);if(!g||g<=0)return;
   const p=S.ns.sel;
@@ -470,7 +490,7 @@ function ckSave(){
   const tot=S.ns.ckitems.reduce((a,i)=>({cal:a.cal+i.cal,prot:a.prot+i.prot,fat:a.fat+i.fat,carbs:a.carbs+i.carbs,grams:a.grams+i.grams}),{cal:0,prot:0,fat:0,carbs:0,grams:0});
   const per100=tot.grams>0?{cal:Math.round(tot.cal/tot.grams*100),prot:Math.round(tot.prot/tot.grams*100*10)/10,fat:Math.round(tot.fat/tot.grams*100*10)/10,carbs:Math.round(tot.carbs/tot.grams*100*10)/10}:{cal:0,prot:0,fat:0,carbs:0};
   const cp=gcp();
-  cp.push({id:'ck'+Date.now(),name:S.ns.ckname.trim(),isCk:true,...per100});
+  cp.push({id:'ck'+Date.now(),name:S.ns.ckname.trim(),isCk:true,defaultGrams:Math.round(tot.grams),...per100});
   scp(cp);
   S.ns.ck=false;S.ns.ckname='';S.ns.ckitems=[];S.ns.ckaf={name:'',cal:'',prot:'',fat:'',carbs:'',grams:''};
   render();
@@ -532,6 +552,7 @@ function render(){
   <div class="tabs">
     <button class="tab-btn ${S.tab==='training'?'active':''}" onclick="S.tab='training';render()">ТРЕНИРОВКА</button>
     <button class="tab-btn ${S.tab==='nutrition'?'active':''}" onclick="S.tab='nutrition';render()">ПИТАНИЕ</button>
+    <button class="tab-btn ${S.tab==='bonus'?'active':''}" onclick="S.tab='bonus';render()">БОНУС</button>
   </div></div>
   <div class="content">`;
 
@@ -596,7 +617,7 @@ function render(){
     h+=`<button class="reset-btn" onclick="ra()">🗑 СБРОСИТЬ ВСЕ ДАННЫЕ</button>`;
     h+=`<div class="footer"><div class="footer-txt">Серый бетон. Чёрный маркер. Никакой фальши.</div><div class="tags"><span class="tag">URBAN</span><span class="tag">CONCRETE</span><span class="tag">STREET</span><span class="tag">RAW</span></div></div>`;
 
-  } else {
+  } else if(S.tab==='nutrition'){
     // NUTRITION TAB
     const prof=gprof();
     const MG=calcMacros(prof)||{cal:2500,prot:180,fat:70,carbs:250};
@@ -752,6 +773,55 @@ function render(){
     if(!log.length)h+=`<div class="empty-log">ЕЩЁ НЕТ ЗАПИСЕЙ</div>`;
     else log.slice().reverse().forEach(e=>{h+=`<div class="fli"><div class="fli-info"><div class="fli-name">${e.name} — ${e.grams}г</div><div class="fli-mac">${e.cal} ККАЛ · Б${e.prot} Ж${e.fat} У${e.carbs}</div></div><button class="fli-del" onclick="dl(${e.id})">×</button></div>`;});
     h+=`</div>`;
+
+  } else if(S.tab==='bonus'){
+    // BONUS TAB
+    const bl=S.bonus.block;
+    const prog=BONUS[bl];
+    h+=`<div class="hdr">
+      <div class="hdr-label">ДОПОЛНИТЕЛЬНЫЕ ТРЕНИРОВКИ</div>
+      <div class="hdr-title">${prog.name}</div>
+      <div class="day-btns">
+        <button class="day-btn ${bl==='abs'?'active':''}" onclick="S.bonus.block='abs';render()">ПРЕСС</button>
+        <button class="day-btn ${bl==='posture'?'active':''}" onclick="S.bonus.block='posture';render()">ОСАНКА</button>
+      </div>
+    </div>`;
+
+    prog.exercises.forEach((ex,ei)=>{
+      const bk='bon_'+bl+'_'+ex.id;
+      if(!S.bonus.sets[bk])S.bonus.sets[bk]=[];
+      const sets=S.bonus.sets[bk];
+      const done=sets.filter(s=>s.c).length;
+      const sh=S.hints['bon_'+ex.id];
+      h+=`<div class="ex-card">
+        <div class="ex-head">
+          <div>
+            <div class="ex-name">${ex.name.toUpperCase()}</div>
+            <div class="ex-meta">${prog.sets} ПОДХ × ${ex.reps||'MAX'}</div>
+          </div>
+          <div class="ex-badges">
+            ${done===prog.sets?'<span class="badge-done">DONE</span>':''}
+            ${ex.hint?`<button class="hint-btn" onclick="S.hints['bon_${ex.id}']=!S.hints['bon_${ex.id}'];render()">?</button>`:''}
+          </div>
+        </div>
+        ${sh?`<div class="hint-box"><div class="hint-t">ТЕХНИКА</div><div class="hint-txt">${ex.hint}</div></div>`:''}
+        ${Array(prog.sets).fill(0).map((_,si)=>{
+          const sd=sets[si]||{r:'',c:false};
+          return `<div class="set-row ${sd.c?'done-row':''}">
+            <span class="set-lbl">S${si+1}</span>
+            <div class="set-inputs">
+              <input type="text" inputmode="numeric" placeholder="${ex.reps||'сек'}" value="${sd.r}" class="set-inp ${sd.c?'done-inp':''}" style="width:120px" onchange="if(!S.bonus.sets['${bk}'])S.bonus.sets['${bk}']=[];while(S.bonus.sets['${bk}'].length<=${si})S.bonus.sets['${bk}'].push({r:'',c:false});S.bonus.sets['${bk}'][${si}].r=this.value;">
+            </div>
+            <button class="chk-btn ${sd.c?'checked':''}" onclick="if(!S.bonus.sets['${bk}'])S.bonus.sets['${bk}']=[];while(S.bonus.sets['${bk}'].length<=${si})S.bonus.sets['${bk}'].push({r:'',c:false});S.bonus.sets['${bk}'][${si}].c=!S.bonus.sets['${bk}'][${si}].c;if(!S.bonus.sets['${bk}'][${si}].c){}else{st(60,'${ex.name}',null);}render()">✓</button>
+          </div>`;
+        }).join('')}
+        <div class="tmr-row">
+          <button class="tmr-start" onclick="st(60,'${ex.name}',null)">⏱ 1:00</button>
+        </div>
+      </div>`;
+    });
+
+    h+=`<button class="reset-btn" onclick="S.bonus.sets={};render()">↺ СБРОСИТЬ БЛОК</button>`;
   }
 
   h+='</div>';
