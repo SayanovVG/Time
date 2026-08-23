@@ -12,10 +12,7 @@
 </head>
 <body><div class="boot"><div class="brand">MAX TIME</div><div class="sub">ЗАПУСК v2…</div></div>
 <script>
-(async()=>{
-  try{if('serviceWorker' in navigator)await navigator.serviceWorker.register('./sw.js');}catch(e){}
-  location.replace('./index-v2.html');
-})();
+(async()=>{try{if('serviceWorker' in navigator)await navigator.serviceWorker.register('./sw.js');}catch(e){} location.replace('./index-v2.html');})();
 </script>
 </body>
 </html>
