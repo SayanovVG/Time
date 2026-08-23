@@ -1,0 +1,24 @@
+:root{--a:#c97a45;--bg:#1a1917;--card:#242220;--line:#3a3733;--txt:#f0ede8;--mut:#8d8a85;--red:#d7473f;--orange:#e58b3a;--yellow:#d6b73d}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--txt);font-family:Arial,sans-serif;padding-bottom:40px}
+button,input,select{font:inherit}button{cursor:pointer}.top{position:sticky;top:0;background:var(--bg);z-index:10;border-bottom:1px solid #2a2825}
+.bar{padding:14px 16px;display:flex;justify-content:space-between;align-items:center}.brand{font-size:25px;font-weight:900;letter-spacing:2px}
+.sub{font-size:11px;color:var(--mut);margin-top:3px}.clock{font-size:24px}.tabs{display:grid;grid-template-columns:repeat(2,1fr)}
+.tab{padding:11px 3px;background:none;border:0;border-bottom:2px solid transparent;color:#666}.tab.on{color:var(--a);border-color:var(--a)}
+main{padding:14px;max-width:760px;margin:auto}.days{display:grid;grid-template-columns:repeat(5,1fr);gap:6px;margin:8px 0 14px}
+.day,.pill,.mini,.btn{background:var(--card);border:1px solid var(--line);color:var(--mut);padding:9px}.day.on,.pill.on,.btn.primary{background:var(--a);color:#fff;border-color:var(--a)}
+h1{font-size:26px;color:var(--a);margin:12px 0 3px}.note{color:var(--mut);font-size:12px;margin-bottom:14px}
+.card{background:var(--card);border:1px solid #2e2c29;margin:10px 0;padding:12px;border-radius:4px}.exhead{display:flex;justify-content:space-between;gap:8px}
+.exname{font-weight:800;font-size:18px}.meta{font-size:12px;color:var(--mut);margin-top:4px}.tools{display:flex;gap:6px}
+.mini{padding:5px 8px;color:var(--a);background:#1a1917}.hint{font-size:12px;color:#bbb;line-height:1.5;padding:9px 0}
+.set{display:grid;grid-template-columns:28px 1fr 1fr 74px 38px;gap:6px;align-items:center;border-top:1px solid #333;padding:8px 0}
+.set input,.set select,input,select{width:100%;background:#171615;color:white;border:1px solid var(--line);padding:8px}
+.check{height:34px;background:#171615;border:1px solid var(--line);color:#777}.check.on{background:var(--a);color:white}
+.rec{margin-top:8px;padding:8px;border:1px solid var(--a);color:var(--a);font-size:12px}.row{display:flex;gap:8px;align-items:center}.row>*{flex:1}
+.stat{display:grid;grid-template-columns:1fr auto;gap:8px;padding:10px 0;border-bottom:1px solid #333}.big{font-size:28px;color:var(--a);font-weight:800}.empty{padding:30px;text-align:center;color:var(--mut)}
+.macros{display:grid;grid-template-columns:repeat(4,1fr);gap:8px}.macro{text-align:center}.macro b{display:block;font-size:22px}.progressbar{height:4px;background:#333;margin-top:5px}.progressbar i{display:block;height:100%;background:var(--a)}
+.food{display:grid;grid-template-columns:1fr auto;gap:8px;padding:9px 0;border-bottom:1px solid #333}.food small{color:var(--mut)}.danger{border-color:#7a3d3d;color:#d77;background:#211}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:8px}.grid3{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+a{color:var(--a)}
+.tmr-row{padding-top:10px}.tmr-start{width:100%;background:var(--a);color:#fff;border:0;padding:11px;font-weight:800;letter-spacing:2px;border-radius:3px}
+.overlay{position:fixed;inset:0;background:rgba(0,0,0,.86);display:flex;align-items:center;justify-content:center;z-index:1000;padding:16px}.tmr-card{background:var(--card);border:2px solid var(--a);border-radius:5px;padding:26px 20px 18px;text-align:center;width:100%;max-width:330px;position:relative}.tmr-close{position:absolute;top:10px;right:12px;background:none;border:0;color:var(--mut);font-size:22px}.tmr-label{font-size:13px;color:var(--mut);letter-spacing:3px}.tmr-time{font-size:72px;font-weight:900;line-height:1.1;margin:6px 0}.tmr-time.warn{color:#ffaa00}.tmr-ex{font-size:12px;color:var(--mut);margin-bottom:14px}.tmr-progress{height:4px;background:#333;margin-bottom:16px;overflow:hidden}.tmr-bar{height:100%;background:var(--a);transition:width 1s linear}.tmr-adj{display:flex;gap:10px;justify-content:center}.adj-btn,.skip-btn{background:#171615;border:1px solid var(--line);color:var(--txt);padding:9px 15px}.skip-btn{margin-top:12px;width:100%}
+@media(max-width:520px){.set{grid-template-columns:25px 1fr 1fr 64px 34px}.macros{grid-template-columns:1fr 1fr}}
