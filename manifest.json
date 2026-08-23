@@ -1,11 +1,11 @@
 {
   "name": "MAX TIME",
   "short_name": "MAX TIME",
-  "description": "Тренировки, мышцы, питание и прогресс",
+  "description": "Тренировки, питание и прогресс",
   "start_url": "./index.html",
   "scope": "./",
   "display": "standalone",
-  "orientation": "portrait-primary",
+  "orientation": "portrait",
   "background_color": "#1a1917",
   "theme_color": "#1a1917",
   "icons": [{"src":"./icon.svg","sizes":"any","type":"image/svg+xml","purpose":"any maskable"}]
