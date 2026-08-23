@@ -1,4 +1,4 @@
-const CACHE='mt-v30';
+const CACHE='mt-v31';
 const ASSETS=['./index.html','./index-v2.html','./styles-v2.css','./program-v2.js','./app-v2.js','./nutrition-v2.js','./fixes-v2.js','./manifest.json','./icon.svg'];
 self.addEventListener('install',e=>{e.waitUntil(caches.open(CACHE).then(c=>c.addAll(ASSETS)));self.skipWaiting();});
 self.addEventListener('activate',e=>{e.waitUntil(caches.keys().then(keys=>Promise.all(keys.filter(k=>k!==CACHE).map(k=>caches.delete(k)))));self.clients.claim();});
