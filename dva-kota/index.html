@@ -1,0 +1,384 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,user-scalable=no">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="theme-color" content="#171821">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icon.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="icon.svg">
+<title>Два кота: Побег!</title>
+<style>
+  *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+  html,body{margin:0;width:100%;height:100%;overflow:hidden;background:#171821;font-family:system-ui,-apple-system,Segoe UI,sans-serif;touch-action:none}
+  #game{position:fixed;inset:0;width:100%;height:100%;display:block}
+  #rotate{position:fixed;inset:0;display:none;align-items:center;justify-content:center;text-align:center;padding:28px;background:#171821;color:white;z-index:10;font-size:22px}
+  #hud{position:fixed;top:max(8px,env(safe-area-inset-top));left:50%;transform:translateX(-50%);z-index:4;color:white;text-align:center;text-shadow:0 2px 4px #0008;pointer-events:none}
+  #hud .title{font-weight:900;font-size:clamp(16px,2.7vw,26px)}
+  #hud .sub{font-weight:700;font-size:clamp(11px,1.7vw,16px);opacity:.95}
+  .controls{position:fixed;bottom:max(10px,env(safe-area-inset-bottom));z-index:5;display:grid;grid-template-columns:repeat(3,64px);gap:8px;user-select:none}
+  #c1{left:max(10px,env(safe-area-inset-left))}
+  #c2{right:max(10px,env(safe-area-inset-right))}
+  .btn{width:64px;height:64px;border:0;border-radius:18px;background:#ffffffd8;color:#111;font-size:28px;font-weight:900;box-shadow:0 4px 0 #0003,0 0 0 2px #fff6;touch-action:none}
+  .btn:active,.btn.on{transform:translateY(3px);box-shadow:0 1px 0 #0003;background:#fff}
+  #startCard{position:fixed;inset:0;z-index:8;display:flex;align-items:center;justify-content:center;background:linear-gradient(#162033ee,#111522f5);padding:20px}
+  .card{max-width:680px;color:white;text-align:center;background:#ffffff10;border:1px solid #ffffff22;border-radius:26px;padding:22px 26px;backdrop-filter:blur(10px)}
+  .cats{font-size:64px;line-height:1}
+  h1{margin:8px 0;font-size:clamp(28px,5vw,46px)}
+  p{font-size:clamp(15px,2.1vw,19px);line-height:1.4}
+  #startBtn,#restartBtn{border:0;border-radius:16px;padding:14px 24px;font-size:20px;font-weight:900;background:#ffd84d;color:#1b1b1b}
+  #restartBtn{position:fixed;top:10px;right:10px;z-index:9;display:none}
+  @media (orientation:portrait){
+    #rotate{display:flex}
+    #hud,.controls,#startCard,#restartBtn{visibility:hidden}
+  }
+  @media (max-height:430px){
+    .controls{grid-template-columns:repeat(3,56px)}
+    .btn{width:56px;height:56px;border-radius:15px;font-size:24px}
+  }
+</style>
+</head>
+<body>
+<canvas id="game"></canvas>
+<div id="rotate">Поверните iPhone горизонтально ↻<br><small>Так двум котам хватит места.</small></div>
+<div id="hud"><div class="title" id="levelText">Уровень 1</div><div class="sub" id="taskText"></div></div>
+<button id="restartBtn">↻ Заново</button>
+
+<div id="c1" class="controls" aria-label="Управление рыжим котом">
+  <button class="btn" data-p="0" data-k="left">◀</button>
+  <button class="btn" data-p="0" data-k="right">▶</button>
+  <button class="btn" data-p="0" data-k="jump">▲</button>
+</div>
+<div id="c2" class="controls" aria-label="Управление серым котом">
+  <button class="btn" data-p="1" data-k="left">◀</button>
+  <button class="btn" data-p="1" data-k="right">▶</button>
+  <button class="btn" data-p="1" data-k="jump">▲</button>
+</div>
+
+<div id="startCard">
+  <div class="card">
+    <div class="cats">🐈 🐈‍⬛</div>
+    <h1>Два кота: Побег!</h1>
+    <p><b>Папа — Рыжик</b>, <b>дочка — Дымка</b>. Вы в клетке зоомагазина. Найдите два ключа, выберитесь наружу, соберите вкусняшки и вместе удерите от пса Барбоса.</p>
+    <p>У каждого кота свои три кнопки: <b>влево, вправо, прыжок</b>. Игра командная — бросать второго кота нельзя.</p>
+    <button id="startBtn">Играть вдвоём</button>
+  </div>
+</div>
+
+<script>
+(() => {
+'use strict';
+
+const canvas = document.getElementById('game');
+const ctx = canvas.getContext('2d');
+const levelText = document.getElementById('levelText');
+const taskText = document.getElementById('taskText');
+const startCard = document.getElementById('startCard');
+const startBtn = document.getElementById('startBtn');
+const restartBtn = document.getElementById('restartBtn');
+
+let W=1280,H=720,dpr=1,last=0,running=false;
+let level=0, cameraX=0, shake=0, msg='', msgTimer=0;
+let worldW=2200, gravity=1850;
+let keys = [{left:false,right:false,jump:false},{left:false,right:false,jump:false}];
+let jumpLatch=[false,false];
+let platforms=[], pickups=[], door=null, dog=null, finishX=0;
+let collected=0,totalCollect=0, levelStart=0;
+
+const players = [
+  {name:'Рыжик', x:130,y:450,vx:0,vy:0,w:46,h:58,on:false,color:'#f39a3c',accent:'#fff0cf',face:'#3a2718',alive:true},
+  {name:'Дымка', x:200,y:450,vx:0,vy:0,w:46,h:58,on:false,color:'#75869d',accent:'#e8eef8',face:'#202935',alive:true}
+];
+
+function resize(){
+  dpr=Math.min(devicePixelRatio||1,2);
+  W=innerWidth; H=innerHeight;
+  canvas.width=Math.round(W*dpr); canvas.height=Math.round(H*dpr);
+  canvas.style.width=W+'px'; canvas.style.height=H+'px';
+  ctx.setTransform(dpr,0,0,dpr,0,0);
+}
+addEventListener('resize',resize); resize();
+
+document.querySelectorAll('.btn').forEach(btn=>{
+  const p=+btn.dataset.p, k=btn.dataset.k;
+  const on=e=>{e.preventDefault(); keys[p][k]=true; btn.classList.add('on');};
+  const off=e=>{e.preventDefault(); keys[p][k]=false; btn.classList.remove('on');};
+  btn.addEventListener('touchstart',on,{passive:false});
+  btn.addEventListener('touchend',off,{passive:false});
+  btn.addEventListener('touchcancel',off,{passive:false});
+  btn.addEventListener('pointerdown',on);
+  btn.addEventListener('pointerup',off);
+  btn.addEventListener('pointerleave',off);
+});
+addEventListener('keydown',e=>{
+  const m={a:[0,'left'],d:[0,'right'],w:[0,'jump'],ArrowLeft:[1,'left'],ArrowRight:[1,'right'],ArrowUp:[1,'jump']};
+  const v=m[e.key]; if(v){keys[v[0]][v[1]]=true;e.preventDefault();}
+});
+addEventListener('keyup',e=>{
+  const m={a:[0,'left'],d:[0,'right'],w:[0,'jump'],ArrowLeft:[1,'left'],ArrowRight:[1,'right'],ArrowUp:[1,'jump']};
+  const v=m[e.key]; if(v){keys[v[0]][v[1]]=false;e.preventDefault();}
+});
+
+startBtn.onclick=()=>{
+  startCard.style.display='none'; restartBtn.style.display='block';
+  if(document.documentElement.requestFullscreen){ document.documentElement.requestFullscreen().catch(()=>{}); }
+  if(screen.orientation?.lock){ screen.orientation.lock('landscape').catch(()=>{}); }
+  running=true; loadLevel(0); last=performance.now(); requestAnimationFrame(loop);
+};
+restartBtn.onclick=()=>loadLevel(level);
+
+function P(x,y,w,h,type='shelf'){return{x,y,w,h,type}}
+function item(x,y,type){return{x,y,type,taken:false,bob:Math.random()*6.28}}
+function setPlayers(x1,y1,x2,y2){
+  Object.assign(players[0],{x:x1,y:y1,vx:0,vy:0,on:false,alive:true});
+  Object.assign(players[1],{x:x2,y:y2,vx:0,vy:0,on:false,alive:true});
+}
+function loadLevel(n){
+  level=n; cameraX=0; collected=0; msg=''; msgTimer=0; dog=null; door=null;
+  keys.forEach(k=>k.left=k.right=k.jump=false);
+  if(n===0){
+    worldW=1850; levelText.textContent='Уровень 1 · Побег из клетки';
+    taskText.textContent='Найдите 2 ключа 🔑 и доберитесь вдвоём до дверцы клетки';
+    platforms=[
+      P(0,610,1850,110,'floor'), P(80,505,220,24,'box'), P(360,435,220,24,'box'),
+      P(680,525,210,24,'box'), P(970,415,220,24,'box'), P(1280,510,190,24,'box'),
+      P(1510,445,170,24,'box')
+    ];
+    pickups=[item(445,390,'key'),item(1350,465,'key')];
+    door={x:1715,y:445,w:72,h:165,open:false};
+    totalCollect=2; setPlayers(105,445,180,445);
+  } else if(n===1){
+    worldW=2850; levelText.textContent='Уровень 2 · Зоомагазин';
+    taskText.textContent='Соберите 8 вкусняшек 🐟🐭 и доберитесь до окна';
+    platforms=[
+      P(0,620,2850,100,'floor'),
+      P(220,510,220,24),P(520,430,190,24),P(790,525,220,24),P(1080,410,180,24),
+      P(1340,500,260,24),P(1680,395,190,24),P(1950,500,220,24),P(2280,420,210,24),
+      P(2550,520,170,24)
+    ];
+    pickups=[
+      item(295,465,'mouse'), item(580,385,'fish'), item(860,480,'mouse'), item(1130,365,'fish'),
+      item(1435,455,'mouse'), item(1745,350,'fish'), item(2030,455,'mouse'), item(2350,375,'fish')
+    ];
+    finishX=2725; totalCollect=8; setPlayers(90,550,160,550);
+  } else {
+    worldW=3300; levelText.textContent='Уровень 3 · Барбос!';
+    taskText.textContent='БЕГИТЕ! Не дайте собаке догнать ни одного кота';
+    platforms=[
+      P(0,620,3300,100,'floor'),
+      P(350,520,180,24),P(640,455,170,24),P(930,535,200,24),P(1260,450,190,24),
+      P(1570,520,210,24),P(1880,430,180,24),P(2160,515,200,24),P(2480,445,170,24),
+      P(2770,520,210,24)
+    ];
+    pickups=[item(740,410,'fish'),item(1650,475,'fish'),item(2540,400,'fish')];
+    totalCollect=3; finishX=3140; setPlayers(280,550,350,550);
+    dog={x:30,y:540,w:95,h:80,speed:158};
+  }
+  levelStart=performance.now();
+}
+
+function rects(a,b){return a.x < b.x+b.w && a.x+a.w>b.x && a.y < b.y+b.h && a.y+a.h>b.y}
+function worldRect(p){return{x:p.x,y:p.y,w:p.w,h:p.h}}
+function say(s,t=1200){msg=s;msgTimer=t}
+
+function updatePlayer(p,i,dt){
+  const k=keys[i], accel=1650, max=330, friction=0.82;
+  if(k.left) p.vx-=accel*dt;
+  if(k.right) p.vx+=accel*dt;
+  if(!k.left&&!k.right) p.vx*=Math.pow(friction,dt*60);
+  p.vx=Math.max(-max,Math.min(max,p.vx));
+  if(k.jump && !jumpLatch[i] && p.on){p.vy=-690;p.on=false;}
+  jumpLatch[i]=k.jump;
+  p.vy+=gravity*dt;
+  p.vy=Math.min(p.vy,1000);
+
+  p.x+=p.vx*dt;
+  p.x=Math.max(0,Math.min(worldW-p.w,p.x));
+  for(const pl of platforms){
+    if(rects(worldRect(p),pl)){
+      if(p.vx>0) p.x=pl.x-p.w;
+      else if(p.vx<0) p.x=pl.x+pl.w;
+      p.vx=0;
+    }
+  }
+
+  p.y+=p.vy*dt; p.on=false;
+  for(const pl of platforms){
+    if(rects(worldRect(p),pl)){
+      if(p.vy>0){p.y=pl.y-p.h;p.vy=0;p.on=true;}
+      else if(p.vy<0){p.y=pl.y+pl.h;p.vy=0;}
+    }
+  }
+  if(p.y>H+350){
+    p.x=Math.max(60,cameraX+160+i*70); p.y=250;p.vx=0;p.vy=0;shake=10;say('Ой! Кот вернулся на полку 😺');
+  }
+}
+
+function update(dt){
+  players.forEach((p,i)=>updatePlayer(p,i,dt));
+
+  for(const it of pickups){
+    if(it.taken) continue;
+    it.bob+=dt*4;
+    const r={x:it.x-18,y:it.y-18+Math.sin(it.bob)*5,w:36,h:36};
+    for(const p of players){
+      if(rects(worldRect(p),r)){it.taken=true;collected++;say(it.type==='key'?'Ключ найден! 🔑':(it.type==='fish'?'Рыбка! 🐟':'Мышка! 🐭'),650);break;}
+    }
+  }
+
+  if(level===0){
+    door.open=collected>=2;
+    if(door.open){
+      taskText.textContent='Ключи собраны! Оба кота — к дверце справа →';
+      const zone={x:door.x-30,y:door.y,w:120,h:door.h};
+      if(players.every(p=>rects(worldRect(p),zone))) nextLevel();
+    } else taskText.textContent=`Найдите 2 ключа 🔑 (${collected}/2)`;
+  } else if(level===1){
+    taskText.textContent=`Вкусняшки: ${collected}/8 · Оба кота к окну →`;
+    if(collected>=8 && players.every(p=>p.x>finishX-130)) nextLevel();
+  } else {
+    const targetX=Math.min(players[0].x,players[1].x);
+    dog.speed=160 + Math.min(125,(performance.now()-levelStart)/9000*60);
+    dog.x += dog.speed*dt;
+    if(dog.x > targetX-85) {
+      shake=18; say('Барбос догнал кота! Попробуйте ещё раз 🐶',1500);
+      setTimeout(()=>loadLevel(2),550); return;
+    }
+    taskText.textContent=`До выхода: ${Math.max(0,Math.ceil((finishX-Math.min(players[0].x,players[1].x))/10))} м · Рыбки ${collected}/3`;
+    if(players.every(p=>p.x>finishX-110)) win();
+  }
+
+  const center=(players[0].x+players[1].x)/2;
+  let targetCam=Math.max(0,Math.min(worldW-W,center-W*0.43));
+  cameraX += (targetCam-cameraX)*Math.min(1,dt*4.5);
+  if(level===2) cameraX=Math.max(cameraX,Math.max(0,dog.x-120));
+
+  if(msgTimer>0) msgTimer-=dt*1000;
+  shake*=Math.pow(.12,dt);
+}
+
+function nextLevel(){
+  running=false;
+  say('Уровень пройден!',600);
+  setTimeout(()=>{loadLevel(level+1);running=true;last=performance.now();},650);
+}
+function win(){
+  running=false;
+  restartBtn.style.display='none';
+  setTimeout(()=>{
+    startCard.style.display='flex';
+    startCard.querySelector('.cats').textContent='🏆🐈🐈‍⬛🏆';
+    startCard.querySelector('h1').textContent='Побег удался!';
+    startCard.querySelector('p').innerHTML='<b>Рыжик и Дымка свободны.</b><br>Барбос остался в зоомагазине, а вся рыба — у вас.';
+    startBtn.textContent='Сыграть ещё раз';
+    startBtn.onclick=()=>location.reload();
+  },300);
+}
+
+function sky(){
+  const g=ctx.createLinearGradient(0,0,0,H);
+  g.addColorStop(0,'#7fd7ff');g.addColorStop(1,'#eef8ff');
+  ctx.fillStyle=g;ctx.fillRect(0,0,W,H);
+  ctx.globalAlpha=.35; ctx.fillStyle='#fff';
+  for(let x=-cameraX%220-50;x<W;x+=220){ctx.fillRect(x,80,140,95)}
+  ctx.globalAlpha=1;
+}
+function drawPlatform(pl){
+  const x=pl.x-cameraX;
+  if(x>W+100||x+pl.w<-100)return;
+  if(pl.type==='floor'){
+    ctx.fillStyle= level===2?'#6d5b52':'#d8c6aa'; ctx.fillRect(x,pl.y,pl.w,pl.h);
+    ctx.fillStyle='#9c846d'; ctx.fillRect(x,pl.y,pl.w,12);
+  } else {
+    ctx.fillStyle='#b88354';ctx.fillRect(x,pl.y,pl.w,pl.h);
+    ctx.fillStyle='#e2b27b';ctx.fillRect(x,pl.y,pl.w,7);
+    ctx.fillStyle='#6e4b33';ctx.fillRect(x+12,pl.y+pl.h,8,42);ctx.fillRect(x+pl.w-20,pl.y+pl.h,8,42);
+  }
+}
+function drawCat(p,i){
+  const x=p.x-cameraX,y=p.y;
+  ctx.save();ctx.translate(x,y);
+  ctx.strokeStyle=p.color;ctx.lineWidth=12;ctx.lineCap='round';
+  ctx.beginPath();ctx.moveTo(i?5:p.w-5,35);ctx.quadraticCurveTo(i?-22:p.w+22,22,i?-8:p.w+8,6);ctx.stroke();
+  ctx.fillStyle=p.color;roundRect(5,18,p.w-10,p.h-18,16,true);
+  ctx.beginPath();ctx.moveTo(8,19);ctx.lineTo(13,0);ctx.lineTo(24,17);ctx.fill();
+  ctx.beginPath();ctx.moveTo(p.w-8,19);ctx.lineTo(p.w-13,0);ctx.lineTo(p.w-24,17);ctx.fill();
+  ctx.fillStyle=p.accent;ctx.beginPath();ctx.ellipse(p.w/2,28,13,10,0,0,Math.PI*2);ctx.fill();
+  ctx.fillStyle=p.face;ctx.beginPath();ctx.arc(17,21,3,0,7);ctx.arc(p.w-17,21,3,0,7);ctx.fill();
+  ctx.fillStyle='#f48ca1';ctx.beginPath();ctx.arc(p.w/2,27,2.7,0,7);ctx.fill();
+  ctx.fillStyle='#111b';roundRect(-3,-22,p.w+6,17,8,true);ctx.fillStyle='white';ctx.font='700 11px system-ui';ctx.textAlign='center';ctx.fillText(p.name,p.w/2,-10);
+  ctx.restore();
+}
+function roundRect(x,y,w,h,r,fill){
+  ctx.beginPath();ctx.roundRect(x,y,w,h,r); if(fill)ctx.fill();
+}
+function drawPickup(it){
+  if(it.taken)return;
+  const x=it.x-cameraX,y=it.y+Math.sin(it.bob)*5;
+  ctx.font='34px system-ui';ctx.textAlign='center';ctx.textBaseline='middle';
+  ctx.fillText(it.type==='key'?'🔑':it.type==='fish'?'🐟':'🐭',x,y);
+}
+function drawDoor(){
+  if(!door)return; const x=door.x-cameraX;
+  ctx.fillStyle=door.open?'#73d47c':'#777';roundRect(x,door.y,door.w,door.h,12,true);
+  ctx.fillStyle='#20242b';ctx.fillRect(x+10,door.y+20,8,door.h-40);ctx.fillRect(x+30,door.y+20,8,door.h-40);ctx.fillRect(x+50,door.y+20,8,door.h-40);
+  ctx.font='26px system-ui';ctx.textAlign='center';ctx.fillText(door.open?'🔓':'🔒',x+36,door.y-18);
+}
+function drawFinish(){
+  if(level===0)return;
+  const x=finishX-cameraX;
+  ctx.fillStyle= level===1?'#87ceeb':'#8ddf87';roundRect(x,350,95,270,10,true);
+  ctx.fillStyle='#243447';ctx.font='700 18px system-ui';ctx.textAlign='center';
+  ctx.fillText(level===1?'ОКНО':'СВОБОДА',x+47,385);
+  ctx.font='50px system-ui';ctx.fillText(level===1?'🪟':'🌳',x+47,455);
+}
+function drawDog(){
+  if(!dog)return;
+  const x=dog.x-cameraX,y=dog.y;
+  ctx.save();ctx.translate(x,y);
+  ctx.fillStyle='#8d5c35';roundRect(8,18,80,50,18,true);
+  ctx.beginPath();ctx.arc(76,18,28,0,Math.PI*2);ctx.fill();
+  ctx.fillStyle='#5e3823';ctx.beginPath();ctx.ellipse(55,2,12,25,-.6,0,7);ctx.fill();
+  ctx.fillStyle='#222';ctx.beginPath();ctx.arc(83,15,4,0,7);ctx.fill();
+  ctx.fillStyle='#333';ctx.beginPath();ctx.arc(98,24,5,0,7);ctx.fill();
+  ctx.strokeStyle='#8d5c35';ctx.lineWidth=10;ctx.beginPath();ctx.moveTo(12,30);ctx.quadraticCurveTo(-20,5,-10,-14);ctx.stroke();
+  ctx.font='700 12px system-ui';ctx.fillStyle='#fff';ctx.textAlign='center';ctx.fillText('БАРБОС',55,88);
+  ctx.restore();
+}
+function draw(){
+  ctx.save();
+  if(shake>1) ctx.translate((Math.random()-.5)*shake,(Math.random()-.5)*shake);
+  sky();
+
+  ctx.fillStyle='#ffef8d';ctx.fillRect(20-cameraX,130,250,80);
+  ctx.fillStyle='#2a3b50';ctx.font='900 24px system-ui';ctx.textAlign='center';
+  ctx.fillText(level===0?'ЗООМАГАЗИН':level===1?'РЫБА • ИГРУШКИ':'ВЫХОД →',145-cameraX,178);
+
+  platforms.forEach(drawPlatform);
+  pickups.forEach(drawPickup);
+  drawDoor(); drawFinish(); drawDog();
+  players.forEach(drawCat);
+
+  if(msgTimer>0){
+    ctx.fillStyle='#111c';roundRect(W/2-165,H*.18,330,48,18,true);
+    ctx.fillStyle='white';ctx.font='800 19px system-ui';ctx.textAlign='center';ctx.textBaseline='middle';ctx.fillText(msg,W/2,H*.18+24);
+  }
+  ctx.restore();
+}
+function loop(t){
+  const dt=Math.min(.032,(t-last)/1000||.016); last=t;
+  if(running)update(dt);
+  draw();
+  requestAnimationFrame(loop);
+}
+draw();
+
+if('serviceWorker' in navigator && location.protocol.startsWith('http')){
+  navigator.serviceWorker.register('./sw.js').catch(()=>{});
+}
+})();
+</script>
+</body>
+</html>
