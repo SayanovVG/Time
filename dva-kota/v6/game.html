@@ -1,0 +1,107 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,viewport-fit=cover,user-scalable=no">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="theme-color" content="#0d141d">
+<title>Два кота 3D</title>
+<style>
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{margin:0;width:100%;height:100%;height:100dvh;overflow:hidden;background:#0d141d;font-family:system-ui,-apple-system,Segoe UI,sans-serif;overscroll-behavior:none}
+button{font:inherit}
+#app{position:fixed;inset:0;width:100vw;height:100dvh;background:#0d141d}
+#app canvas{display:block;width:100%!important;height:100%!important;touch-action:none}
+#hud{position:fixed;z-index:6;top:max(7px,env(safe-area-inset-top));left:max(10px,env(safe-area-inset-left));right:max(10px,env(safe-area-inset-right));display:flex;gap:8px;justify-content:space-between;align-items:flex-start;color:#fff;pointer-events:none;text-shadow:0 2px 4px #0008}
+.hudbox{background:#101923d9;border:1px solid #ffffff22;border-radius:12px;padding:7px 10px;font-size:12px;font-weight:800;backdrop-filter:blur(7px)}
+#task{max-width:52vw;text-align:center}
+#joy{position:fixed;z-index:8;left:max(18px,env(safe-area-inset-left));bottom:max(18px,env(safe-area-inset-bottom));width:120px;height:120px;border-radius:50%;background:#ffffff1b;border:2px solid #ffffff35;touch-action:none}
+#knob{position:absolute;left:38px;top:38px;width:44px;height:44px;border-radius:50%;background:#ffffffc7;box-shadow:0 4px 14px #0007;pointer-events:none}
+#actions{position:fixed;z-index:8;right:max(18px,env(safe-area-inset-right));bottom:max(18px,env(safe-area-inset-bottom));display:grid;grid-template-columns:66px 82px;grid-template-rows:66px 66px;gap:10px;touch-action:none}
+.act{border:2px solid #ffffff35;border-radius:50%;background:#182534e8;color:#fff;font-size:26px;font-weight:900;box-shadow:0 5px 16px #0005;touch-action:none}
+.act.on,.act:active{transform:scale(.94);background:#334b65}
+#jump{grid-column:2;grid-row:1/span 2;width:84px;height:84px;align-self:center;background:#2e6fe4e8}
+#use{grid-column:1;grid-row:1}#shoot{grid-column:1;grid-row:2}
+#cross{position:fixed;z-index:5;left:50%;top:50%;transform:translate(-50%,-50%);color:#fff8;font-size:22px;pointer-events:none}
+#start{position:fixed;inset:0;z-index:30;background:linear-gradient(145deg,#1e2c40f7,#0b111af8);color:#fff;display:flex;align-items:center;justify-content:center;padding:12px;touch-action:manipulation}
+.card{position:relative;width:min(780px,96vw);max-height:calc(100dvh - 24px);min-height:min(360px,calc(100dvh - 24px));overflow:hidden;background:#ffffff0c;border:1px solid #ffffff25;border-radius:24px;padding:14px 18px 78px;text-align:center;box-shadow:0 18px 60px #0007}
+.hero{font-size:44px;line-height:1}.card h1{font-size:clamp(28px,5vw,48px);line-height:1;margin:5px 0 7px}.lead{margin:4px auto 9px;max-width:660px;font-size:clamp(13px,2vw,18px);line-height:1.25;color:#e8edf5}.features{display:flex;gap:6px;justify-content:center;flex-wrap:wrap;margin:7px 0}.pill{padding:5px 9px;border-radius:999px;background:#ffffff10;border:1px solid #ffffff22;font-size:12px;font-weight:800}.mission{font-size:13px;line-height:1.25;margin:8px auto;max-width:650px;color:#f2f5f8}
+#play{position:absolute;left:50%;bottom:14px;transform:translateX(-50%);width:min(330px,80vw);height:52px;border:0;border-radius:16px;background:#ffd648;color:#171717;font-size:19px;font-weight:950;box-shadow:0 8px 22px #0005;touch-action:manipulation}
+#play:active{transform:translateX(-50%) scale(.98)}
+#status{position:absolute;left:14px;right:14px;bottom:70px;text-align:center;font-size:12px;color:#dbe7f7;min-height:16px}
+#rotate{display:none;position:fixed;inset:0;z-index:99;background:#0d141d;color:#fff;align-items:center;justify-content:center;text-align:center;font-size:22px;font-weight:900;padding:30px}
+@media(max-height:520px){.hero{font-size:34px}.card{padding-top:9px}.card h1{font-size:31px}.lead{font-size:13px;margin:2px auto 6px}.features{margin:4px 0}.pill{font-size:10px;padding:3px 6px}.mission{font-size:11px;margin:4px auto}.hudbox{font-size:10px;padding:5px 7px}#joy{width:102px;height:102px}#knob{left:32px;top:32px;width:38px;height:38px}#actions{grid-template-columns:58px 72px;grid-template-rows:58px 58px}.act{font-size:22px}#jump{width:74px;height:74px}}
+@media(max-height:400px){.features,.mission{display:none}.card{min-height:260px}.hero{font-size:30px}.lead{max-width:520px}}
+@media(orientation:portrait){#rotate{display:flex}#start,#hud,#joy,#actions,#cross{visibility:hidden}}
+</style>
+</head>
+<body>
+<div id="app"></div>
+<div id="hud"><div class="hudbox" id="stats">🐟 0 · 🐭 0 · 🎾 15</div><div class="hudbox" id="task">Найдите ключ-карту</div><div class="hudbox" id="skill">Навык: обычный кот</div></div>
+<div id="cross">＋</div>
+<div id="joy"><div id="knob"></div></div>
+<div id="actions"><button class="act" id="use" aria-label="Взять или бросить">🐾</button><button class="act" id="shoot" aria-label="Бросить мячик">🎾</button><button class="act" id="jump" aria-label="Прыжок">⬆</button></div>
+<div id="rotate">Поверните телефон горизонтально ↻</div>
+<div id="start"><div class="card"><div class="hero">🐈 🐈‍⬛</div><h1>Два кота 3D</h1><div class="lead">3D-зоомагазин. Джойстик слева, камера свайпом, справа прыжок, действие и мячик.</div><div class="features"><span class="pill">3D</span><span class="pill">брать предметы</span><span class="pill">двигать ящики</span><span class="pill">стрелять мячиками</span><span class="pill">секреты</span></div><div class="mission"><b>Задача:</b> найти ключ-карту, попасть мячиками по 2 красным кнопкам, подвинуть ящик к вентиляции и выбраться.</div><div id="status">Нажмите «Играть» — откроется полный экран.</div><button id="play">Играть в 3D</button></div></div>
+<script>
+(()=>{
+'use strict';
+const THREE_URL='https://cdn.jsdelivr.net/npm/three@0.169.0/build/three.module.min.js';
+const app=document.getElementById('app'),start=document.getElementById('start'),play=document.getElementById('play'),status=document.getElementById('status');
+const stats=document.getElementById('stats'),task=document.getElementById('task'),skill=document.getElementById('skill');
+const joy=document.getElementById('joy'),knob=document.getElementById('knob'),jumpBtn=document.getElementById('jump'),useBtn=document.getElementById('use'),shootBtn=document.getElementById('shoot');
+let T=null,scene,camera,renderer,clock,cat,tail,held=null;
+let velocity,grounded=false,yaw=0,pitch=-.16,moveX=0,moveY=0,joyId=null,camId=null,lastCam=null;
+let fish=0,mice=0,balls=15,key=false,buttons=0,ventOpen=false,started=false;
+let solids=[],items=[],shots=[];
+function setStatus(s){status.textContent=s}
+async function enterFullscreen(){try{if(document.documentElement.requestFullscreen&&!document.fullscreenElement)await document.documentElement.requestFullscreen()}catch(e){}try{if(screen.orientation?.lock)await screen.orientation.lock('landscape')}catch(e){}}
+play.addEventListener('click',boot,{passive:true});
+play.addEventListener('pointerup',e=>{e.preventDefault();boot()},{passive:false});
+let booting=false;
+async function boot(){if(booting||started)return;booting=true;play.disabled=true;play.textContent='Загрузка 3D…';setStatus('Загружаю 3D-движок…');await enterFullscreen();
+ try{T=await import(THREE_URL)}catch(err){console.error(err);setStatus('3D-движок не загрузился. Проверь интернет/VPN и нажми ещё раз.');play.disabled=false;play.textContent='Повторить';booting=false;return}
+ try{init();started=true;start.style.display='none'}catch(err){console.error(err);setStatus('Ошибка запуска 3D: '+(err?.message||err));play.disabled=false;play.textContent='Повторить';booting=false;return}
+}
+function material(c,r=.72){return new T.MeshStandardMaterial({color:c,roughness:r,metalness:.03})}
+function addBox(x,y,z,w,h,d,c,name='',solid=true){const m=new T.Mesh(new T.BoxGeometry(w,h,d),material(c));m.position.set(x,y,z);m.name=name;m.castShadow=m.receiveShadow=true;scene.add(m);if(solid)solids.push(m);return m}
+function addCylinder(x,y,z,r,h,c){const m=new T.Mesh(new T.CylinderGeometry(r,r,h,16),material(c));m.position.set(x,y,z);m.castShadow=m.receiveShadow=true;scene.add(m);return m}
+function init(){velocity=new T.Vector3();scene=new T.Scene();scene.background=new T.Color(0xc9e6f2);scene.fog=new T.Fog(0xc9e6f2,25,52);camera=new T.PerspectiveCamera(67,innerWidth/innerHeight,.05,100);renderer=new T.WebGLRenderer({antialias:true,powerPreference:'high-performance'});renderer.setPixelRatio(Math.min(devicePixelRatio||1,1.5));resizeRenderer();renderer.shadowMap.enabled=true;app.appendChild(renderer.domElement);scene.add(new T.HemisphereLight(0xffffff,0x657789,1.65));const sun=new T.DirectionalLight(0xffffff,2.0);sun.position.set(8,13,7);sun.castShadow=true;scene.add(sun);buildShop();buildCat();clock=new T.Clock();bindControls();addEventListener('resize',resizeRenderer);if(window.visualViewport)visualViewport.addEventListener('resize',resizeRenderer);requestAnimationFrame(loop)}
+function resizeRenderer(){if(!renderer||!camera)return;const w=window.visualViewport?.width||innerWidth,h=window.visualViewport?.height||innerHeight;renderer.setSize(w,h,false);renderer.domElement.style.width=w+'px';renderer.domElement.style.height=h+'px';camera.aspect=w/h;camera.updateProjectionMatrix()}
+function buildShop(){addBox(0,-.3,0,22,.6,20,0xc6b292,'floor');addBox(0,4.5,-10,22,9,.35,0xe7dfd4,'wall');addBox(-11,4.5,0,.35,9,20,0xe7dfd4,'wall');addBox(11,4.5,0,.35,9,20,0xe7dfd4,'wall');
+ for(const x of [-7,-2,3,8]){addBox(x,1.1,-4,1.7,2.2,6,0xa8794d,'shelf');for(let y=.45;y<=2;y+=.5)addBox(x,y,-4,1.9,.10,6.2,0xd0a46f,'board',false)}
+ addBox(4,1,-8.2,6,2,2.2,0x8e6849,'counter');addBox(4,2.15,-8.2,6.4,.18,2.5,0xd4b58f,'countertop');
+ for(let i=0;i<4;i++){const aq=addBox(-8.7,1.2,6-i*2.55,2.4,1.8,1.3,0x5e9db6,'aquarium');const w=new T.Mesh(new T.BoxGeometry(2.15,1.35,1.05),new T.MeshPhysicalMaterial({color:0x36a5cf,transparent:true,opacity:.38,roughness:.1}));w.position.copy(aq.position);scene.add(w)}
+ for(let i=0;i<5;i++){const z=6.5-i*2.6;addBox(8.7,.75,z,2.1,1.5,1.55,0x70757b,'cage');for(let k=-4;k<=4;k++)addBox(8.7+k*.2,.8,z+.8,.035,1.2,.035,0x303438,'bar',false)}
+ for(const [x,z] of [[-4,3],[-2.5,5],[1.6,4.5]]){const b=addBox(x,.55,z,1.1,1.1,1.1,0xb77a43,'crate',false);b.userData.kind='crate';items.push(b)}
+ for(const [x,z] of [[-7,1],[-1,-1],[6,1]]){const f=addCylinder(x,.28,z,.23,.38,0x4f9ed8);f.rotation.z=Math.PI/2;f.userData.kind='fish';items.push(f)}
+ for(const [x,z] of [[-5,-7],[1,7],[6,-2.5]]){const m=new T.Mesh(new T.SphereGeometry(.22,14,10),material(0x99877b));m.scale.set(1.25,.7,.7);m.position.set(x,.24,z);m.castShadow=true;m.userData.kind='mouse';scene.add(m);items.push(m)}
+ const card=addBox(-6.5,2.35,-5.0,.6,.08,.85,0xffd13e,'key',false);card.rotation.x=-.35;card.userData.kind='key';items.push(card);
+ for(const x of [-3.5,3.5]){addBox(x,2.7,-9.73,1,1,.12,0x34404c,'buttonframe',false);const b=addCylinder(x,2.7,-9.48,.28,.16,0xe5473c);b.rotation.x=Math.PI/2;b.userData.kind='button';b.userData.hit=false;items.push(b)}
+ addBox(0,3.25,-9.72,3.3,2.2,.18,0x596571,'ventframe',false);const vent=addBox(0,3.25,-9.49,3,1.9,.12,0x8e959c,'vent',false);vent.userData.kind='vent';window._vent=vent;
+ for(const [x,c] of [[-7,0x176292],[-2,0x873a82],[3,0x3d7942],[8,0x9c622b]])addBox(x,3.35,-3.46,2.4,.75,.08,c,'sign',false)
+}
+function buildCat(){cat=new T.Group();cat.position.set(0,.6,8);const body=new T.Mesh(new T.BoxGeometry(.8,.55,1.25),material(0xe78f34));body.position.y=.35;body.castShadow=true;cat.add(body);const head=new T.Mesh(new T.BoxGeometry(.7,.65,.65),material(0xf0a24a));head.position.set(0,.67,-.62);head.castShadow=true;cat.add(head);for(const s of [-1,1]){const ear=new T.Mesh(new T.ConeGeometry(.16,.34,4),material(0xe78f34));ear.position.set(.2*s,1.04,-.62);ear.rotation.y=Math.PI/4;cat.add(ear);const eye=new T.Mesh(new T.SphereGeometry(.055,10,8),material(0x17212a));eye.position.set(.2*s,.75,-.95);cat.add(eye)}tail=new T.Mesh(new T.CylinderGeometry(.07,.09,.9,10),material(0xe78f34));tail.position.set(0,.65,.92);tail.rotation.x=.8;cat.add(tail);scene.add(cat)}
+function bindControls(){const joyMove=e=>{const r=joy.getBoundingClientRect(),cx=r.left+r.width/2,cy=r.top+r.height/2;let dx=e.clientX-cx,dy=e.clientY-cy;const max=r.width*.31,len=Math.hypot(dx,dy)||1;if(len>max){dx=dx/len*max;dy=dy/len*max}knob.style.transform=`translate(${dx}px,${dy}px)`;moveX=dx/max;moveY=-dy/max};joy.addEventListener('pointerdown',e=>{joyId=e.pointerId;joy.setPointerCapture(e.pointerId);joyMove(e);e.preventDefault()},{passive:false});joy.addEventListener('pointermove',e=>{if(e.pointerId===joyId){joyMove(e);e.preventDefault()}},{passive:false});const joyEnd=e=>{if(e.pointerId===joyId){joyId=null;moveX=moveY=0;knob.style.transform='translate(0,0)'}};joy.addEventListener('pointerup',joyEnd);joy.addEventListener('pointercancel',joyEnd);
+ const bind=(el,fn)=>{el.addEventListener('pointerdown',e=>{e.preventDefault();el.classList.add('on');fn()},{passive:false});['pointerup','pointercancel','pointerleave'].forEach(t=>el.addEventListener(t,()=>el.classList.remove('on')))};bind(jumpBtn,jump);bind(useBtn,useItem);bind(shootBtn,shoot);
+ renderer.domElement.addEventListener('pointerdown',e=>{if(e.pointerType==='touch'){camId=e.pointerId;lastCam={x:e.clientX,y:e.clientY}}});renderer.domElement.addEventListener('pointermove',e=>{if(e.pointerId!==camId||!lastCam)return;const dx=e.clientX-lastCam.x,dy=e.clientY-lastCam.y;yaw-=dx*.006;pitch=Math.max(-.55,Math.min(.25,pitch-dy*.004));lastCam={x:e.clientX,y:e.clientY}});const ce=e=>{if(e.pointerId===camId){camId=null;lastCam=null}};renderer.domElement.addEventListener('pointerup',ce);renderer.domElement.addEventListener('pointercancel',ce)}
+function jump(){if(grounded){velocity.y=5.8;grounded=false;tone(300,.05)}}
+function nearest(){let best=null,d=1.7;for(const o of items){if(!o.parent||o.userData.hit||o===held)continue;const q=o.position.distanceTo(cat.position);if(q<d){d=q;best=o}}return best}
+function useItem(){if(held){const dir=new T.Vector3(Math.sin(yaw),0,-Math.cos(yaw));held.position.copy(cat.position).add(new T.Vector3(0,.55,0)).addScaledVector(dir,1.2);held=null;tone(240,.05);return}const o=nearest();if(!o){tone(140,.05);return}if(o.userData.kind==='crate'){held=o;tone(280,.05)}else if(o.userData.kind==='fish'){fish++;removeItem(o);tone(680,.08);upgrade()}else if(o.userData.kind==='mouse'){mice++;removeItem(o);tone(1050,.04);setTimeout(()=>tone(1300,.04),45);upgrade()}else if(o.userData.kind==='key'){key=true;removeItem(o);tone(900,.12);refreshTask()}}
+function removeItem(o){scene.remove(o);items=items.filter(x=>x!==o)}
+function upgrade(){if(fish+mice>=4){cat.userData.fast=true;skill.textContent='Навык: быстрые лапы ⚡'}}
+function shoot(){if(balls<=0){tone(120,.08);return}balls--;const p=new T.Mesh(new T.SphereGeometry(.12,12,8),material(0xf0df3c,.35));const dir=new T.Vector3(Math.sin(yaw),.03,-Math.cos(yaw)).normalize();p.position.copy(cat.position).add(new T.Vector3(0,.85,0)).addScaledVector(dir,.8);p.userData.v=dir.multiplyScalar(13);p.userData.life=3;p.castShadow=true;scene.add(p);shots.push(p);tone(420,.04)}
+function refreshTask(){if(!key)task.textContent='Найдите ключ-карту';else if(buttons<2)task.textContent=`Попадите по кнопкам: ${buttons}/2`;else if(!ventOpen)task.textContent='Подвиньте ящик к вентиляции';else task.textContent='Вентиляция открыта — выбирайтесь!'}
+function tone(f,d=.06){try{if(!window._ac)window._ac=new (AudioContext||webkitAudioContext)();const a=window._ac,o=a.createOscillator(),g=a.createGain();o.frequency.value=f;g.gain.setValueAtTime(.035,a.currentTime);g.gain.exponentialRampToValueAtTime(.0001,a.currentTime+d);o.connect(g);g.connect(a.destination);o.start();o.stop(a.currentTime+d)}catch(e){}}
+function isBlocked(pos){for(const s of solids){if(['floor','wall','bar','board'].includes(s.name))continue;const b=new T.Box3().setFromObject(s);b.expandByScalar(.4);if(pos.x>b.min.x&&pos.x<b.max.x&&pos.z>b.min.z&&pos.z<b.max.z&&cat.position.y<b.max.y+.8)return true}return false}
+function update(dt){const fwd=new T.Vector3(Math.sin(yaw),0,-Math.cos(yaw)),right=new T.Vector3(Math.cos(yaw),0,Math.sin(yaw)),wish=new T.Vector3().addScaledVector(fwd,moveY).addScaledVector(right,moveX);if(wish.lengthSq()>1)wish.normalize();const speed=cat.userData.fast?4.8:4.0;velocity.x+=(wish.x*speed-velocity.x)*Math.min(1,dt*10);velocity.z+=(wish.z*speed-velocity.z)*Math.min(1,dt*10);velocity.y-=12.5*dt;let next=cat.position.clone();let px=next.clone();px.x+=velocity.x*dt;if(!isBlocked(px))next.x=px.x;else velocity.x=0;let pz=next.clone();pz.z+=velocity.z*dt;if(!isBlocked(pz))next.z=pz.z;else velocity.z=0;next.x=Math.max(-10.2,Math.min(10.2,next.x));next.z=Math.max(-9.1,Math.min(9.1,next.z));next.y+=velocity.y*dt;if(next.y<=.6){next.y=.6;velocity.y=0;grounded=true}cat.position.copy(next);if(wish.lengthSq()>.03){cat.rotation.y=Math.atan2(wish.x,-wish.z);tail.rotation.z=Math.sin(performance.now()*.008)*.25}
+ if(held){const d=new T.Vector3(Math.sin(yaw),0,-Math.cos(yaw));held.position.copy(cat.position).add(new T.Vector3(0,.62,0)).addScaledVector(d,1.0)}
+ for(let i=shots.length-1;i>=0;i--){const p=shots[i];p.userData.life-=dt;p.userData.v.y-=2.5*dt;p.position.addScaledVector(p.userData.v,dt);let dead=p.userData.life<=0;for(const o of items){if(o.userData.kind==='button'&&!o.userData.hit&&o.position.distanceTo(p.position)<.55){o.userData.hit=true;o.material.color.set(0x49cb68);buttons++;dead=true;tone(780,.1);refreshTask();if(buttons>=2&&key){ventOpen=true;window._vent.position.y=4.55;window._vent.rotation.z=.75;tone(520,.25);refreshTask()}break}if(o.userData.kind==='crate'&&o.position.distanceTo(p.position)<.75){o.position.addScaledVector(p.userData.v.clone().normalize(),.32);dead=true;break}}if(dead){scene.remove(p);shots.splice(i,1)}}
+ const target=cat.position.clone().add(new T.Vector3(0,.75,0)),dist=4.8,cp=new T.Vector3(target.x-Math.sin(yaw)*Math.cos(pitch)*dist,target.y+1.55-Math.sin(pitch)*dist,target.z+Math.cos(yaw)*Math.cos(pitch)*dist);camera.position.lerp(cp,1-Math.pow(.001,dt));camera.lookAt(target);stats.textContent=`🐟 ${fish} · 🐭 ${mice} · 🎾 ${balls}`;if(ventOpen&&cat.position.z<-8.65&&cat.position.y>2.1)task.textContent='Уровень пройден! 🎉'}
+function loop(){requestAnimationFrame(loop);if(!clock||!cat)return;const dt=Math.min(.033,clock.getDelta());update(dt);renderer.render(scene,camera)}
+})();
+</script>
+</body>
+</html>
