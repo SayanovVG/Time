@@ -1,4 +1,4 @@
-// MAX TIME v42 — training UI refinements + workout data recovery
+// MAX TIME v43 — training UI refinements + workout data recovery
 (function(){
   const pad=n=>String(n).padStart(2,'0');
   const dateStr=d=>d.getFullYear()+'-'+pad(d.getMonth()+1)+'-'+pad(d.getDate());
@@ -11,14 +11,12 @@
   const weekMonday=d=>{const x=new Date(d.getFullYear(),d.getMonth(),d.getDate()),wd=x.getDay()||7;x.setDate(x.getDate()-(wd-1));return x};
   const targetDateForWeek=(sourceDate,day)=>{const m=weekMonday(sourceDate);m.setDate(m.getDate()+(day-1));return dateStr(m)};
 
-  // v41 exposed an older storage bug: before v41, opening another weekday still saved
-  // that workout under the device's current calendar date. Recover those records by
-  // exercise id within the same week. Originals are kept as a safety copy.
+  // Recover workouts that older builds saved under the calendar date on which another tab/day was opened.
+  // Originals are intentionally kept as a safety copy.
   (function recoverMisdatedWorkouts(){
     if(!S.train||typeof S.train!=='object')return;
     const idToDay={};
     Object.keys(P).forEach(d=>(P[d].ex||[]).forEach(ex=>{idToDay[ex.id]=+d}));
-    // Legacy id used by an earlier Monday biceps version.
     idToDay.bandcurl=1;
     const entries=Object.entries(S.train);
     let changed=false;
@@ -33,7 +31,6 @@
     if(changed)save();
   })();
 
-  // Use the actual most recent selected weekday for workout storage/viewing.
   const dateForSelectedDay=()=>{
     const d=new Date(),wd=d.getDay(),target=Number(S.day)||wd;
     const delta=(wd-target+7)%7;
@@ -93,10 +90,17 @@
         h=h.slice(0,cardStart)+card+h.slice(cardEnd);
       }
     }
+
+    // Historical weekday view: keep the stored workout untouched, but present it as old data.
+    // Values are grey and completed-set buttons are visually reset; current-day behaviour is unchanged.
+    if(dateForSelectedDay()!==todayKey()){
+      h=h.replace(/class="set set-with-prev"/g,'class="set set-with-prev past-set"')
+         .replace(/class="check on"/g,'class="check"');
+    }
     return h;
   };
 
   const st=document.createElement('style');
-  st.textContent=`.machine-badge{display:inline-block;margin-left:6px;padding:2px 6px;border:1px solid rgba(201,122,69,.38);border-radius:5px;color:var(--a);font-size:8px;font-weight:800;letter-spacing:.08em;vertical-align:2px}.gear-note{margin:8px 0 12px;padding:9px 11px;border-radius:9px;border:1px solid rgba(201,122,69,.28);background:rgba(201,122,69,.08);color:var(--a);font-size:11px;font-weight:800;letter-spacing:.05em}.set-time{height:36px;min-width:72px;border:1px solid rgba(201,122,69,.38);border-radius:8px;background:#11161c;color:var(--a);font-family:inherit;font-size:11px;font-weight:800;cursor:pointer}`;
+  st.textContent=`.machine-badge{display:inline-block;margin-left:6px;padding:2px 6px;border:1px solid rgba(201,122,69,.38);border-radius:5px;color:var(--a);font-size:8px;font-weight:800;letter-spacing:.08em;vertical-align:2px}.gear-note{margin:8px 0 12px;padding:9px 11px;border-radius:9px;border:1px solid rgba(201,122,69,.28);background:rgba(201,122,69,.08);color:var(--a);font-size:11px;font-weight:800;letter-spacing:.05em}.set-time{height:36px;min-width:72px;border:1px solid rgba(201,122,69,.38);border-radius:8px;background:#11161c;color:var(--a);font-family:inherit;font-size:11px;font-weight:800;cursor:pointer}.past-set input,.past-set select,.past-set .set-time{color:#7f8994!important}.past-set input{border-color:rgba(127,137,148,.22)!important}.past-set select{border-color:rgba(127,137,148,.22)!important}`;
   document.head.appendChild(st);
 })();
