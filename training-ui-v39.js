@@ -1,12 +1,44 @@
-// MAX TIME v41 — training UI refinements
+// MAX TIME v42 — training UI refinements + workout data recovery
 (function(){
+  const pad=n=>String(n).padStart(2,'0');
+  const dateStr=d=>d.getFullYear()+'-'+pad(d.getMonth()+1)+'-'+pad(d.getDate());
+  const parseDate=s=>{const m=String(s).match(/^(\d{4})-(\d{2})-(\d{2})$/);return m?new Date(+m[1],+m[2]-1,+m[3]):null};
+  const hasRealData=sets=>Array.isArray(sets)&&sets.some(s=>s&&(
+    (s.load!==''&&s.load!==undefined&&s.load!==null)||
+    (s.reps!==''&&s.reps!==undefined&&s.reps!==null)||
+    s.done===true
+  ));
+  const weekMonday=d=>{const x=new Date(d.getFullYear(),d.getMonth(),d.getDate()),wd=x.getDay()||7;x.setDate(x.getDate()-(wd-1));return x};
+  const targetDateForWeek=(sourceDate,day)=>{const m=weekMonday(sourceDate);m.setDate(m.getDate()+(day-1));return dateStr(m)};
+
+  // v41 exposed an older storage bug: before v41, opening another weekday still saved
+  // that workout under the device's current calendar date. Recover those records by
+  // exercise id within the same week. Originals are kept as a safety copy.
+  (function recoverMisdatedWorkouts(){
+    if(!S.train||typeof S.train!=='object')return;
+    const idToDay={};
+    Object.keys(P).forEach(d=>(P[d].ex||[]).forEach(ex=>{idToDay[ex.id]=+d}));
+    // Legacy id used by an earlier Monday biceps version.
+    idToDay.bandcurl=1;
+    const entries=Object.entries(S.train);
+    let changed=false;
+    for(const [key,sets] of entries){
+      const m=key.match(/^(\d{4}-\d{2}-\d{2})_(.+)$/);if(!m||!hasRealData(sets))continue;
+      const src=parseDate(m[1]),id=m[2],day=idToDay[id];if(!src||!day)continue;
+      const targetId=id==='bandcurl'?'curlband':id;
+      const target=targetDateForWeek(src,day)+'_'+targetId;
+      if(target===key)continue;
+      if(!hasRealData(S.train[target])){S.train[target]=JSON.parse(JSON.stringify(sets));changed=true}
+    }
+    if(changed)save();
+  })();
+
   // Use the actual most recent selected weekday for workout storage/viewing.
-  // This restores Monday's workout when it is opened later in the same week.
   const dateForSelectedDay=()=>{
     const d=new Date(),wd=d.getDay(),target=Number(S.day)||wd;
     const delta=(wd-target+7)%7;
     d.setDate(d.getDate()-delta);
-    return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');
+    return dateStr(d);
   };
   exKey=function(ex){return dateForSelectedDay()+'_'+ex.id};
 
@@ -43,7 +75,6 @@
       }
       if(ex.noLoad&&ex.time){
         const sets=getSets(ex);
-        // Scope replacements to this exercise card only, so timers can never appear in pull-ups or other exercises.
         const nameMarker=`<div class="exname">${ex.n}`;
         const start=h.indexOf(nameMarker);
         if(start<0)continue;
