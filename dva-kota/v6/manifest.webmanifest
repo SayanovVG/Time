@@ -1,0 +1,10 @@
+{
+  "name": "Два кота 3D",
+  "short_name": "Два кота 3D",
+  "start_url": "./",
+  "scope": "./",
+  "display": "fullscreen",
+  "orientation": "landscape",
+  "background_color": "#11151b",
+  "theme_color": "#11151b"
+}
