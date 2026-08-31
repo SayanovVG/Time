@@ -1,4 +1,4 @@
-// MAX TIME v44 — training UI refinements + workout data recovery
+// MAX TIME v45 — stable workout dates + durable local backups
 (function(){
   const pad=n=>String(n).padStart(2,'0');
   const dateStr=d=>d.getFullYear()+'-'+pad(d.getMonth()+1)+'-'+pad(d.getDate());
@@ -12,7 +12,26 @@
   const targetDateForWeek=(sourceDate,day)=>{const m=weekMonday(sourceDate);m.setDate(m.getDate()+(day-1));return dateStr(m)};
   const blank=v=>v===''||v===undefined||v===null;
 
-  (function recoverMisdatedWorkouts(){
+  // Keep two automatic local snapshots of workout history. Before every normal save,
+  // the previous persisted training state is copied to PREV; after save, CURRENT is updated.
+  // These backups are independent of the main max_time_v2 record and never delete workout data.
+  const MAIN_KEY='max_time_v2',BACKUP_CURRENT='max_time_train_backup_current',BACKUP_PREV='max_time_train_backup_prev';
+  const baseSave=save;
+  save=function(){
+    try{
+      const oldRaw=localStorage.getItem(MAIN_KEY);
+      if(oldRaw){const old=JSON.parse(oldRaw);if(old&&old.train)localStorage.setItem(BACKUP_PREV,JSON.stringify({savedAt:Date.now(),train:old.train}))}
+    }catch(e){}
+    baseSave();
+    try{localStorage.setItem(BACKUP_CURRENT,JSON.stringify({savedAt:Date.now(),train:S.train||{}}))}catch(e){}
+  };
+  try{if(!localStorage.getItem(BACKUP_CURRENT))localStorage.setItem(BACKUP_CURRENT,JSON.stringify({savedAt:Date.now(),train:S.train||{}}))}catch(e){}
+
+  // One final non-destructive legacy recovery. Older builds could save a selected workout
+  // under the calendar date on which it was opened. Originals remain untouched.
+  (function recoverMisdatedWorkoutsOnce(){
+    const FLAG='max_time_recovery_v45_done';
+    try{if(localStorage.getItem(FLAG)==='1')return}catch(e){}
     if(!S.train||typeof S.train!=='object')return;
     const idToDay={};
     Object.keys(P).forEach(d=>(P[d].ex||[]).forEach(ex=>{idToDay[ex.id]=+d}));
@@ -28,19 +47,21 @@
       if(!hasRealData(S.train[target])){S.train[target]=JSON.parse(JSON.stringify(sets));changed=true}
     }
     if(changed)save();
+    try{localStorage.setItem(FLAG,'1')}catch(e){}
   })();
 
+  // All five tabs now belong to the SAME calendar week (Mon–Fri), including future days.
+  // This removes the old Monday special case where Mon meant "today" but Tue–Fri meant last week.
   const dateForSelectedDay=()=>{
-    const d=new Date(),wd=d.getDay(),target=Number(S.day)||wd;
-    const delta=(wd-target+7)%7;
-    d.setDate(d.getDate()-delta);
+    const target=Math.min(5,Math.max(1,Number(S.day)||1));
+    const d=weekMonday(new Date());
+    d.setDate(d.getDate()+(target-1));
     return dateStr(d);
   };
   exKey=function(ex){return dateForSelectedDay()+'_'+ex.id};
 
-  // Always refresh grey reference values for the CURRENT workout day from the latest
-  // older workout. This is especially important on Monday, when selecting Monday now
-  // correctly points to a fresh new date rather than last week's completed workout.
+  // Fill grey "было" references for every selected day from the latest genuinely older
+  // workout of the same exercise. The referenced workout itself is never copied or changed.
   function latestOlderSets(ex,beforeDate){
     const suf='_'+ex.id,limit=String(beforeDate).replace(/-/g,'');
     const keys=Object.keys(S.train||{}).filter(k=>{
@@ -50,17 +71,16 @@
     }).sort();
     return keys.length?S.train[keys[keys.length-1]]:null;
   }
-  function refreshCurrentDayReferences(){
-    if(dateForSelectedDay()!==todayKey())return;
-    const wo=P[S.day];if(!wo)return;
+  function refreshSelectedDayReferences(){
+    const selectedDate=dateForSelectedDay(),wo=P[S.day];if(!wo)return;
     for(const ex of wo.ex){
-      const sets=getSets(ex),prev=latestOlderSets(ex,todayKey());
+      const sets=getSets(ex),prev=latestOlderSets(ex,selectedDate);
       if(!prev)continue;
       sets.slice(0,ex.s).forEach((s,i)=>{
         const p=prev[i]||{};
         if(blank(s.load)&&!blank(p.load))s.prevLoad=p.load;
         if(blank(s.reps)&&!blank(p.reps))s.prevReps=p.reps;
-        if(blank(s.rir)&&!blank(p.rir))s.prevRir=p.rir;
+        if((s.prevRir===undefined||blank(s.prevRir))&&!blank(p.rir))s.prevRir=p.rir;
       });
     }
   }
@@ -85,7 +105,7 @@
 
   const oldRT=renderTraining;
   renderTraining=function(){
-    refreshCurrentDayReferences();
+    refreshSelectedDayReferences();
     const wo=P[S.day];
     let h=oldRT();
     if(wo.gear){
@@ -118,7 +138,9 @@
       }
     }
 
-    if(dateForSelectedDay()!==todayKey()){
+    // Only genuinely elapsed days of THIS week are historical: grey values and no active checks.
+    // Today and future days use the same clean-entry layout with grey "было" references.
+    if(dateForSelectedDay()<todayKey()){
       h=h.replace(/class="set set-with-prev"/g,'class="set set-with-prev past-set"')
          .replace(/class="check on"/g,'class="check"');
     }
