@@ -1,4 +1,4 @@
-// MAX TIME v43 — training UI refinements + workout data recovery
+// MAX TIME v44 — training UI refinements + workout data recovery
 (function(){
   const pad=n=>String(n).padStart(2,'0');
   const dateStr=d=>d.getFullYear()+'-'+pad(d.getMonth()+1)+'-'+pad(d.getDate());
@@ -10,9 +10,8 @@
   ));
   const weekMonday=d=>{const x=new Date(d.getFullYear(),d.getMonth(),d.getDate()),wd=x.getDay()||7;x.setDate(x.getDate()-(wd-1));return x};
   const targetDateForWeek=(sourceDate,day)=>{const m=weekMonday(sourceDate);m.setDate(m.getDate()+(day-1));return dateStr(m)};
+  const blank=v=>v===''||v===undefined||v===null;
 
-  // Recover workouts that older builds saved under the calendar date on which another tab/day was opened.
-  // Originals are intentionally kept as a safety copy.
   (function recoverMisdatedWorkouts(){
     if(!S.train||typeof S.train!=='object')return;
     const idToDay={};
@@ -39,6 +38,33 @@
   };
   exKey=function(ex){return dateForSelectedDay()+'_'+ex.id};
 
+  // Always refresh grey reference values for the CURRENT workout day from the latest
+  // older workout. This is especially important on Monday, when selecting Monday now
+  // correctly points to a fresh new date rather than last week's completed workout.
+  function latestOlderSets(ex,beforeDate){
+    const suf='_'+ex.id,limit=String(beforeDate).replace(/-/g,'');
+    const keys=Object.keys(S.train||{}).filter(k=>{
+      if(!k.endsWith(suf))return false;
+      const m=k.match(/^(\d{4})-(\d{2})-(\d{2})_/);if(!m)return false;
+      return (m[1]+m[2]+m[3])<limit&&hasRealData(S.train[k]);
+    }).sort();
+    return keys.length?S.train[keys[keys.length-1]]:null;
+  }
+  function refreshCurrentDayReferences(){
+    if(dateForSelectedDay()!==todayKey())return;
+    const wo=P[S.day];if(!wo)return;
+    for(const ex of wo.ex){
+      const sets=getSets(ex),prev=latestOlderSets(ex,todayKey());
+      if(!prev)continue;
+      sets.slice(0,ex.s).forEach((s,i)=>{
+        const p=prev[i]||{};
+        if(blank(s.load)&&!blank(p.load))s.prevLoad=p.load;
+        if(blank(s.reps)&&!blank(p.reps))s.prevReps=p.reps;
+        if(blank(s.rir)&&!blank(p.rir))s.prevRir=p.rir;
+      });
+    }
+  }
+
   window.startExerciseTimer=function(sec,ex,eid){
     startTimer(sec,ex,eid);
     S.timer.exerciseTimer=true;
@@ -59,6 +85,7 @@
 
   const oldRT=renderTraining;
   renderTraining=function(){
+    refreshCurrentDayReferences();
     const wo=P[S.day];
     let h=oldRT();
     if(wo.gear){
@@ -91,8 +118,6 @@
       }
     }
 
-    // Historical weekday view: keep the stored workout untouched, but present it as old data.
-    // Values are grey and completed-set buttons are visually reset; current-day behaviour is unchanged.
     if(dateForSelectedDay()!==todayKey()){
       h=h.replace(/class="set set-with-prev"/g,'class="set set-with-prev past-set"')
          .replace(/class="check on"/g,'class="check"');
