@@ -15,6 +15,30 @@
   window.mtToggleMealV55=function(id){const m=MEALS.find(x=>x.id===id);if(!m)return;const a=dayFood(),p=pid(id),i=a.findIndex(x=>x.planId===p);if(i>=0)a.splice(i,1);else a.push({id:Date.now(),planId:p,name:m.title,g:1,cal:m.cal,p:m.p,f:m.f,c:m.c});S['food_'+todayKey()]=a;save();render()};
   const esc=s=>String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
   const meal=m=>{const done=dayFood().some(x=>x.planId===pid(m.id));return `<div class="meal v55-meal ${done?'meal-done':''}"><time>${m.time}</time><div class="meal-copy"><strong>${esc(m.title)}</strong><small>${esc(m.text)}</small><em>${m.cal} ккал · Б ${m.p} · Ж ${m.f} · У ${m.c}</em></div><button class="meal-check ${done?'on':''}" onclick="mtToggleMealV55('${m.id}')" aria-label="Отметить ${esc(m.title)}">✓</button></div>`};
+
+  // Supplements are tracked separately from food and never add guessed macros.
+  const SUPPS=[
+    {id:'beta1',time:'Завтрак',name:'PRIMEKRAFT · бета-аланин',dose:'1 г',text:'Ежедневно, включая отдых. Растворить в воде; отмерять весами.'},
+    {id:'beta2',time:'Обед',name:'Бета-аланин · 2-й приём',dose:'1 г',text:'Суточная схема: 4 приёма по 1 г = 4 г.'},
+    {id:'beta3',time:'Полдник',name:'Бета-аланин · 3-й приём',dose:'1 г',text:'Эффект накопительный: оценивать через 4 недели, не по покалыванию.'},
+    {id:'beta4',time:'Ужин',name:'Бета-аланин · 4-й приём',dose:'1 г',text:'При неприятном покалывании уменьшить разовую порцию и разделить на больше приёмов.'},
+    {id:'omega',time:'С едой',name:'Омега-3 · Fish Oil 1000 мг',dose:'Нужна этикетка',pending:true,text:'Принимать с завтраком или обедом. Число капсул уточним по EPA + DHA на капсулу: 1000 мг рыбьего жира не равно 1000 мг омеги-3.'},
+    {id:'magnesium',time:'Ужин',name:'VitaMeal · магний бисглицинат',dose:'Нужна этикетка',pending:true,text:'Дозу считать по элементарному магнию, не по массе бисглицината. Если добавка нужна для восполнения рациона, обычно достаточно 100–200 мг/сут. Без назначения не превышать 350 мг/сут из всех добавок. При заболевании почек — только с врачом.'},
+    {id:'caffeine',time:'По необходимости',name:'VitaMeal · кофеин',dose:'Нужна этикетка',pending:true,text:'Не обязательный ежедневный приём. После проверки содержания: начать со 100 мг за 30–60 минут до утренней тренировки. Не более 200 мг за раз и 400 мг/сут из всех источников, включая кофе и чай. За 8 часов до сна не принимать. При сердцебиении, тревоге или повышении давления отменить.'}
+  ];
+  window.mtToggleSupplement=function(id){
+    const item=SUPPS.find(x=>x.id===id);if(!item||item.pending)return;
+    const key='supplements_'+todayKey();
+    S[key]=S[key]||{};S[key][id]=!S[key][id];save();render();
+  };
+  function supplementPlan(){
+    const checked=S['supplements_'+todayKey()]||{};
+    return '<div class="card supplement-plan"><b>ДОБАВКИ · ПЛАН ПРИЁМА</b><div class="nutrition-rule">Бета-аланин: 4 г ежедневно, отдельно от учёта белка. Для остальных добавок нужен состав с упаковки; число капсул пока не назначено.</div>'+
+      SUPPS.map(m=>'<div class="meal"><time>'+esc(m.time)+'</time><div class="meal-copy"><strong>'+esc(m.name)+'</strong><small>'+esc(m.dose)+' · '+esc(m.text)+'</small></div>'+
+        (m.pending?'<span aria-label="Ожидается состав">—</span>':'<button class="meal-check '+(checked[m.id]?'on':'')+'" aria-pressed="'+!!checked[m.id]+'" aria-label="'+(checked[m.id]?'Снять отметку: ':'Принял: ')+esc(m.name+' '+m.time)+'" onclick="mtToggleSupplement(\''+m.id+'\')">✓</button>')+'</div>').join('')+
+      '<details class="nutrition-rule"><summary>Как пользоваться и источники</summary><p>Отметки относятся к выбранному дню питания и сохраняются отдельно от еды. Не отмечайте повторно уже принятые порции. Омега-3 и магний не обязательны, если потребности покрывает питание. Лечебные дозировки здесь не назначаются.</p><p>У PRIMEKRAFT мерная ложка 5 г; для этой дробной схемы используйте весы. При выраженной сыпи, отёке или затруднении дыхания прекратите приём и обратитесь за медицинской помощью.</p><a href="https://primekraft.ru/catalog/aminokisloty/beta-alanin/beta-alanin-banka-200-gr/" target="_blank" rel="noopener noreferrer">Состав PRIMEKRAFT</a> · <a href="https://ods.od.nih.gov/factsheets/ExerciseAndAthleticPerformance-HealthProfessional/" target="_blank" rel="noopener noreferrer">Бета-аланин и кофеин · NIH</a> · <a href="https://ods.od.nih.gov/factsheets/Magnesium-HealthProfessional/" target="_blank" rel="noopener noreferrer">Магний · NIH</a> · <a href="https://ods.od.nih.gov/factsheets/Omega3FattyAcids-HealthProfessional/" target="_blank" rel="noopener noreferrer">Омега-3 · NIH</a></details></div>';
+  }
+
   const base=renderNutrition;
   renderNutrition=function(){
     let h=base(),t=totals();
@@ -23,6 +47,6 @@
     const plan=`<div class="card plan-card"><b>МОЙ РАЦИОН · СИЛОВОЙ РЕЖИМ</b><div class="nutrition-rule">Базовый план ≈2450 ккал. Ужин обязателен как обычный приём пищи; продукты можно заменять эквивалентами по КБЖУ.</div>${MEALS.map(meal).join('')}<div class="nutrition-rule">План: 2451 ккал · Б 180 · Ж 75 · У 264. Разница 1 ккал — округление макросов.</div></div>`;
     h=h.replace(/<div class="card nutrition-status">[\s\S]*?<div class="card"><b>КОНТРОЛЬ РЕКОМПОЗИЦИИ<\/b>/,status+plan+'<div class="card"><b>КОНТРОЛЬ РЕКОМПОЗИЦИИ</b>');
     h=h.replace(/День MMA[^<]*/g,'Силовой режим · рекомпозиция').replace(/День без MMA[^<]*/g,'Силовой режим · рекомпозиция').replace(/МОЙ РАЦИОН · MMA/g,'МОЙ РАЦИОН · СИЛОВОЙ РЕЖИМ');
-    return h;
+    return h + supplementPlan();
   };
 })();
