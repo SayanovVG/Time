@@ -1,7 +1,21 @@
 'use strict';
 // MAX TIME v55 — final stabilization layer.
 (function(){
-  const VERSION='v55';
+  const VERSION='v58';
+  // Capture installed context before Fullscreen API changes display-mode.
+  const installedApp=['standalone','fullscreen','minimal-ui'].some(mode=>window.matchMedia('(display-mode: '+mode+')').matches)||navigator.standalone===true;
+  let appFullscreenPending=false;
+  function appIsFullscreen(){return !!document.fullscreenElement||window.matchMedia('(display-mode: fullscreen)').matches}
+  async function ensureAppFullscreen(){
+    if(!installedApp||appIsFullscreen()||appFullscreenPending||!document.documentElement.requestFullscreen)return;
+    appFullscreenPending=true;
+    try{await document.documentElement.requestFullscreen({navigationUI:'hide'})}catch(_){}
+    finally{appFullscreenPending=false}
+  }
+  // Older installed copies may retain standalone mode. A trusted tap provides
+  // the activation required by Android; ordinary browser tabs are untouched.
+  document.addEventListener('click',e=>{if(e.isTrusted)ensureAppFullscreen()},true);
+
   const pad=n=>String(n).padStart(2,'0');
   const dayDate=day=>{const x=new Date(),wd=x.getDay()||7,m=new Date(x.getFullYear(),x.getMonth(),x.getDate());m.setDate(m.getDate()-(wd-1)+(Math.min(5,Math.max(1,+day||1))-1));return m.getFullYear()+'-'+pad(m.getMonth()+1)+'-'+pad(m.getDate())};
   const logError=(kind,msg,extra='')=>{try{const k='max_time_error_log_v55',a=JSON.parse(localStorage.getItem(k)||'[]');a.push({at:new Date().toISOString(),version:VERSION,kind,msg:String(msg||''),extra:String(extra||'')});while(a.length>30)a.shift();localStorage.setItem(k,JSON.stringify(a))}catch(_){}};
@@ -13,7 +27,7 @@
 
   function firstIncomplete(){const wo=P[S.day],date=dayDate(S.day);if(!wo)return 0;let start=Number.isInteger(S.focusIndex)?S.focusIndex:0;start=Math.max(0,Math.min(wo.ex.length-1,start));const done=ex=>{const a=(S.train||{})[date+'_'+ex.id]||[];return a.slice(0,ex.s).filter(x=>x&&x.done).length>=ex.s};while(start<wo.ex.length-1&&done(wo.ex[start]))start++;if(done(wo.ex[start])){const i=wo.ex.findIndex(ex=>!done(ex));if(i>=0)start=i}S.focusIndex=start;return start}
   async function enterFullscreen(){try{if(!document.fullscreenElement&&document.documentElement.requestFullscreen)await document.documentElement.requestFullscreen({navigationUI:'hide'})}catch(e){logError('fullscreen',e.message||e)}}
-  async function exitFullscreen(){try{if(document.fullscreenElement&&document.exitFullscreen)await document.exitFullscreen()}catch(e){logError('fullscreen-exit',e.message||e)}}
+  async function exitFullscreen(){if(installedApp)return;try{if(document.fullscreenElement&&document.exitFullscreen)await document.exitFullscreen()}catch(e){logError('fullscreen-exit',e.message||e)}}
   window.mtToggleWorkoutMode=function(on){const next=on===undefined?!S.workoutMode:!!on;S.workoutMode=next;if(next){S.focusIndex=firstIncomplete();enterFullscreen()}else{S.focusIndex=null;exitFullscreen()}save();render()};
   window.mtFocusPrev=function(){const wo=P[S.day];if(!wo)return;S.focusIndex=Math.max(0,firstIncomplete()-1);save();render()};
   window.mtFocusNext=function(){const wo=P[S.day];if(!wo)return;S.focusIndex=Math.min(wo.ex.length-1,firstIncomplete()+1);save();render()};
