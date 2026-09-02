@@ -16,28 +16,28 @@
   const esc=s=>String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
   const meal=m=>{const done=dayFood().some(x=>x.planId===pid(m.id));return `<div class="meal v55-meal ${done?'meal-done':''}"><time>${m.time}</time><div class="meal-copy"><strong>${esc(m.title)}</strong><small>${esc(m.text)}</small><em>${m.cal} ккал · Б ${m.p} · Ж ${m.f} · У ${m.c}</em></div><button class="meal-check ${done?'on':''}" onclick="mtToggleMealV55('${m.id}')" aria-label="Отметить ${esc(m.title)}">✓</button></div>`};
 
-  // Supplements are tracked separately from food and never add guessed macros.
+  // Compact schedule requested by the user; quantities use the supplied labels.
+  // Magnesium and B6 are the same capsule (100 mg magnesium + 1.5 mg B6).
+  // Keep unchanged intake IDs; the new 5 g beta-alanine dose gets a new ID,
+  // so a previous 1 g check cannot mark a full portion as taken.
   const SUPPS=[
-    {id:'beta1',time:'Завтрак',name:'PRIMEKRAFT · бета-аланин',dose:'1 г',text:'Ежедневно, включая отдых. Растворить в воде; отмерять весами.'},
-    {id:'beta2',time:'Обед',name:'Бета-аланин · 2-й приём',dose:'1 г',text:'Суточная схема: 4 приёма по 1 г = 4 г.'},
-    {id:'beta3',time:'Полдник',name:'Бета-аланин · 3-й приём',dose:'1 г',text:'Эффект накопительный: оценивать через 4 недели, не по покалыванию.'},
-    {id:'beta4',time:'Ужин',name:'Бета-аланин · 4-й приём',dose:'1 г',text:'При неприятном покалывании уменьшить разовую порцию и разделить на больше приёмов.'},
-    {id:'omega',time:'Завтрак',name:'Омега-3 · Fish Oil',dose:'2 капсулы',text:'Во время еды. По этикетке: 4 капсулы/сут дают 1000 мг омега-3, включая EPA 520 мг + DHA 380 мг. Курс по упаковке — 1 месяц; затем оценить необходимость продолжения.'},
-    {id:'omegaEvening',time:'Ужин',name:'Омега-3 · 2-й приём',dose:'2 капсулы',text:'Во время еды. Итого 4 капсулы/сут, EPA + DHA = 900 мг. При приёме антикоагулянтов согласовать с врачом.'},
-    {id:'magnesium',time:'Ужин',name:'VitaMeal · магний бисглицинат',dose:'2 капсулы · 200 мг магния',text:'С ужином, ежедневно при необходимости дополнить рацион. По этикетке в 1 капсуле: 100 мг элементарного магния + 1,5 мг B6; в 2 капсулах — 200 мг + 3 мг B6. Начать с 1 капсулы на несколько дней для оценки переносимости; затем 2. Четыре капсулы дают 400 мг магния: без назначения врача такую дозу не использовать. Учитывать магний и B6 из других добавок. При заболевании почек — только с врачом; при диарее уменьшить дозу или отменить.'},
-    {id:'caffeine',time:'По необходимости',name:'VitaMeal · кофеин',dose:'До 1 таблетки · 200 мг',text:'Только по необходимости за 30–60 минут до утренней тренировки. Для первой пробы предпочтительнее 100 мг: половина таблетки только если производитель допускает деление, иначе форма 100 мг. Не более 1 таблетки этого продукта в сутки по этикетке и 400 мг кофеина суммарно из всех источников. Не сочетать с другими стимуляторами; за 8 часов до сна не принимать. При сердцебиении, тревоге или повышении давления отменить.'}
+    {name:'Бета-аланин',text:'1 порция (5 г) утром',intakes:[{id:'betaMorning5',time:'Утро',dose:'1 порция (5 г)'}]},
+    {name:'Омега-3',text:'2 капсулы с завтраком · 2 с ужином',intakes:[{id:'omega',time:'Завтрак',dose:'2 капсулы'},{id:'omegaEvening',time:'Ужин',dose:'2 капсулы'}]},
+    {name:'Магний + B6',text:'2 капсулы с завтраком · 2 с ужином',intakes:[{id:'magnesiumMorning',time:'Завтрак',dose:'2 капсулы'},{id:'magnesium',time:'Ужин',dose:'2 капсулы'}]},
+    {name:'Кофеин',text:'1 таблетка (200 мг) утром по необходимости',intakes:[{id:'caffeine',time:'Утро',dose:'1 таблетка (200 мг)'}]}
   ];
   window.mtToggleSupplement=function(id){
-    const item=SUPPS.find(x=>x.id===id);if(!item||item.pending)return;
+    if(!SUPPS.some(item=>item.intakes.some(intake=>intake.id===id)))return;
     const key='supplements_'+todayKey();
     S[key]=S[key]||{};S[key][id]=!S[key][id];save();render();
   };
   function supplementPlan(){
     const checked=S['supplements_'+todayKey()]||{};
-    return '<div class="card supplement-plan"><b>ДОБАВКИ · ПЛАН ПРИЁМА</b><div class="nutrition-rule">Бета-аланин: 4 г ежедневно, отдельно от учёта белка. Омега-3: 2 капсулы дважды в день с едой по этикетке. Кофеин: 200 мг в таблетке, необязательный приём. Магний: 2 капсулы с ужином = 200 мг магния + 3 мг B6.</div>'+
-      SUPPS.map(m=>'<div class="meal"><time>'+esc(m.time)+'</time><div class="meal-copy"><strong>'+esc(m.name)+'</strong><small>'+esc(m.dose)+' · '+esc(m.text)+'</small></div>'+
-        (m.pending?'<span aria-label="Ожидается состав">—</span>':'<button class="meal-check '+(checked[m.id]?'on':'')+'" aria-pressed="'+!!checked[m.id]+'" aria-label="'+(checked[m.id]?'Снять отметку: ':'Принял: ')+esc(m.name+' '+m.time)+'" onclick="mtToggleSupplement(\''+m.id+'\')">✓</button>')+'</div>').join('')+
-      '<details class="nutrition-rule"><summary>Как пользоваться и источники</summary><p>Отметки относятся к выбранному дню питания и сохраняются отдельно от еды. Не отмечайте повторно уже принятые порции. Омега-3 и магний не обязательны, если потребности покрывает питание. Лечебные дозировки здесь не назначаются.</p><p>У PRIMEKRAFT мерная ложка 5 г; для этой дробной схемы используйте весы. При выраженной сыпи, отёке или затруднении дыхания прекратите приём и обратитесь за медицинской помощью.</p><a href="https://primekraft.ru/catalog/aminokisloty/beta-alanin/beta-alanin-banka-200-gr/" target="_blank" rel="noopener noreferrer">Состав PRIMEKRAFT</a> · <a href="https://ods.od.nih.gov/factsheets/ExerciseAndAthleticPerformance-HealthProfessional/" target="_blank" rel="noopener noreferrer">Бета-аланин и кофеин · NIH</a> · <a href="https://ods.od.nih.gov/factsheets/Magnesium-HealthProfessional/" target="_blank" rel="noopener noreferrer">Магний · NIH</a> · <a href="https://ods.od.nih.gov/factsheets/Omega3FattyAcids-HealthProfessional/" target="_blank" rel="noopener noreferrer">Омега-3 · NIH</a></details></div>';
+    return '<style>.supplement-plan .supplement-entry{display:flex;align-items:center;gap:10px;padding:12px 0;border-bottom:1px solid var(--line)}.supplement-plan .supplement-entry:last-child{border-bottom:0;padding-bottom:0}.supplement-copy{flex:1;min-width:0}.supplement-copy strong{display:block;font-size:14px}.supplement-copy small{display:block;font-size:12px;color:var(--dim);line-height:1.5;margin-top:4px}.supplement-checks{display:flex;gap:6px;flex-shrink:0}.supplement-dose{display:flex;flex-direction:column;align-items:center;gap:4px;min-width:40px}.supplement-dose span{font-size:9px;color:var(--dim)}</style>'+
+      '<div class="card supplement-plan"><b>ДОБАВКИ</b>'+
+      SUPPS.map(item=>'<div class="supplement-entry"><div class="supplement-copy"><strong>'+esc(item.name)+'</strong><small>'+esc(item.text)+'</small></div><div class="supplement-checks">'+
+        item.intakes.map(intake=>'<div class="supplement-dose"><span>'+esc(intake.time)+'</span><button class="meal-check '+(checked[intake.id]?'on':'')+'" aria-pressed="'+!!checked[intake.id]+'" aria-label="'+esc((checked[intake.id]?'Снять отметку: ':'Принял: ')+item.name+', '+intake.dose+', '+intake.time)+'" onclick="mtToggleSupplement(\''+intake.id+'\')">✓</button></div>').join('')+
+        '</div></div>').join('')+'</div>';
   }
 
   const base=renderNutrition;
