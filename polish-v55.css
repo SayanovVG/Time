@@ -9,3 +9,25 @@ body{font-size:14px;line-height:1.45}
 .exercise-timer-control{grid-column:2/4;display:grid;grid-template-columns:44px minmax(64px,1fr) 44px 74px;gap:6px;align-items:center;width:100%}.et-load-sentinel{position:absolute!important;width:1px!important;height:1px!important;opacity:0!important;pointer-events:none!important}.exercise-timer-control+input{display:block!important}.et-adj,.et-toggle{height:44px;border-radius:10px;border:1px solid var(--line);background:#10141a;font:800 11px Manrope,sans-serif}.et-adj{color:var(--a);font-size:12px}.et-time{height:44px;display:flex;align-items:baseline;justify-content:center;gap:3px;border:1px solid var(--line);border-radius:10px;background:#10141a;color:var(--txt);font-size:19px;font-weight:800}.et-time small{font-size:9px;color:var(--mut)}.et-toggle{background:var(--a);border-color:var(--a);color:#111}.et-toggle.stop{background:rgba(255,93,93,.10);color:#ff8d8d;border-color:rgba(255,93,93,.35)}
 .mt-workout-active{padding-bottom:12px}.mt-workout-active .top{display:none!important}.mt-focus-shell{padding-top:env(safe-area-inset-top,0)}.mt-focus-shell>.mt-workout-toolbar,.mt-focus-shell>.days,.mt-focus-shell>h1,.mt-focus-shell>.note,.mt-focus-shell>.gear-note{display:none!important}.mt-focus-shell .card:not(.mt-focus-card):not(.workout-complete){display:none!important}.mt-focus-top{position:sticky;top:0;z-index:95;margin:0 -14px 12px;padding:10px 14px;background:rgba(13,16,20,.97);backdrop-filter:blur(18px);border-bottom:1px solid var(--line);display:grid;grid-template-columns:auto 1fr auto;align-items:center;gap:12px}.mt-focus-top div{text-align:center;display:flex;flex-direction:column}.mt-focus-top small{font-size:11px;color:var(--mut);font-weight:800}.mt-focus-top strong{font-size:18px}.mt-focus-top>span{font-size:10px;color:var(--dim);font-weight:800}.mt-focus-exit{min-height:42px;padding:0 12px;border-radius:10px;background:transparent;border:1px solid rgba(255,138,61,.45);color:var(--a);font-size:11px;font-weight:900}.mt-focus-card{display:block!important;border-color:rgba(255,138,61,.42)!important;padding:18px!important;box-shadow:0 14px 40px rgba(0,0,0,.28)}.mt-focus-card .exname{font-size:24px;line-height:1.15}.mt-focus-card .meta{font-size:13px;margin-top:6px}.mt-focus-card .set{grid-template-columns:30px 1fr 1fr 72px 46px;gap:8px;padding:14px 0}.mt-focus-card .set input,.mt-focus-card .set select{min-height:48px;font-size:17px!important}.mt-focus-card .check{width:46px!important;height:46px!important}.mt-focus-card .tmr-start{min-height:54px;font-size:16px}.mt-focus-nav{position:sticky;bottom:8px;display:grid;grid-template-columns:1fr 1.6fr;gap:8px;z-index:90;margin-top:10px}.mt-focus-nav button{min-height:52px;border-radius:13px;border:1px solid var(--line);background:var(--card2);color:var(--txt);font-size:12px;font-weight:900}.mt-focus-nav button.primary{background:var(--a);border-color:var(--a);color:#111}.mt-focus-nav button:disabled{opacity:.35}
 @media(max-width:520px){.set{grid-template-columns:24px 1fr 1fr 62px 44px}.exercise-timer-control{grid-template-columns:40px minmax(56px,1fr) 40px 66px;gap:5px}.mt-focus-card{padding:14px!important}.mt-focus-card .set{grid-template-columns:26px 1fr 1fr 62px 44px;gap:6px}.mt-focus-card .exname{font-size:22px}.clock{font-size:21px}}
+
+/* v61: timed sets keep entry fields and the exercise timer on separate rows. */
+.set.set-timed,.mt-focus-card .set.set-timed{
+  grid-template-columns:24px minmax(0,1fr) 62px 44px;
+  grid-template-rows:auto auto auto;
+  gap:8px;
+}
+.set.set-timed>span{grid-column:1;grid-row:1}
+.set.set-timed>input{grid-column:2;grid-row:1;min-width:0;min-height:44px}
+.set.set-timed>select{grid-column:3;grid-row:1;min-width:0;min-height:44px}
+.set.set-timed>.check{grid-column:4;grid-row:1;width:44px!important;height:44px!important}
+.set.set-timed>.exercise-timer-control{
+  position:relative;
+  grid-column:1/-1;
+  grid-row:2;
+  grid-template-columns:44px minmax(56px,1fr) 44px minmax(74px,1fr);
+  gap:6px;
+  min-width:0;
+}
+.set.set-timed>.prev-set{grid-column:2/-1;grid-row:3;margin-top:0;overflow-wrap:anywhere}
+.set.set-timed .et-adj,.set.set-timed .et-toggle{min-width:0;min-height:44px;white-space:nowrap}
+.set.set-timed .et-time{min-width:0;align-items:center;white-space:nowrap}
