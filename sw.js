@@ -1,3 +1,74 @@
-const CACHE='mt-v61';
-const ASSETS=['./index.html','./index-v2.html','./styles-v2.css','./polish-v55.css','./program-v2.js','./program-v48.js','./strength-focus-v52.js','./app-v2.js','./nutrition-v2.js','./nutrition-v55.js','./fixes-v2.js','./progress-v2.js','./training-ui-v39.js','./experience-v46.js','./exercise-timer-v55.js','./core-v55.js','./manifest.json','./icon.svg'];
-self.addEventListener('install',e=>{e.waitUntil(caches.open(CACHE).then(c=>c.addAll(ASSETS)));self.skipWaiting();});self.addEventListener('activate',e=>{e.waitUntil(caches.keys().then(keys=>Promise.all(keys.filter(k=>k!==CACHE).map(k=>caches.delete(k)))));self.clients.claim();});self.addEventListener('fetch',e=>{if(e.request.method!=='GET')return;const u=new URL(e.request.url),isCode=u.origin===location.origin&&/\.(js|css|html|json)$/.test(u.pathname);if(isCode){e.respondWith(fetch(e.request).then(resp=>{if(resp&&resp.status===200){const clone=resp.clone();caches.open(CACHE).then(c=>c.put(e.request,clone))}return resp}).catch(()=>caches.match(e.request,{ignoreSearch:true}).then(x=>x||caches.match('./index-v2.html'))));return}e.respondWith(caches.match(e.request).then(cached=>cached||fetch(e.request).then(resp=>{if(resp&&resp.status===200&&u.origin===location.origin){const clone=resp.clone();caches.open(CACHE).then(c=>c.put(e.request,clone))}return resp}).catch(()=>caches.match('./index-v2.html'))))});
+const CACHE = "max-time-v3-20260906-1";
+const ASSETS = [
+  "./",
+  "./index.html",
+  "./index-v2.html",
+  "./app/main.mjs",
+  "./app/model.mjs",
+  "./app/store.mjs",
+  "./app/program.mjs",
+  "./app/nutrition.mjs",
+  "./app/timer.mjs",
+  "./app/view.mjs",
+  "./app/app.css",
+  "./app/fonts/manrope-latin-wght-normal.woff2",
+  "./app/fonts/manrope-cyrillic-wght-normal.woff2",
+  "./manifest.json",
+  "./icon.svg",
+  "./icons/icon-192.png",
+  "./icons/icon-512.png",
+];
+const OWN_CACHE = (name) =>
+  name.startsWith("max-time-") || /^mt-v\d+$/.test(name);
+self.addEventListener("install", (event) => {
+  event.waitUntil(caches.open(CACHE).then((cache) => cache.addAll(ASSETS)));
+});
+self.addEventListener("message", (event) => {
+  if (event.data?.type === "SKIP_WAITING") self.skipWaiting();
+});
+self.addEventListener("activate", (event) => {
+  event.waitUntil(
+    caches
+      .keys()
+      .then((keys) =>
+        Promise.all(
+          keys
+            .filter((key) => key !== CACHE && OWN_CACHE(key))
+            .map((key) => caches.delete(key)),
+        ),
+      )
+      .then(() => self.clients.claim()),
+  );
+});
+self.addEventListener("fetch", (event) => {
+  const url = new URL(event.request.url),
+    scope = new URL(self.registration.scope);
+  if (
+    event.request.method !== "GET" ||
+    url.origin !== scope.origin ||
+    !url.pathname.startsWith(scope.pathname) ||
+    url.pathname.startsWith(scope.pathname + "dva-kota/")
+  )
+    return;
+  // One installed version per cache: HTML and native modules update together.
+  event.respondWith(
+    caches.open(CACHE).then(async (cache) => {
+      const cached = await cache.match(event.request, { ignoreSearch: true });
+      if (cached) return cached;
+      try {
+        return await fetch(event.request);
+      } catch (error) {
+        if (
+          event.request.mode === "navigate" &&
+          [
+            scope.pathname,
+            scope.pathname + "index.html",
+            scope.pathname + "index-v2.html",
+          ].includes(url.pathname)
+        )
+          return cache.match("./index.html");
+        throw error;
+      }
+    }),
+  );
+});

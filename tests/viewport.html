@@ -1,0 +1,46 @@
+<!doctype html>
+<html lang="ru">
+  <meta charset="utf-8" /><meta
+    name="viewport"
+    content="width=device-width, initial-scale=1"
+  /><title>MAX TIME — проверка размеров</title>
+  <style>
+    body {
+      background: #080a0d;
+      color: #ddd;
+      font: 14px system-ui;
+      margin: 16px;
+    }
+    nav {
+      display: flex;
+      gap: 12px;
+      margin-bottom: 16px;
+    }
+    a {
+      color: #ffae73;
+      padding: 10px;
+    }
+    iframe {
+      border: 1px solid #444;
+      border-radius: 18px;
+      height: 820px;
+      background: #101215;
+    }
+    p {
+      max-width: 800px;
+    }
+  </style>
+  <nav>
+    <a href="?width=320">320 px</a><a href="?width=360">360 px</a
+    ><a href="?width=393">393 px</a><a href="?width=768">768 px</a>
+  </nav>
+  <p>
+    Проверка интерфейса на разных ширинах. Используйте только тестовые данные.
+  </p>
+  <iframe title="MAX TIME mobile" src="../index-v2.html" width="393"></iframe>
+  <script type="module">
+    const width = Number(new URL(location.href).searchParams.get("width"));
+    if ([320, 360, 393, 768].includes(width))
+      document.querySelector("iframe").width = width;
+  </script>
+</html>
