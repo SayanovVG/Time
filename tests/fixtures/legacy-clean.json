@@ -1,0 +1,327 @@
+{
+  "tab": "training",
+  "day": 3,
+  "hint": null,
+  "train": {
+    "2026-09-02_lateral": [
+      {
+        "load": "",
+        "reps": "",
+        "rir": "2",
+        "done": false,
+        "prevLoad": "",
+        "prevReps": "",
+        "prevRir": ""
+      },
+      {
+        "load": "",
+        "reps": "",
+        "rir": "2",
+        "done": false,
+        "prevLoad": "",
+        "prevReps": "",
+        "prevRir": ""
+      },
+      {
+        "load": "",
+        "reps": "",
+        "rir": "2",
+        "done": false,
+        "prevLoad": "",
+        "prevReps": "",
+        "prevRir": ""
+      }
+    ],
+    "2026-09-02_uprightband": [
+      {
+        "load": "",
+        "reps": "",
+        "rir": "2",
+        "done": false,
+        "prevLoad": "",
+        "prevReps": "",
+        "prevRir": ""
+      },
+      {
+        "load": "",
+        "reps": "",
+        "rir": "2",
+        "done": false,
+        "prevLoad": "",
+        "prevReps": "",
+        "prevRir": ""
+      }
+    ],
+    "2026-09-02_facepull": [
+      {
+        "load": "",
+        "reps": "",
+        "rir": "2",
+        "done": false,
+        "prevLoad": "",
+        "prevReps": "",
+        "prevRir": ""
+      },
+      {
+        "load": "",
+        "reps": "",
+        "rir": "2",
+        "done": false,
+        "prevLoad": "",
+        "prevReps": "",
+        "prevRir": ""
+      },
+      {
+        "load": "",
+        "reps": "",
+        "rir": "2",
+        "done": false,
+        "prevLoad": "",
+        "prevReps": "",
+        "prevRir": ""
+      }
+    ],
+    "2026-09-02_external": [
+      {
+        "load": "",
+        "reps": "",
+        "rir": "3",
+        "done": false,
+        "prevLoad": "",
+        "prevReps": "",
+        "prevRir": ""
+      },
+      {
+        "load": "",
+        "reps": "",
+        "rir": "3",
+        "done": false,
+        "prevLoad": "",
+        "prevReps": "",
+        "prevRir": ""
+      }
+    ],
+    "2026-09-02_wedcurl": [
+      {
+        "load": "",
+        "reps": "",
+        "rir": "2",
+        "done": false,
+        "prevLoad": "",
+        "prevReps": "",
+        "prevRir": ""
+      },
+      {
+        "load": "",
+        "reps": "",
+        "rir": "2",
+        "done": false,
+        "prevLoad": "",
+        "prevReps": "",
+        "prevRir": ""
+      }
+    ],
+    "2026-09-02_wedtriceps": [
+      {
+        "load": "",
+        "reps": "",
+        "rir": "2",
+        "done": false,
+        "prevLoad": "",
+        "prevReps": "",
+        "prevRir": ""
+      },
+      {
+        "load": "",
+        "reps": "",
+        "rir": "2",
+        "done": false,
+        "prevLoad": "",
+        "prevReps": "",
+        "prevRir": ""
+      }
+    ],
+    "2026-09-02_pallof": [
+      {
+        "load": "",
+        "reps": "",
+        "rir": "2",
+        "done": false,
+        "prevLoad": "",
+        "prevReps": "",
+        "prevRir": ""
+      },
+      {
+        "load": "",
+        "reps": "",
+        "rir": "2",
+        "done": false,
+        "prevLoad": "",
+        "prevReps": "",
+        "prevRir": ""
+      },
+      {
+        "load": "",
+        "reps": "",
+        "rir": "2",
+        "done": false,
+        "prevLoad": "",
+        "prevReps": "",
+        "prevRir": ""
+      }
+    ],
+    "2026-09-02_plank": [
+      {
+        "load": "",
+        "reps": "",
+        "rir": "2",
+        "done": false,
+        "prevLoad": "",
+        "prevReps": "",
+        "prevRir": ""
+      },
+      {
+        "load": "",
+        "reps": "",
+        "rir": "2",
+        "done": false,
+        "prevLoad": "",
+        "prevReps": "",
+        "prevRir": ""
+      }
+    ]
+  },
+  "foods": [
+    {
+      "id": "oats",
+      "name": "Овсянка",
+      "cal": 366,
+      "p": 12.3,
+      "f": 6.1,
+      "c": 59.5
+    },
+    {
+      "id": "buck",
+      "name": "Гречка варёная",
+      "cal": 110,
+      "p": 4.2,
+      "f": 1.1,
+      "c": 21.3
+    },
+    {
+      "id": "pasta",
+      "name": "Макароны твёрдых сортов варёные",
+      "cal": 135,
+      "p": 5,
+      "f": 1.1,
+      "c": 27
+    },
+    {
+      "id": "chicken",
+      "name": "Куриное бедро готовое",
+      "cal": 210,
+      "p": 26,
+      "f": 11,
+      "c": 0
+    },
+    {
+      "id": "cottage",
+      "name": "Творог 5%",
+      "cal": 121,
+      "p": 17,
+      "f": 5,
+      "c": 1.8
+    },
+    {
+      "id": "kefir",
+      "name": "Кефир 1%",
+      "cal": 40,
+      "p": 3,
+      "f": 1,
+      "c": 4
+    },
+    {
+      "id": "egg",
+      "name": "Яйцо куриное C0",
+      "unit": "piece",
+      "cal": 80,
+      "p": 7,
+      "f": 5.5,
+      "c": 0.4
+    },
+    {
+      "id": "banana",
+      "name": "Банан",
+      "cal": 89,
+      "p": 1.1,
+      "f": 0.3,
+      "c": 22.8
+    },
+    {
+      "id": "honey",
+      "name": "Мёд",
+      "cal": 304,
+      "p": 0.3,
+      "f": 0,
+      "c": 82.4
+    },
+    {
+      "id": "whey",
+      "name": "Prime Kraft Whey Protein — молочный шоколад",
+      "cal": 380,
+      "p": 76.7,
+      "f": 4.7,
+      "c": 7.3
+    }
+  ],
+  "foodSearch": "",
+  "foodForm": null,
+  "profile": {
+    "weight": 84,
+    "height": 178,
+    "age": 48,
+    "activity": 1.725,
+    "goal": 0,
+    "waist": 100
+  },
+  "history": [],
+  "cp": {},
+  "timer": {
+    "on": false,
+    "left": 0,
+    "max": 0,
+    "ex": "",
+    "eid": null,
+    "mod": false,
+    "saved": false
+  },
+  "measurements": [
+    {
+      "date": "2026-09-02",
+      "weight": 84,
+      "waist": 100
+    }
+  ],
+  "dailySummary": {
+    "2026-09-02": {
+      "date": "2026-09-02",
+      "cal": 0,
+      "p": 0,
+      "f": 0,
+      "c": 0,
+      "targetCal": 2600,
+      "targetP": 180,
+      "targetF": 75,
+      "targetC": 300,
+      "weight": 84,
+      "waist": 100
+    }
+  },
+  "analyticsPeriod": 28,
+  "food_2026-09-02": [],
+  "workoutMeta": {
+    "2026-09-02": {}
+  },
+  "workoutMode": false,
+  "exerciseHistoryOpen": null
+}
