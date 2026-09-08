@@ -1,4 +1,4 @@
-import { addFood, bounded, totals, uid, round } from "./model.mjs";
+import { addFood, bounded, uid, round, number } from "./model.mjs";
 
 // Exact portions from the existing detailed plan; no new targets or supplement doses.
 export const MEALS = [
@@ -88,11 +88,63 @@ export function mealParts(s, meal) {
     amount: s.mealPortions?.[meal.id]?.[id] ?? g,
   }));
 }
+export const unitLabel = (food) =>
+  food?.unit === "piece"
+    ? "шт."
+    : food?.unit === "ml"
+      ? "мл"
+      : food?.unit === "portion"
+        ? "порц."
+        : "г";
+export function allMeals(s) {
+  const recipes = s.mealRecipes || {};
+  return [
+    ...MEALS.map((m) => recipes[m.id] || m),
+    ...Object.values(recipes).filter(
+      (m) => !MEALS.some((base) => base.id === m.id),
+    ),
+  ];
+}
+export function saveRecipe(s, draft) {
+  const title = String(draft.title || "").trim();
+  if (!title || title.length > 150)
+    throw new Error("Укажите название до 150 символов.");
+  if (!draft.items?.length)
+    throw new Error("Добавьте хотя бы один ингредиент.");
+  const id = draft.id || uid();
+  const recipe = {
+    id,
+    title,
+    time: draft.time || "",
+    items: draft.items.map(([foodId, amount]) => {
+      const food = s.foods.find((f) => f.id === foodId);
+      if (!food) throw new Error("Выберите продукт для каждого ингредиента.");
+      return [
+        foodId,
+        bounded(
+          amount,
+          0.01,
+          food.unit === "piece" ? 100 : 20000,
+          "Количество",
+        ),
+      ];
+    }),
+  };
+  if (new Set(recipe.items.map(([id]) => id)).size !== recipe.items.length)
+    throw new Error(
+      "Продукт повторяется. Объедините его количество в одной строке.",
+    );
+  (s.mealRecipes ||= {})[id] = recipe;
+  if (s.mealPortions) delete s.mealPortions[id];
+  return recipe;
+}
 export function mealTotals(s, meal) {
   return mealParts(s, meal).reduce(
     (t, { food, amount }) => {
       if (!food) return t;
-      const ratio = food.unit === "piece" ? amount : amount / 100;
+      const quantity = number(amount);
+      if (quantity === null) throw new Error("Укажите количество ингредиента.");
+      const ratio = food.unit === "piece" ? quantity : quantity / 100;
       for (const k of ["cal", "p", "f", "c"])
         t[k] = round(t[k] + food[k] * ratio);
       return t;
@@ -102,14 +154,20 @@ export function mealTotals(s, meal) {
 }
 export function addMeal(s, meal, date) {
   const rows = s[`food_${date}`] || [];
-  if (rows.some((r) => r.mealId === meal.id))
+  if (
+    MEALS.some((m) => m.id === meal.id) &&
+    rows.some((r) => r.mealId === meal.id)
+  )
     throw new Error(
       "Этот приём пищи уже записан. Изменить его можно в дневнике.",
     );
+  const entryId = uid();
   for (const { food, amount } of mealParts(s, meal)) {
     if (!food) throw new Error("В шаблоне отсутствует продукт.");
     addFood(s, food.id, amount, date);
     s[`food_${date}`].at(-1).mealId = meal.id;
+    s[`food_${date}`].at(-1).mealEntryId = entryId;
+    s[`food_${date}`].at(-1).mealTitle = meal.title;
   }
 }
 export function makeProduct(form) {
@@ -119,7 +177,7 @@ export function makeProduct(form) {
   return {
     id: uid(),
     name,
-    unit: form.unit === "piece" ? "piece" : "g",
+    unit: ["piece", "ml"].includes(form.unit) ? form.unit : "g",
     cal: bounded(form.cal, 0, 2000, "Калории"),
     p: bounded(form.p, 0, 200, "Белок"),
     f: bounded(form.f, 0, 200, "Жиры"),

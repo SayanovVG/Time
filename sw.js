@@ -1,4 +1,4 @@
-const CACHE = "max-time-v3-20260906-1";
+const CACHE = "max-time-v3-20260908-1";
 const ASSETS = [
   "./",
   "./index.html",
@@ -9,8 +9,11 @@ const ASSETS = [
   "./app/program.mjs",
   "./app/nutrition.mjs",
   "./app/timer.mjs",
+  "./app/audio.mjs",
+  "./app/audio/original-gong.mp3",
   "./app/view.mjs",
   "./app/app.css",
+  "./app/refinement.css",
   "./app/fonts/manrope-latin-wght-normal.woff2",
   "./app/fonts/manrope-cyrillic-wght-normal.woff2",
   "./manifest.json",
