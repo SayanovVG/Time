@@ -25,6 +25,10 @@ import {
   MEALS,
   SUPPLEMENTS,
   mealParts,
+  mealTotals,
+  allMeals,
+  saveRecipe,
+  unitLabel,
   addMeal,
   makeProduct,
 } from "./nutrition.mjs";
@@ -44,6 +48,8 @@ const ui = {
   focus: false,
   focusIndex: 0,
   editPast: false,
+  metric: "weight",
+  folds: {},
 };
 let storage;
 try {
@@ -59,7 +65,12 @@ try {
   };
 }
 const store = new Store(storage),
-  bell = createBell();
+  bell = createBell({
+    onError: () =>
+      notify(
+        "Не удалось загрузить звуки. Подключись к сети и открой таймер снова.",
+      ),
+  });
 let wakeLock = null,
   modalReturnFocus = null,
   searchController = null,
@@ -67,7 +78,9 @@ let wakeLock = null,
   onlineFoods = [],
   toastTimeout,
   registration,
-  sessionTimer;
+  sessionTimer,
+  recipeDraft = null,
+  recipeProductIndex = null;
 const installed =
   ["standalone", "fullscreen", "minimal-ui"].some(
     (mode) => matchMedia(`(display-mode: ${mode})`).matches,
@@ -84,7 +97,26 @@ function notify(text) {
 }
 function render({ top = false } = {}) {
   const y = window.scrollY;
+  for (const detail of root.querySelectorAll("details[data-fold]"))
+    ui.folds[detail.dataset.fold] = detail.open;
+  const previousTab = root.querySelector('.main-nav [aria-current="page"]')
+    ?.dataset.tab;
   root.innerHTML = shell(store.state, ui, store);
+  for (const detail of root.querySelectorAll("details[data-fold]"))
+    detail.open = !!ui.folds[detail.dataset.fold];
+  if (top) root.querySelector("main")?.classList.add("view-enter");
+  const nav = root.querySelector(".main-nav");
+  if (nav && previousTab !== ui.tab) {
+    nav.classList.add("nav-enter");
+    nav.style.setProperty(
+      "--from",
+      ["training", "nutrition", "analytics"].indexOf(previousTab || ui.tab),
+    );
+    nav.style.setProperty(
+      "--active",
+      ["training", "nutrition", "analytics"].indexOf(ui.tab),
+    );
+  }
   document.body.classList.toggle("focus-mode", ui.focus);
   if (top)
     window.scrollTo({
@@ -113,6 +145,11 @@ function openModal(title, body, kind = "generic") {
   if (!dialog.open) dialog.showModal();
 }
 function closeModal() {
+  if (dialog.dataset.kind === "recipe-product" && recipeDraft) {
+    drawRecipe();
+    return;
+  }
+  recipeDraft = null;
   if (dialog.dataset.kind === "timer") timer.stop();
   dialog.close();
   searchController?.abort();
@@ -186,6 +223,27 @@ function flushVisibleSets() {
     }
   });
 }
+function flushVisibleMetrics() {
+  if (ui.tab !== "nutrition" || store.recoveryRaw) return;
+  const saved = store.state.measurements.find((m) => m.date === ui.foodDate);
+  const fields = [...root.querySelectorAll('[data-field="metric"]')].filter(
+    (field) =>
+      field.value.trim() !== "" &&
+      number(field.value) !== saved?.[field.dataset.key],
+  );
+  if (!fields.length) return;
+  commit((s) => {
+    for (const field of fields) {
+      try {
+        setMetric(s, field.dataset.key, field.value, ui.foodDate);
+        field.removeAttribute("aria-invalid");
+      } catch (error) {
+        field.setAttribute("aria-invalid", "true");
+        throw error;
+      }
+    }
+  });
+}
 
 const timer = new WorkoutTimer({
   onChange: timerChanged,
@@ -194,7 +252,16 @@ const timer = new WorkoutTimer({
       sessionStorage.removeItem("max_time_active_timer_v3");
     } catch {}
     bell.ring();
-    if (dialog.dataset.kind === "timer") dialog.close();
+    if (dialog.dataset.kind === "timer") {
+      document.getElementById("timer-number").textContent = "0:00";
+      document.getElementById("timer-arc").style.strokeDashoffset = "100";
+      document.getElementById("timer-stage").textContent = "Готово";
+      dialog.classList.remove("last-seconds");
+      dialog.classList.add("timer-finished");
+      setTimeout(() => {
+        if (!timer.current && dialog.dataset.kind === "timer") dialog.close();
+      }, 1600);
+    }
     notify(
       done.mode === "exercise"
         ? "Время упражнения вышло. Отметь выполненный подход."
@@ -203,6 +270,7 @@ const timer = new WorkoutTimer({
   },
 });
 function timerChanged(snapshot) {
+  bell.sync(snapshot);
   try {
     if (snapshot)
       sessionStorage.setItem(
@@ -218,20 +286,48 @@ function timerChanged(snapshot) {
   if (!dialog.open || dialog.dataset.kind !== "timer")
     openModal(
       snapshot.mode === "exercise" ? "Время упражнения" : "Отдых",
-      `<p class="timer-name">${esc(snapshot.name)}</p><div class="timer-number" id="timer-number" aria-live="off"></div><progress id="timer-progress" max="${snapshot.seconds}" value="${snapshot.left}" aria-label="Осталось времени"></progress><div class="timer-adjust">${[-1, 1].map((n) => `<button class="button secondary" data-action="timer-adjust" data-delta="${n * (snapshot.mode === "exercise" ? 10 : 15)}">${n < 0 ? "−" : "+"}${snapshot.mode === "exercise" ? 10 : 15} сек</button>`).join("")}</div><button id="timer-save" class="button primary wide" data-action="timer-save" hidden>Сохранить длительность</button><button class="button quiet wide" data-action="timer-stop">${snapshot.mode === "exercise" ? "Остановить" : "Завершить отдых"}</button>`,
+      `<p class="timer-name">${esc(snapshot.name)}</p><div class="timer-dial"><svg viewBox="0 0 280 280" aria-hidden="true"><circle class="timer-ticks" cx="140" cy="140" r="134" pathLength="120"/><circle class="timer-track" cx="140" cy="140" r="119"/><circle id="timer-arc" class="timer-arc" cx="140" cy="140" r="119" pathLength="100"/></svg><div class="timer-face"><span id="timer-stage">${snapshot.mode === "exercise" ? "Работа" : "Восстановление"}</span><div class="timer-number" id="timer-number" aria-live="off"></div><span class="timer-total" id="timer-total"></span></div></div><div class="timer-adjust">${[-1, 1].map((n) => `<button class="button secondary" data-action="timer-adjust" data-delta="${n * (snapshot.mode === "exercise" ? 10 : 15)}">${n < 0 ? "−" : "+"}${snapshot.mode === "exercise" ? 10 : 15} сек</button>`).join("")}</div><button id="timer-save" class="button primary wide" data-action="timer-save" hidden>Сохранить длительность</button><button class="button quiet wide" data-action="timer-stop">${snapshot.mode === "exercise" ? "Остановить" : "Завершить отдых"}</button>`,
       "timer",
     );
-  document.getElementById("timer-number").textContent = formatTime(
-    snapshot.left,
-  );
-  const progress = document.getElementById("timer-progress");
-  progress.max = snapshot.seconds;
-  progress.value = snapshot.left;
+  dialog.classList.remove("timer-finished");
+  dialog.classList.toggle("last-seconds", snapshot.left <= 10);
+  const digits = document.getElementById("timer-number"),
+    next = formatTime(snapshot.left);
+  if (digits.textContent !== next) {
+    digits.textContent = next;
+    if (
+      snapshot.left <= 10 &&
+      !matchMedia("(prefers-reduced-motion: reduce)").matches
+    )
+      digits.animate(
+        [
+          { transform: "scale(1.065)", opacity: 0.65 },
+          { transform: "scale(1)", opacity: 1 },
+        ],
+        { duration: 380, easing: "ease-out" },
+      );
+  }
+  document.getElementById("timer-arc").style.strokeDashoffset =
+    100 - (snapshot.left / snapshot.seconds) * 100;
+  document.getElementById("timer-total").textContent =
+    "из " + formatTime(snapshot.seconds);
+  document.getElementById("timer-stage").textContent =
+    snapshot.left <= 10
+      ? snapshot.mode === "exercise"
+        ? "Финиш"
+        : "Приготовься"
+      : snapshot.mode === "exercise"
+        ? "Работа"
+        : "Восстановление";
   document.getElementById("timer-save").hidden = !snapshot.modified;
 }
 setInterval(() => timer.tick(), 250);
-dialog.addEventListener("cancel", () => {
+dialog.addEventListener("cancel", (event) => {
   if (dialog.dataset.kind === "timer") timer.stop();
+  if (dialog.dataset.kind === "recipe-product" && recipeDraft) {
+    event.preventDefault();
+    drawRecipe();
+  } else recipeDraft = null;
   searchController?.abort();
 });
 document.addEventListener("pointerdown", () => bell.unlock(), { once: true });
@@ -267,10 +363,12 @@ function startTimer(ex, mode, index) {
     writableWorkout();
     commit((s) => updateSet(s, ex, index, (r) => (r.reps = seconds)));
   }
+  bell.unlock();
   timer.start(seconds, { mode, exId: ex.id, name: ex.n, index, date: ui.date });
 }
 
 function productDialog() {
+  recipeDraft = null;
   onlineFoods = [];
   openModal(
     "Добавить еду",
@@ -297,7 +395,7 @@ function drawFoods(q) {
     ? rows
         .map(
           (f) =>
-            `<div class="food-result"><div><strong>${esc(f.name)}</strong><small>${Math.round(f.cal)} ккал · Б ${f.p} · Ж ${f.f} · У ${f.c} / ${f.unit === "piece" ? "1 шт." : "100 г"}</small></div><button class="icon-button" data-action="choose-food" data-id="${esc(f.id)}" aria-label="Добавить ${esc(f.name)}">${icon("plus")}</button></div>`,
+            `<div class="food-result"><div><strong>${esc(f.name)}</strong><small>${Math.round(f.cal)} ккал · Б ${f.p} · Ж ${f.f} · У ${f.c} / ${f.unit === "piece" ? "1 шт." : "100 " + unitLabel(f)}</small></div><button class="icon-button" data-action="choose-food" data-id="${esc(f.id)}" aria-label="Добавить ${esc(f.name)}">${icon("plus")}</button></div>`,
         )
         .join("")
     : '<p class="empty-message">Продукт не найден. Можно добавить свой.</p>';
@@ -359,7 +457,7 @@ async function onlineSearch() {
 function amountDialog(f) {
   openModal(
     "Количество",
-    `<form id="food-amount-form" data-id="${esc(f.id)}"><h3>${esc(f.name)}</h3><label>${f.unit === "piece" ? "Количество, шт." : "Количество, г"}<input name="amount" inputmode="decimal" value="${f.unit === "piece" ? 1 : 100}" required></label><p class="helper">На ${f.unit === "piece" ? "1 шт." : "100 г"}: ${Math.round(f.cal)} ккал · Б ${f.p} · Ж ${f.f} · У ${f.c}</p><button class="button primary wide">Добавить в дневник</button></form>`,
+    `<form id="food-amount-form" data-id="${esc(f.id)}"><h3>${esc(f.name)}</h3><label>${"Количество, " + unitLabel(f)}<input name="amount" inputmode="decimal" value="${f.unit === "piece" ? 1 : 100}" required></label><p class="helper">На ${f.unit === "piece" ? "1 шт." : "100 " + unitLabel(f)}: ${Math.round(f.cal)} ккал · Б ${f.p} · Ж ${f.f} · У ${f.c}</p><button class="button primary wide">Добавить в дневник</button></form>`,
     "food-amount",
   );
   dialog.querySelector("input").select();
@@ -367,7 +465,7 @@ function amountDialog(f) {
 function customProductDialog() {
   openModal(
     "Свой продукт",
-    `<form id="custom-product-form"><label>Название<input name="name" maxlength="150" required></label><label>Значения указаны<select name="unit"><option value="g">На 100 г</option><option value="piece">На 1 штуку</option></select></label><div class="form-grid">${[
+    `<p class="helper">Перенеси КБЖУ с упаковки протеина, напитка или другого продукта.</p><form id="custom-product-form"><label>Название<input name="name" maxlength="150" required></label><label>Значения указаны<select name="unit"><option value="g">На 100 г</option><option value="ml">На 100 мл</option><option value="piece">На 1 штуку</option></select></label><div class="form-grid">${[
       ["cal", "Калории"],
       ["p", "Белок, г"],
       ["f", "Жиры, г"],
@@ -380,20 +478,71 @@ function customProductDialog() {
       .join(
         "",
       )}</div><button class="button primary wide">Сохранить продукт</button></form>`,
+    recipeDraft ? "recipe-product" : "custom-product",
   );
 }
-function mealDialog(meal) {
+function readRecipeDraft() {
+  const form = dialog.querySelector("#meal-form");
+  if (!form || !recipeDraft) return;
+  recipeDraft.title = form.elements.title.value;
+  recipeDraft.time = form.elements.time.value;
+  recipeDraft.items = [...form.querySelectorAll(".ingredient-row")].map(
+    (row, i) => [
+      row.querySelector("select").value || recipeDraft.items[i]?.[0] || "",
+      row.querySelector("input").value,
+    ],
+  );
+}
+function recipeOptions(selected) {
+  return `<option value="">Выбрать продукт</option>${store.state.foods.map((f) => `<option value="${esc(f.id)}" ${f.id === selected ? "selected" : ""}>${esc(f.name)}</option>`).join("")}`;
+}
+function drawRecipe() {
   openModal(
-    meal.title,
-    `<form id="meal-form" data-id="${meal.id}">${mealParts(store.state, meal)
-      .map(
-        (p) =>
-          `<label>${esc(p.food?.name)} (${p.food?.unit === "piece" ? "шт." : "г"})<input name="${p.food?.id}" inputmode="decimal" value="${p.amount}" required></label>`,
-      )
+    recipeDraft.id ? "Изменить блюдо" : "Своё блюдо или коктейль",
+    `<form id="meal-form"><label>Название<input name="title" maxlength="150" placeholder="Например, мой коктейль" value="${esc(recipeDraft.title)}" required></label><label class="recipe-time">Время приёма <span class="helper">необязательно</span><input name="time" type="time" value="${esc(recipeDraft.time)}"></label><div class="compact-heading"><h3>Состав</h3></div><div class="ingredient-list">${recipeDraft.items
+      .map(([id, amount], i) => {
+        const f = store.state.foods.find((f) => f.id === id);
+        return `<div class="ingredient-row"><label class="ingredient-product">Продукт ${i + 1}<select data-field="recipe-food" aria-label="Ингредиент ${i + 1}" required>${recipeOptions(id)}</select></label><label class="ingredient-amount">Количество, ${unitLabel(f)}<input inputmode="decimal" value="${esc(amount)}" aria-label="Количество ингредиента ${i + 1}" required></label><button class="icon-button ingredient-remove" type="button" data-action="recipe-remove" data-index="${i}" aria-label="Убрать ингредиент ${i + 1}">${icon("close")}</button></div>`;
+      })
       .join(
         "",
-      )}<button class="button primary wide">Сохранить порции</button></form>`,
+      )}</div><div class="recipe-tools"><button class="button secondary" type="button" data-action="recipe-ingredient">${icon("plus")}Ингредиент</button><button class="button quiet" type="button" data-action="recipe-product">Новый продукт по этикетке</button></div><div class="recipe-total" id="recipe-total" aria-live="polite"></div><button class="button primary wide">Сохранить рецепт</button><p class="helper">Сохраняется как одна порция. Записи прошлых дней не изменятся.</p></form>`,
+    "recipe",
   );
+  drawRecipeTotal();
+}
+function drawRecipeTotal() {
+  const target = document.getElementById("recipe-total");
+  if (!target) return;
+  try {
+    const valid = recipeDraft.items.every(
+      ([id, value]) =>
+        store.state.foods.some((f) => f.id === id) && number(value) > 0,
+    );
+    if (!valid || !recipeDraft.items.length) {
+      target.textContent = "Укажи продукты и количество";
+      return;
+    }
+    const t = mealTotals({ ...store.state, mealPortions: {} }, recipeDraft);
+    target.innerHTML = `<span>Вся порция</span><strong>${Math.round(t.cal)} ккал</strong><small>Б ${round(t.p)} · Ж ${round(t.f)} · У ${round(t.c)}</small>`;
+  } catch {
+    target.textContent = "Проверь количество ингредиентов";
+  }
+}
+function mealDialog(meal) {
+  recipeProductIndex = null;
+  recipeDraft = meal
+    ? {
+        id: meal.id,
+        title: meal.title,
+        time: meal.time || "",
+        items: mealParts(store.state, meal).map(({ food, amount }) => [
+          food?.id || "",
+          amount,
+        ]),
+      }
+    : { id: null, title: "", time: "", items: [["", 100]] };
+  drawRecipe();
 }
 function importDialog() {
   openModal(
@@ -425,9 +574,21 @@ document.addEventListener("click", async (event) => {
     if (
       root.contains(button) &&
       !["export", "import", "restore"].includes(action)
-    )
+    ) {
       flushVisibleSets();
+      flushVisibleMetrics();
+    }
     switch (action) {
+      case "save-measures":
+        if (
+          ![...root.querySelectorAll('[data-field="metric"]')].some((f) =>
+            f.value.trim(),
+          )
+        )
+          throw new Error("Введи вес или талию.");
+        flushVisibleMetrics();
+        notify("Замеры сохранены");
+        break;
       case "tab":
         ui.tab = button.dataset.tab;
         ui.focus = false;
@@ -599,6 +760,32 @@ document.addEventListener("click", async (event) => {
         );
         break;
       }
+      case "recipe-new":
+        mealDialog(null);
+        break;
+      case "recipe-ingredient":
+        readRecipeDraft();
+        if (recipeDraft.items.length >= 50)
+          throw new Error("В рецепте максимум 50 ингредиентов.");
+        recipeDraft.items.push(["", 100]);
+        drawRecipe();
+        dialog.querySelector(".ingredient-row:last-child select")?.focus();
+        break;
+      case "recipe-remove":
+        readRecipeDraft();
+        recipeDraft.items.splice(index, 1);
+        drawRecipe();
+        break;
+      case "recipe-product":
+        readRecipeDraft();
+        recipeProductIndex = recipeDraft.items.findIndex(([id]) => !id);
+        customProductDialog();
+        break;
+      case "chart-metric":
+        ui.metric = button.dataset.metric;
+        render();
+        root.querySelector(".progress-feature")?.classList.add("chart-enter");
+        break;
       case "add-product":
         productDialog();
         break;
@@ -644,13 +831,13 @@ document.addEventListener("click", async (event) => {
         render();
         break;
       case "meal-edit":
-        mealDialog(MEALS.find((m) => m.id === id));
+        mealDialog(allMeals(store.state).find((m) => m.id === id));
         break;
       case "meal-add":
         commit((s) =>
           addMeal(
             s,
-            MEALS.find((m) => m.id === id),
+            allMeals(s).find((m) => m.id === id),
             ui.foodDate,
           ),
         );
@@ -735,6 +922,10 @@ document.addEventListener("click", async (event) => {
   }
 });
 document.addEventListener("input", (event) => {
+  if (event.target.closest("#meal-form")) {
+    readRecipeDraft();
+    drawRecipeTotal();
+  }
   if (event.target.id === "food-search") {
     searchController?.abort();
     onlineFoods = [];
@@ -748,6 +939,17 @@ document.addEventListener("change", async (event) => {
   const field = event.target,
     { field: kind, ex: id, index, key } = field.dataset;
   try {
+    if (kind === "recipe-food") {
+      readRecipeDraft();
+      const row = field.closest(".ingredient-row"),
+        i = [...row.parentElement.children].indexOf(row);
+      const f = store.state.foods.find((f) => f.id === field.value);
+      if (f?.unit === "piece" && recipeDraft.items[i][1] === "100")
+        recipeDraft.items[i][1] = 1;
+      drawRecipe();
+      dialog.querySelectorAll(".ingredient-amount input")[i]?.focus();
+      return;
+    }
     if (field.id === "backup-file") {
       const file = field.files?.[0];
       if (!file) return;
@@ -772,6 +974,7 @@ document.addEventListener("change", async (event) => {
     if (kind === "food-date") {
       if (!parseDate(field.value) || field.value > dateKey())
         throw new Error("Выберите сегодняшний или прошедший день.");
+      flushVisibleMetrics();
       ui.foodDate = field.value;
       render();
       return;
@@ -821,28 +1024,27 @@ document.addEventListener("submit", (event) => {
       notify("Еда записана");
     }
     if (form.id === "custom-product-form") {
-      const product = makeProduct(values);
+      const product = makeProduct(values),
+        forRecipe = dialog.dataset.kind === "recipe-product" && recipeDraft;
       commit((s) => s.foods.push(product));
-      amountDialog(product);
+      if (forRecipe) {
+        const item = [product.id, product.unit === "piece" ? 1 : 100];
+        if (recipeProductIndex >= 0)
+          recipeDraft.items[recipeProductIndex] = item;
+        else recipeDraft.items.push(item);
+        recipeProductIndex = null;
+        drawRecipe();
+      } else amountDialog(product);
     }
     if (form.id === "meal-form") {
-      const meal = MEALS.find((m) => m.id === form.dataset.id);
-      commit((s) => {
-        s.mealPortions ||= {};
-        s.mealPortions[meal.id] = Object.fromEntries(
-          mealParts(s, meal).map(({ food }) => [
-            food.id,
-            bounded(
-              values[food.id],
-              0.01,
-              food.unit === "piece" ? 100 : 20000,
-              "Количество",
-            ),
-          ]),
-        );
-      });
+      readRecipeDraft();
+      commit((s) => saveRecipe(s, recipeDraft));
+      recipeDraft = null;
       closeModal();
+      const oldFold = root.querySelector('[data-fold="meals"]');
+      if (oldFold) oldFold.open = true;
       render();
+      notify("Рецепт сохранён в «Моих блюдах»");
     }
   } catch (error) {
     modalError(error.message);

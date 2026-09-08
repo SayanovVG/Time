@@ -75,6 +75,9 @@ test("offline installation caches every native module, entry and local font with
   w.handlers.install({ waitUntil: (p) => (pending = p) });
   await pending;
   assert.ok(w.assets.includes("./app/main.mjs"));
+  assert.ok(w.assets.includes("./app/audio.mjs"));
+  assert.ok(w.assets.includes("./app/audio/original-gong.mp3"));
+  assert.ok(w.assets.includes("./app/refinement.css"));
   assert.ok(
     w.assets.includes("./app/fonts/manrope-cyrillic-wght-normal.woff2"),
   );

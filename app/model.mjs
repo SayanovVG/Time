@@ -1,6 +1,6 @@
 import { PROGRAM, BANDS, DEFAULT_FOODS } from "./program.mjs";
 
-export const VERSION = "3.0.0";
+export const VERSION = "3.1.0";
 export const SCHEMA = 3;
 export const TARGET = { cal: 2450, p: 180, f: 75, c: 264 };
 export const clone = (value) => JSON.parse(JSON.stringify(value));
@@ -55,6 +55,7 @@ export function freshState() {
     profile: {},
     train: {},
     foods: clone(DEFAULT_FOODS),
+    mealRecipes: {},
     measurements: [],
     dailySummary: {},
     foodDays: {},
@@ -109,6 +110,7 @@ export function normalizeState(input, { source = "import" } = {}) {
     "workoutMeta",
     "foodDays",
     "exerciseDurations",
+    "mealRecipes",
   ])
     requireObject(s[key], key);
   for (const key of ["foods", "measurements"])
@@ -169,7 +171,7 @@ export function normalizeState(input, { source = "import" } = {}) {
     seenFoodIds.add(f.id);
     for (const k of ["cal", "p", "f", "c"])
       f[k] = bounded(f[k], 0, k === "cal" ? 2000 : 200, `Продукт: ${k}`);
-    if (f.unit && !["g", "piece", "portion"].includes(f.unit))
+    if (f.unit && !["g", "ml", "piece", "portion"].includes(f.unit))
       throw new Error("Некорректная единица продукта.");
   }
   for (const m of s.measurements) {
@@ -216,7 +218,7 @@ export function normalizeState(input, { source = "import" } = {}) {
             row.g < 20
               ? "piece"
               : "g";
-        if (!["g", "piece", "portion"].includes(row.unit))
+        if (!["g", "ml", "piece", "portion"].includes(row.unit))
           throw new Error("Некорректная единица записи еды.");
         if (row.mealId !== undefined) safeText(row.mealId, "шаблон еды", 50);
       }
@@ -228,6 +230,41 @@ export function normalizeState(input, { source = "import" } = {}) {
       for (const v of Object.values(value))
         if (typeof v !== "boolean")
           throw new Error("Некорректная отметка добавки.");
+    }
+  }
+  if (Object.keys(s.mealRecipes).length > 500)
+    throw new Error("Слишком много рецептов.");
+  for (const [id, recipe] of Object.entries(s.mealRecipes)) {
+    requireObject(recipe, "рецепт");
+    if (!/^[\w-]{1,50}$/.test(id) || recipe.id !== id)
+      throw new Error("Некорректный ID рецепта.");
+    safeText(recipe.title, "название рецепта", 150);
+    if (!recipe.title.trim()) throw new Error("Укажите название рецепта.");
+    if (recipe.time && !/^([01]\d|2[0-3]):[0-5]\d$/.test(recipe.time))
+      throw new Error("Некорректное время приёма пищи.");
+    if (
+      !Array.isArray(recipe.items) ||
+      !recipe.items.length ||
+      recipe.items.length > 50
+    )
+      throw new Error("В рецепте должно быть от 1 до 50 ингредиентов.");
+    const ingredients = new Set();
+    for (const item of recipe.items) {
+      if (!Array.isArray(item) || item.length !== 2)
+        throw new Error("Повреждён ингредиент рецепта.");
+      const food = s.foods.find((f) => f.id === item[0]);
+      if (!food) throw new Error("Продукт рецепта отсутствует в справочнике.");
+      if (ingredients.has(food.id))
+        throw new Error(
+          "Продукт повторяется в рецепте. Объедините его количество.",
+        );
+      ingredients.add(food.id);
+      item[1] = bounded(
+        item[1],
+        0.01,
+        food.unit === "piece" ? 100 : 20000,
+        "Количество ингредиента",
+      );
     }
   }
   for (const [d, summary] of Object.entries(s.dailySummary)) {

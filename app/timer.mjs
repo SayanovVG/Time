@@ -63,37 +63,5 @@ export class WorkoutTimer {
     return previous;
   }
 }
-export function createBell() {
-  let context;
-  function unlock() {
-    try {
-      context ||= new (window.AudioContext || window.webkitAudioContext)();
-      if (context.state === "suspended") context.resume();
-    } catch {}
-  }
-  function ring() {
-    unlock();
-    if (!context) return;
-    try {
-      const now = context.currentTime;
-      for (const [f, gain, duration] of [
-        [520, 0.22, 1.5],
-        [1040, 0.12, 1.2],
-        [1560, 0.05, 0.7],
-      ]) {
-        const osc = context.createOscillator(),
-          volume = context.createGain();
-        osc.frequency.value = f;
-        volume.gain.setValueAtTime(0.001, now);
-        volume.gain.exponentialRampToValueAtTime(gain, now + 0.008);
-        volume.gain.exponentialRampToValueAtTime(0.001, now + duration);
-        osc.connect(volume);
-        volume.connect(context.destination);
-        osc.start(now);
-        osc.stop(now + duration + 0.1);
-      }
-      navigator.vibrate?.([150, 80, 180]);
-    } catch {}
-  }
-  return { unlock, ring };
-}
+// The original sound profile is kept separately from deadline bookkeeping.
+export { createBell } from "./audio.mjs";
