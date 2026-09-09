@@ -1,6 +1,6 @@
 import { PROGRAM, BANDS, DEFAULT_FOODS } from "./program.mjs";
 
-export const VERSION = "3.1.0";
+export const VERSION = "3.1.1";
 export const SCHEMA = 3;
 export const TARGET = { cal: 2450, p: 180, f: 75, c: 264 };
 export const clone = (value) => JSON.parse(JSON.stringify(value));
