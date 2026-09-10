@@ -1,4 +1,12 @@
-import { addFood, bounded, uid, round, number } from "./model.mjs";
+import {
+  addFood,
+  bounded,
+  uid,
+  round,
+  number,
+  dateKey,
+  parseDate,
+} from "./model.mjs";
 
 // Exact portions from the existing detailed plan; no new targets or supplement doses.
 export const MEALS = [
@@ -152,9 +160,17 @@ export function mealTotals(s, meal) {
     { cal: 0, p: 0, f: 0, c: 0 },
   );
 }
-export function addMeal(s, meal, date) {
+export function addMeal(
+  s,
+  meal,
+  date,
+  { portions = 1, allowRepeat = false } = {},
+) {
+  if (!meal) throw new Error("Блюдо не найдено.");
+  const factor = bounded(portions, 0.01, 100, "Порции");
   const rows = s[`food_${date}`] || [];
   if (
+    !allowRepeat &&
     MEALS.some((m) => m.id === meal.id) &&
     rows.some((r) => r.mealId === meal.id)
   )
@@ -162,13 +178,88 @@ export function addMeal(s, meal, date) {
       "Этот приём пищи уже записан. Изменить его можно в дневнике.",
     );
   const entryId = uid();
-  for (const { food, amount } of mealParts(s, meal)) {
+  const parts = mealParts(s, meal).map(({ food, amount }) => {
     if (!food) throw new Error("В шаблоне отсутствует продукт.");
+    return {
+      food,
+      amount: bounded(
+        round(number(amount) * factor),
+        0.01,
+        food.unit === "piece" ? 100 : 20000,
+        "Количество",
+      ),
+    };
+  });
+  for (const { food, amount } of parts) {
     addFood(s, food.id, amount, date);
     s[`food_${date}`].at(-1).mealId = meal.id;
     s[`food_${date}`].at(-1).mealEntryId = entryId;
     s[`food_${date}`].at(-1).mealTitle = meal.title;
   }
+}
+export function recentFoods(s, end = dateKey(), limit = 8) {
+  const seen = new Set(),
+    recent = [];
+  const dates = Object.keys(s)
+    .filter(
+      (key) =>
+        key.startsWith("food_") &&
+        parseDate(key.slice(5)) &&
+        key.slice(5) <= end,
+    )
+    .sort()
+    .reverse();
+  for (const key of dates)
+    for (const row of [...s[key]].reverse()) {
+      if (seen.has(row.foodId)) continue;
+      const food = s.foods.find((f) => f.id === row.foodId);
+      if (!food || (food.unit || "g") !== (row.unit || "g")) continue;
+      seen.add(food.id);
+      recent.push({ food, amount: row.g, date: key.slice(5) });
+      if (recent.length >= limit) return recent;
+    }
+  return recent;
+}
+export function defaultAmount(s, food, end = dateKey()) {
+  return (
+    recentFoods(s, end, s.foods.length).find((r) => r.food.id === food.id)
+      ?.amount ?? (food.unit === "piece" ? 1 : 100)
+  );
+}
+export function portionTotals(food, amount) {
+  const quantity = bounded(
+    amount,
+    0.01,
+    food.unit === "piece" ? 100 : 20000,
+    "Количество",
+  );
+  const factor =
+    food.unit === "piece" || food.unit === "portion"
+      ? quantity
+      : quantity / 100;
+  return Object.fromEntries(
+    ["cal", "p", "f", "c"].map((k) => [k, round(food[k] * factor)]),
+  );
+}
+export function editFoodAmount(s, id, amount, date) {
+  const row = (s[`food_${date}`] || []).find(
+    (r) => String(r.id) === String(id),
+  );
+  if (!row) throw new Error("Запись не найдена.");
+  const quantity = bounded(
+    amount,
+    0.01,
+    row.unit === "piece" ? 100 : 20000,
+    "Количество",
+  );
+  if (!(row.g > 0))
+    throw new Error("У старой записи нет количества. Добавь её заново.");
+  // Preserve the diary's nutritional values, even if its recipe/product changed.
+  const values = Object.fromEntries(
+    ["cal", "p", "f", "c"].map((k) => [k, round((row[k] / row.g) * quantity)]),
+  );
+  Object.assign(row, values, { g: quantity });
+  s.foodDays[date] = { ...s.foodDays[date], complete: false };
 }
 export function makeProduct(form) {
   const name = String(form.name || "").trim();
