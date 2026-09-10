@@ -1,4 +1,4 @@
-const CACHE = "max-time-v3-20260909-1";
+const CACHE = "max-time-v3-20260910-1";
 const ASSETS = [
   "./",
   "./index.html",

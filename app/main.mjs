@@ -19,6 +19,7 @@ import {
   setMetric,
   exerciseById,
   trainingSessions,
+  sameSessionConditions,
   report,
 } from "./model.mjs";
 import {
@@ -31,9 +32,24 @@ import {
   unitLabel,
   addMeal,
   makeProduct,
+  recentFoods,
+  defaultAmount,
+  portionTotals,
+  editFoodAmount,
 } from "./nutrition.mjs";
 import { WorkoutTimer, createBell } from "./timer.mjs";
-import { shell, esc, icon, formatTime, formatDate, chart } from "./view.mjs";
+import {
+  shell,
+  esc,
+  icon,
+  formatTime,
+  formatDate,
+  chart,
+  foodPicker,
+  foodResults,
+  amountForm,
+  sessionDescription,
+} from "./view.mjs";
 
 const root = document.getElementById("app"),
   dialog = document.getElementById("dialog"),
@@ -80,7 +96,9 @@ let wakeLock = null,
   registration,
   sessionTimer,
   recipeDraft = null,
-  recipeProductIndex = null;
+  recipeProductIndex = null,
+  picker = null,
+  nutritionFrame = null;
 const installed =
   ["standalone", "fullscreen", "minimal-ui"].some(
     (mode) => matchMedia(`(display-mode: ${mode})`).matches,
@@ -95,7 +113,8 @@ function notify(text) {
   clearTimeout(toastTimeout);
   toastTimeout = setTimeout(() => (toast.hidden = true), 2600);
 }
-function render({ top = false } = {}) {
+function render({ top = false, nutritionFrom = null, foodIds = [] } = {}) {
+  if (nutritionFrame !== null) cancelAnimationFrame(nutritionFrame);
   const y = window.scrollY;
   for (const detail of root.querySelectorAll("details[data-fold]"))
     ui.folds[detail.dataset.fold] = detail.open;
@@ -127,6 +146,43 @@ function render({ top = false } = {}) {
     });
   else window.scrollTo(0, y);
   if (store.warning) showError(store.warning);
+  if (nutritionFrom && ui.tab === "nutrition")
+    animateNutrition(nutritionFrom, foodIds);
+}
+function animateNutrition(before, ids) {
+  if (matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+  const after = totals(store.state, ui.foodDate);
+  const ring = root.querySelector(".ring-value");
+  ring?.animate(
+    [
+      { strokeDashoffset: 100 - Math.min(1, before.cal / TARGET.cal) * 100 },
+      { strokeDashoffset: 100 - Math.min(1, after.cal / TARGET.cal) * 100 },
+    ],
+    { duration: 520, easing: "cubic-bezier(.2,.7,.2,1)" },
+  );
+  const digits = root.querySelector(".calorie-value")?.firstChild;
+  const meters = [...root.querySelectorAll(".macro-inline progress")];
+  const began = performance.now();
+  const frame = (time) => {
+    const progress = Math.min(1, (time - began) / 480),
+      eased = 1 - (1 - progress) ** 3;
+    if (digits)
+      digits.textContent = String(
+        Math.round(before.cal + (after.cal - before.cal) * eased),
+      );
+    meters.forEach((meter, i) => {
+      const key = ["p", "f", "c"][i];
+      meter.value = Math.min(
+        TARGET[key],
+        before[key] + (after[key] - before[key]) * eased,
+      );
+    });
+    nutritionFrame = progress < 1 ? requestAnimationFrame(frame) : null;
+  };
+  nutritionFrame = requestAnimationFrame(frame);
+  for (const row of root.querySelectorAll("[data-food-entry]"))
+    if (ids.includes(row.dataset.foodEntry))
+      (row.closest(".diary-meal") || row).classList.add("entry-arrive");
 }
 function commit(fn, options) {
   store.commit(fn, options);
@@ -139,22 +195,31 @@ function commit(fn, options) {
       : "Сохранено на устройстве";
 }
 function openModal(title, body, kind = "generic") {
-  modalReturnFocus = document.activeElement;
+  if (!dialog.open) modalReturnFocus = document.activeElement;
   dialog.dataset.kind = kind;
   dialog.innerHTML = `<div class="dialog-heading"><h2 id="dialog-title">${title}</h2><button type="button" class="icon-button" data-action="close-dialog" aria-label="Закрыть">${icon("close")}</button></div><div id="dialog-error" role="alert" hidden></div>${body}`;
   if (!dialog.open) dialog.showModal();
+  dialog.scrollTop = 0;
 }
 function closeModal() {
   if (dialog.dataset.kind === "recipe-product" && recipeDraft) {
     drawRecipe();
     return;
   }
+  const foodFeedback =
+    picker?.added && ui.foodDate === picker.date
+      ? { nutritionFrom: picker.startedWith, foodIds: picker.lastIds }
+      : null;
   recipeDraft = null;
+  picker = null;
   if (dialog.dataset.kind === "timer") timer.stop();
   dialog.close();
+  if (foodFeedback) render(foodFeedback);
   searchController?.abort();
   clearTimeout(searchTimeout);
   if (modalReturnFocus?.isConnected) modalReturnFocus.focus();
+  else if (foodFeedback)
+    root.querySelector('[data-action="add-product"]')?.focus();
 }
 function modalError(text) {
   const target = document.getElementById("dialog-error");
@@ -327,7 +392,13 @@ dialog.addEventListener("cancel", (event) => {
   if (dialog.dataset.kind === "recipe-product" && recipeDraft) {
     event.preventDefault();
     drawRecipe();
-  } else recipeDraft = null;
+  } else if (picker?.added) {
+    event.preventDefault();
+    closeModal();
+  } else {
+    recipeDraft = null;
+    picker = null;
+  }
   searchController?.abort();
 });
 document.addEventListener("pointerdown", () => bell.unlock(), { once: true });
@@ -367,38 +438,71 @@ function startTimer(ex, mode, index) {
   timer.start(seconds, { mode, exId: ex.id, name: ex.n, index, date: ui.date });
 }
 
-function productDialog() {
+function productDialog(tab) {
   recipeDraft = null;
   onlineFoods = [];
-  openModal(
-    "Добавить еду",
-    `<label class="search-label">Найти продукт<input type="search" id="food-search" placeholder="Название продукта" autocomplete="off"></label><div class="search-tools"><button class="button quiet" data-action="online-search">Поиск в интернете</button><button class="button secondary" data-action="custom-product">Свой продукт</button></div><div id="search-status" role="status"></div><div id="food-results"></div>`,
-    "food-search",
-  );
-  drawFoods("");
-  document.getElementById("food-search").focus();
+  picker = {
+    tab:
+      tab ||
+      (recentFoods(store.state, ui.foodDate).length ? "recent" : "foods"),
+    query: "",
+    date: ui.foodDate,
+    startedWith: totals(store.state, ui.foodDate),
+    added: 0,
+    message: "",
+    lastIds: [],
+  };
+  drawPicker();
+}
+function drawPicker() {
+  if (!picker) return productDialog();
+  openModal("Добавить еду", foodPicker(store.state, picker), "food-search");
+  drawFoods(picker.query);
 }
 function drawFoods(q) {
-  const local = store.state.foods
-      .filter((f) =>
-        f.name.toLocaleLowerCase("ru").includes(q.toLocaleLowerCase("ru")),
-      )
-      .slice(0, 30),
-    seen = new Set(local.map((f) => f.name.toLowerCase())),
-    rows = [
-      ...local,
-      ...onlineFoods.filter((f) => !seen.has(f.name.toLowerCase())),
-    ];
+  if (!picker) return;
+  picker.query = q;
   const target = document.getElementById("food-results");
   if (!target) return;
-  target.innerHTML = rows.length
-    ? rows
-        .map(
-          (f) =>
-            `<div class="food-result"><div><strong>${esc(f.name)}</strong><small>${Math.round(f.cal)} ккал · Б ${f.p} · Ж ${f.f} · У ${f.c} / ${f.unit === "piece" ? "1 шт." : "100 " + unitLabel(f)}</small></div><button class="icon-button" data-action="choose-food" data-id="${esc(f.id)}" aria-label="Добавить ${esc(f.name)}">${icon("plus")}</button></div>`,
-        )
-        .join("")
-    : '<p class="empty-message">Продукт не найден. Можно добавить свой.</p>';
+  target.innerHTML = foodResults(store.state, picker, onlineFoods);
+}
+function findFood(id) {
+  return (
+    store.state.foods.find((f) => f.id === id) ||
+    onlineFoods.find((f) => f.id === id)
+  );
+}
+function recordFood(write, message) {
+  if (!picker || picker.date > dateKey())
+    throw new Error("Выберите сегодняшний или прошедший день.");
+  const date = picker.date,
+    before = totals(store.state, date);
+  const oldIds = new Set(
+    (store.state[`food_${date}`] || []).map((r) => String(r.id)),
+  );
+  commit(write);
+  picker.lastIds = store.state[`food_${date}`]
+    .map((r) => String(r.id))
+    .filter((id) => !oldIds.has(id));
+  picker.added++;
+  picker.message = message;
+  picker.query = "";
+  onlineFoods = [];
+  render({
+    nutritionFrom: ui.foodDate === date ? before : null,
+    foodIds: picker.lastIds,
+  });
+  drawPicker();
+}
+function recordProduct(food, amount) {
+  if (!food) throw new Error("Продукт не найден.");
+  recordFood(
+    (s) => {
+      if (!s.foods.some((f) => f.id === food.id)) s.foods.push(food);
+      addFood(s, food.id, amount, picker.date);
+    },
+    `${food.name} · ${number(amount)} ${unitLabel(food)} — записано`,
+  );
 }
 async function onlineSearch() {
   const field = document.getElementById("food-search"),
@@ -455,17 +559,111 @@ async function onlineSearch() {
   }
 }
 function amountDialog(f) {
+  if (!picker) productDialog();
   openModal(
-    "Количество",
-    `<form id="food-amount-form" data-id="${esc(f.id)}"><h3>${esc(f.name)}</h3><label>${"Количество, " + unitLabel(f)}<input name="amount" inputmode="decimal" value="${f.unit === "piece" ? 1 : 100}" required></label><p class="helper">На ${f.unit === "piece" ? "1 шт." : "100 " + unitLabel(f)}: ${Math.round(f.cal)} ккал · Б ${f.p} · Ж ${f.f} · У ${f.c}</p><button class="button primary wide">Добавить в дневник</button></form>`,
+    "Твоя порция",
+    amountForm({
+      id: f.id,
+      name: f.name,
+      amount: defaultAmount(store.state, f, picker.date),
+      unit: unitLabel(f),
+      date: picker.date,
+    }),
     "food-amount",
   );
-  dialog.querySelector("input").select();
+  drawPortionTotal();
+}
+function mealAmountDialog(meal) {
+  if (!meal) throw new Error("Блюдо не найдено.");
+  if (!picker) productDialog("meals");
+  openModal(
+    "Порция блюда",
+    amountForm({
+      id: meal.id,
+      name: meal.title,
+      amount: 1,
+      unit: "порц.",
+      form: "meal-amount-form",
+      date: picker.date,
+      meal: true,
+      repeat: (store.state[`food_${picker.date}`] || []).some(
+        (r) => r.mealId === meal.id,
+      ),
+    }),
+    "meal-amount",
+  );
+  drawPortionTotal();
+}
+function editAmountDialog(id) {
+  const row = (store.state[`food_${ui.foodDate}`] || []).find(
+    (r) => String(r.id) === id,
+  );
+  if (!row) throw new Error("Запись не найдена.");
+  openModal(
+    "Изменить количество",
+    amountForm({
+      id,
+      name: row.name,
+      amount: row.g,
+      unit: unitLabel(row),
+      form: "food-edit-form",
+      date: ui.foodDate,
+      editing: true,
+    }),
+    "food-edit",
+  );
+  drawPortionTotal();
+}
+function drawPortionTotal() {
+  const target = document.getElementById("portion-preview"),
+    form = dialog.querySelector("form");
+  if (!target || !form) return;
+  const amount = number(form.elements.amount.value);
+  for (const button of dialog.querySelectorAll(
+    '[data-action="portion-preset"]',
+  ))
+    button.setAttribute(
+      "aria-pressed",
+      String(+button.dataset.amount === amount),
+    );
+  try {
+    let total,
+      ingredients = "";
+    if (form.id === "meal-amount-form") {
+      const meal = allMeals(store.state).find((m) => m.id === form.dataset.id);
+      const factor = bounded(amount, 0.01, 100, "Порции");
+      const portion = {
+        ...meal,
+        items: mealParts(store.state, meal).map(({ food, amount }) => [
+          food.id,
+          round(amount * factor),
+        ]),
+      };
+      total = mealTotals({ ...store.state, mealPortions: {} }, portion);
+      ingredients = `<p class="portion-components">${portion.items.map(([id, quantity]) => `${esc(findFood(id).name)} — ${quantity} ${unitLabel(findFood(id))}`).join(" · ")}</p>`;
+    } else if (form.id === "food-edit-form") {
+      const row = store.state[`food_${form.dataset.date}`].find(
+        (r) => String(r.id) === form.dataset.id,
+      );
+      total = portionTotals(
+        {
+          unit: "portion",
+          ...Object.fromEntries(
+            ["cal", "p", "f", "c"].map((k) => [k, row[k] / row.g]),
+          ),
+        },
+        amount,
+      );
+    } else total = portionTotals(findFood(form.dataset.id), amount);
+    target.innerHTML = `<span>В этой порции</span><strong>${Math.round(total.cal)} <small>ккал</small></strong><div class="portion-macros"><span>Б <b>${round(total.p)}</b></span><span>Ж <b>${round(total.f)}</b></span><span>У <b>${round(total.c)}</b></span></div>${ingredients}`;
+  } catch {
+    target.textContent = "Укажи количество, чтобы увидеть КБЖУ порции";
+  }
 }
 function customProductDialog() {
   openModal(
     "Свой продукт",
-    `<p class="helper">Перенеси КБЖУ с упаковки протеина, напитка или другого продукта.</p><form id="custom-product-form"><label>Название<input name="name" maxlength="150" required></label><label>Значения указаны<select name="unit"><option value="g">На 100 г</option><option value="ml">На 100 мл</option><option value="piece">На 1 штуку</option></select></label><div class="form-grid">${[
+    `${picker && !recipeDraft ? '<button class="button text-button" data-action="food-back" type="button">← К списку</button>' : ""}<p class="helper">Перенеси КБЖУ с упаковки протеина, напитка или другого продукта.</p><form id="custom-product-form"><label>Название<input name="name" maxlength="150" value="${esc(recipeDraft ? "" : picker?.query || "")}" required></label><label>Значения указаны<select name="unit"><option value="g">На 100 г</option><option value="ml">На 100 мл</option><option value="piece">На 1 штуку</option></select></label><div class="form-grid">${[
       ["cal", "Калории"],
       ["p", "Белок, г"],
       ["f", "Жиры, г"],
@@ -745,16 +943,29 @@ document.addEventListener("click", async (event) => {
         const rows = trainingSessions(store.state, 36500)
           .filter((r) => r.id === exId)
           .slice(-10);
+        const reference = rows.findLast((r) => r.complete);
+        const comparable = rows.filter(
+          (r) => r.complete && sameSessionConditions(r, reference),
+        );
         openModal(
           esc(ex.n),
-          chart(
-            rows.map((r) => ({ date: r.date, value: r.volume ?? r.reps })),
-            { label: "История упражнения" },
-          ) +
+          (comparable.length >= 2
+            ? chart(
+                comparable.map((r) => ({ date: r.date, value: r.reps })),
+                {
+                  label: ex.time
+                    ? "Сумма секунд в подходах"
+                    : "Повторы при одинаковой нагрузке",
+                },
+              ) +
+              '<p class="helper">График: одинаковые нагрузка и число подходов.</p>'
+            : '<p class="helper">График появится после двух полностью записанных тренировок с одинаковой нагрузкой и числом подходов.</p>') +
             rows
+              .slice()
+              .reverse()
               .map(
                 (r) =>
-                  `<p class="history-row"><strong>${formatDate(r.date)}</strong><span>${r.sets} подхода · ${r.volume !== null ? r.volume + " кг × повт." : r.reps + " повт. / сек"} · RIR ${r.rir}</span></p>`,
+                  `<div class="comparison-session"><span>${formatDate(r.date)} <small>${r.sets}/${r.expectedSets} подходов${r.complete ? "" : " · не завершено"} · RIR ${r.rir}</small></span><strong>${esc(sessionDescription(r))}</strong></div>`,
               )
               .join(""),
         );
@@ -789,6 +1000,60 @@ document.addEventListener("click", async (event) => {
       case "add-product":
         productDialog();
         break;
+      case "pick-meals":
+        productDialog("meals");
+        break;
+      case "food-tab":
+        if (
+          !picker ||
+          !["recent", "foods", "meals"].includes(button.dataset.tab)
+        )
+          break;
+        searchController?.abort();
+        picker.tab = button.dataset.tab;
+        picker.query = "";
+        onlineFoods = [];
+        drawPicker();
+        break;
+      case "food-back":
+        recipeDraft = null;
+        drawPicker();
+        break;
+      case "portion-preset": {
+        const input = dialog.querySelector('[name="amount"]');
+        if (input) input.value = button.dataset.amount;
+        drawPortionTotal();
+        break;
+      }
+      case "quick-food":
+        recordProduct(findFood(id), button.dataset.amount);
+        break;
+      case "choose-meal":
+        mealAmountDialog(allMeals(store.state).find((m) => m.id === id));
+        break;
+      case "edit-food":
+        editAmountDialog(id);
+        break;
+      case "undo-food": {
+        if (!picker?.lastIds.length) break;
+        const before = totals(store.state, picker.date),
+          ids = new Set(picker.lastIds);
+        commit((s) => {
+          s[`food_${picker.date}`] = s[`food_${picker.date}`].filter(
+            (r) => !ids.has(String(r.id)),
+          );
+          s.foodDays[picker.date] = {
+            ...s.foodDays[picker.date],
+            complete: false,
+          };
+        });
+        picker.lastIds = [];
+        picker.added = Math.max(0, picker.added - 1);
+        picker.message = "Последняя запись отменена";
+        render({ nutritionFrom: ui.foodDate === picker.date ? before : null });
+        drawPicker();
+        break;
+      }
       case "online-search":
         await onlineSearch();
         break;
@@ -796,9 +1061,7 @@ document.addEventListener("click", async (event) => {
         customProductDialog();
         break;
       case "choose-food": {
-        const f =
-          store.state.foods.find((f) => f.id === id) ||
-          onlineFoods.find((f) => f.id === id);
+        const f = findFood(id);
         if (f) amountDialog(f);
         break;
       }
@@ -834,15 +1097,7 @@ document.addEventListener("click", async (event) => {
         mealDialog(allMeals(store.state).find((m) => m.id === id));
         break;
       case "meal-add":
-        commit((s) =>
-          addMeal(
-            s,
-            allMeals(s).find((m) => m.id === id),
-            ui.foodDate,
-          ),
-        );
-        render();
-        notify("Приём пищи записан");
+        mealAmountDialog(allMeals(store.state).find((m) => m.id === id));
         break;
       case "supplement":
         if (!SUPPLEMENTS.some((s) => s.intakes.some((i) => i.id === id)))
@@ -922,6 +1177,12 @@ document.addEventListener("click", async (event) => {
   }
 });
 document.addEventListener("input", (event) => {
+  if (
+    ["food-amount-form", "food-edit-form", "meal-amount-form"].includes(
+      event.target.form?.id,
+    )
+  )
+    drawPortionTotal();
   if (event.target.closest("#meal-form")) {
     readRecipeDraft();
     drawRecipeTotal();
@@ -982,6 +1243,13 @@ document.addEventListener("change", async (event) => {
     if (kind === "metric") {
       commit((s) => setMetric(s, key, field.value, ui.foodDate));
       field.removeAttribute("aria-invalid");
+      const label = field.closest("label");
+      label?.classList.add("saved-flash");
+      label?.addEventListener(
+        "animationend",
+        () => label.classList.remove("saved-flash"),
+        { once: true },
+      );
       notify("Замер сохранён");
       return;
     }
@@ -1012,16 +1280,29 @@ document.addEventListener("submit", (event) => {
     values = Object.fromEntries(new FormData(form));
   try {
     if (form.id === "food-amount-form") {
-      const f =
-        store.state.foods.find((f) => f.id === form.dataset.id) ||
-        onlineFoods.find((f) => f.id === form.dataset.id);
-      commit((s) => {
-        if (!s.foods.some((x) => x.id === f.id)) s.foods.push(f);
-        addFood(s, f.id, values.amount, ui.foodDate);
-      });
+      recordProduct(findFood(form.dataset.id), values.amount);
+    }
+    if (form.id === "meal-amount-form") {
+      const meal = allMeals(store.state).find((m) => m.id === form.dataset.id);
+      recordFood(
+        (s) =>
+          addMeal(s, meal, picker.date, {
+            portions: values.amount,
+            allowRepeat: true,
+          }),
+        `${meal.title} · ${number(values.amount)} порц. — записано`,
+      );
+    }
+    if (form.id === "food-edit-form") {
+      const date = form.dataset.date,
+        before = totals(store.state, date);
+      commit((s) => editFoodAmount(s, form.dataset.id, values.amount, date));
       closeModal();
-      render();
-      notify("Еда записана");
+      render({
+        nutritionFrom: ui.foodDate === date ? before : null,
+        foodIds: [form.dataset.id],
+      });
+      notify("Количество обновлено");
     }
     if (form.id === "custom-product-form") {
       const product = makeProduct(values),
@@ -1038,8 +1319,16 @@ document.addEventListener("submit", (event) => {
     }
     if (form.id === "meal-form") {
       readRecipeDraft();
-      commit((s) => saveRecipe(s, recipeDraft));
+      let saved;
+      commit((s) => (saved = saveRecipe(s, recipeDraft)));
       recipeDraft = null;
+      if (picker) {
+        picker.tab = "meals";
+        picker.query = "";
+        render();
+        mealAmountDialog(saved);
+        return;
+      }
       closeModal();
       const oldFold = root.querySelector('[data-fold="meals"]');
       if (oldFold) oldFold.open = true;

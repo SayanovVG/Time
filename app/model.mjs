@@ -1,6 +1,6 @@
 import { PROGRAM, BANDS, DEFAULT_FOODS } from "./program.mjs";
 
-export const VERSION = "3.1.1";
+export const VERSION = "3.2.0";
 export const SCHEMA = 3;
 export const TARGET = { cal: 2450, p: 180, f: 75, c: 264 };
 export const clone = (value) => JSON.parse(JSON.stringify(value));
@@ -364,20 +364,22 @@ const comparableSet = (s) => ({
   done: s.done,
 });
 export function validSet(ex, s) {
+  const reps = number(s?.reps),
+    rir = number(s?.rir);
   if (
     !s ||
-    number(s.reps) === null ||
-    !Number.isInteger(number(s.reps)) ||
-    +s.reps <= 0 ||
-    number(s.rir) === null ||
-    !Number.isInteger(number(s.rir)) ||
-    +s.rir < 0 ||
-    +s.rir > 3
+    reps === null ||
+    !Number.isInteger(reps) ||
+    reps <= 0 ||
+    rir === null ||
+    !Number.isInteger(rir) ||
+    rir < 0 ||
+    rir > 3
   )
     return false;
   if (ex?.band) return BANDS.includes(s.load);
   if (ex?.time || ["pullup", "dips", "legraise"].includes(ex?.id)) return true;
-  return number(s.load) !== null && +s.load >= 0;
+  return number(s.load) !== null && number(s.load) >= 0;
 }
 export function setInput(ex, row, field, value) {
   if (!["load", "reps", "rir"].includes(field))
@@ -526,17 +528,18 @@ export function trainingSessions(s, days, end = dateKey()) {
     if (!inPeriod(date, days, end)) continue;
     const done = rows.filter((r) => r.done && validSet(ex, r));
     if (!done.length) continue;
-    const reps = done.reduce((n, r) => n + +r.reps, 0),
+    const reps = done.reduce((n, r) => n + number(r.reps), 0),
       numericLoad = done.every(
         (r) => number(r.load) !== null && !BANDS.includes(r.load),
       );
     const volume =
       numericLoad && !ex?.time
-        ? round(done.reduce((n, r) => n + +r.reps * +r.load, 0))
+        ? round(done.reduce((n, r) => n + number(r.reps) * number(r.load), 0))
         : null;
     const id = ex?.id || key.slice(11),
-      canonical = `${date}_${id}`;
-    if (!by.has(canonical))
+      canonical = `${date}_${id}`,
+      expectedSets = Math.max(ex?.s || 0, rows.length);
+    if (!by.has(canonical) || key === canonical)
       by.set(canonical, {
         date,
         id,
@@ -544,10 +547,91 @@ export function trainingSessions(s, days, end = dateKey()) {
         sets: done.length,
         reps,
         volume,
-        rir: round(done.reduce((n, r) => n + +r.rir, 0) / done.length),
+        expectedSets,
+        complete: done.length === expectedSets,
+        kind: ex?.time
+          ? "time"
+          : ex?.band || done.some((r) => BANDS.includes(r.load))
+            ? "band"
+            : "weight",
+        loads: done.map((r) =>
+          ex?.time
+            ? null
+            : BANDS.includes(r.load)
+              ? r.load
+              : (number(r.load) ?? 0),
+        ),
+        repetitions: done.map((r) => number(r.reps)),
+        rir: round(done.reduce((n, r) => n + number(r.rir), 0) / done.length),
       });
   }
   return [...by.values()].sort((a, b) => a.date.localeCompare(b.date));
+}
+export function sameSessionConditions(a, b) {
+  return (
+    !!a &&
+    !!b &&
+    a.id === b.id &&
+    a.kind === b.kind &&
+    a.sets === b.sets &&
+    a.loads.every((load, i) => load === b.loads[i])
+  );
+}
+export function exerciseTrend(current, previous, count) {
+  const trend = {
+    id: current.id,
+    name: current.name,
+    count,
+    current,
+    previous,
+    metric: current.kind === "time" ? "секунды" : "повторы",
+    rir: current.rir,
+    pct: null,
+    delta: null,
+  };
+  if (!current.complete)
+    return {
+      ...trend,
+      status: "incomplete",
+      label: "Не все подходы",
+      reason: `Выполнено ${current.sets} из ${current.expectedSets} подходов. Сравнение появится после завершения упражнения.`,
+    };
+  if (!previous?.complete)
+    return {
+      ...trend,
+      status: "first",
+      label: "Первая запись",
+      reason:
+        "Для сравнения нужна предыдущая полностью записанная тренировка этого упражнения.",
+    };
+  if (current.sets !== previous.sets)
+    return {
+      ...trend,
+      status: "sets",
+      label: "Разное число подходов",
+      reason:
+        "Общий результат не сравнивается, когда число подходов различается.",
+    };
+  if (!sameSessionConditions(current, previous))
+    return {
+      ...trend,
+      status: "load",
+      label: current.kind === "band" ? "Другая резинка" : "Другой вес",
+      reason:
+        "Нагрузка изменилась. Процент повторов здесь не показывает рост или падение силы.",
+    };
+  const delta = current.reps - previous.reps;
+  return {
+    ...trend,
+    delta,
+    pct: round((delta / previous.reps) * 100),
+    status: delta > 0 ? "up" : delta < 0 ? "down" : "same",
+    label: delta > 0 ? "Больше" : delta < 0 ? "Меньше" : "Без изменений",
+    reason:
+      current.kind === "time"
+        ? "При одинаковом числе подходов"
+        : "При одинаковой нагрузке и числе подходов",
+  };
 }
 export function measureSeries(s, field, days, end = dateKey()) {
   return s.measurements
@@ -572,30 +656,21 @@ export function movingAverage(rows, days = 7) {
 export function analytics(s, days, end = dateKey()) {
   const nutrition = nutritionDays(s, days, end),
     completed = nutrition.filter((d) => d.complete),
-    sessions = trainingSessions(s, days, end);
+    history = trainingSessions(s, 36500, end),
+    sessions = history.filter((r) => inPeriod(r.date, days, end));
   const by = new Map();
   for (const x of sessions) {
     const a = by.get(x.id) || [];
     a.push(x);
     by.set(x.id, a);
   }
-  const trends = [...by.values()]
-    .filter((a) => a.length >= 2)
-    .map((a) => {
-      const first = a[0],
-        last = a.at(-1),
-        volume = first.volume > 0 && last.volume > 0,
-        base = volume ? first.volume : first.reps,
-        current = volume ? last.volume : last.reps;
-      return {
-        id: first.id,
-        name: first.name,
-        count: a.length,
-        pct: base ? round((current / base - 1) * 100) : null,
-        metric: volume ? "объём нагрузки" : "повторы / секунды",
-        rir: last.rir,
-      };
-    });
+  const trends = [...by.values()].map((a) => {
+    const current = a.at(-1);
+    const previous = history.findLast(
+      (r) => r.id === current.id && r.date < current.date && r.complete,
+    );
+    return exerciseTrend(current, previous, a.length);
+  });
   return {
     nutrition,
     completed,
@@ -648,7 +723,8 @@ export function report(s, days, end = dateKey()) {
   );
   for (const t of a.trends)
     lines.push(
-      `- ${t.name}: ${t.count} тренировок; ${t.pct > 0 ? "+" : ""}${t.pct}% (${t.metric}); последний RIR ${t.rir}.`,
+      `- ${t.name}: ${t.current.date}, ${t.current.sets}/${t.current.expectedSets} подходов, ${t.current.reps} ${t.metric}; RIR ${t.rir}. ${t.pct === null ? t.label + ". " + t.reason : `${t.pct > 0 ? "+" : ""}${t.pct}% к предыдущей тренировке ${t.previous.date}: ${t.previous.reps} → ${t.current.reps} ${t.metric}. ${t.reason}.`}`,
+      `  Подходы сейчас: ${t.current.repetitions.map((reps, i) => `${t.current.kind === "time" ? "" : t.current.loads[i] + (t.current.kind === "band" ? "" : " кг") + " × "}${reps}${t.current.kind === "time" ? " сек" : ""}`).join("; ")}.${t.previous ? ` Ранее (${t.previous.date}): ${t.previous.repetitions.map((reps, i) => `${t.previous.kind === "time" ? "" : t.previous.loads[i] + (t.previous.kind === "band" ? "" : " кг") + " × "}${reps}${t.previous.kind === "time" ? " сек" : ""}`).join("; ")}.` : ""}`,
     );
   if (!a.trends.length)
     lines.push("Для сравнения упражнений нужно минимум две тренировки.");

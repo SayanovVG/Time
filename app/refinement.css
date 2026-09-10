@@ -1,4 +1,4 @@
-/* MAX TIME 3.1: a focused graphite-and-ember training surface. */
+/* MAX TIME: graphite, ember accents and brief feedback for real actions. */
 :root {
   --bg: #0d1014;
   --surface: #171c22;
@@ -932,6 +932,498 @@ dialog[data-kind="timer"] .wide {
     }
     to {
       transform: none;
+    }
+  }
+}
+/* Food entry stays in one sheet; the date and saved result remain explicit. */
+dialog[data-kind="food-search"],
+dialog[data-kind="food-amount"],
+dialog[data-kind="food-edit"],
+dialog[data-kind="meal-amount"] {
+  width: min(620px, calc(100% - 28px));
+  background:
+    radial-gradient(ellipse at 100% 0, #31534124, transparent 340px), #171d24;
+  border-color: #46594f;
+}
+.picker-date,
+.picker-hint {
+  color: var(--muted);
+  font-size: 0.875rem;
+  margin: 0 0 14px;
+}
+.food-picker-tabs {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  padding: 4px;
+  gap: 4px;
+  background: #0c1217;
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  margin: 0 0 16px;
+}
+.food-picker-tabs .button {
+  min-width: 0;
+  padding: 9px 5px;
+  min-height: 46px;
+  font-size: 0.875rem;
+  border-radius: 10px;
+}
+.food-picker-tabs .selected {
+  color: #c3efcf;
+  background: #2a4135;
+  box-shadow: 0 2px 10px #0003;
+}
+.food-picker-flow .search-label input {
+  width: 100%;
+}
+.picker-feedback:not(:empty) {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin: 14px 0;
+  padding: 10px 12px;
+  border: 1px solid #41674d;
+  border-radius: 12px;
+  color: #c3efcf;
+  background: #263c2f;
+  font-size: 0.875rem;
+}
+.picker-feedback > span {
+  flex: 1;
+  min-width: 120px;
+  overflow-wrap: anywhere;
+}
+.picker-feedback .button {
+  padding: 6px;
+  min-height: 44px;
+}
+.food-choice,
+.diary-edit {
+  display: block;
+  flex: 1;
+  min-width: 0;
+  min-height: 48px;
+  text-align: left;
+  color: var(--ink);
+  background: none;
+  border: 0;
+  padding: 8px 0;
+  border-radius: 8px;
+}
+.food-choice strong,
+.diary-edit strong {
+  display: block;
+  font-size: 1rem;
+  overflow-wrap: anywhere;
+}
+.food-choice small,
+.diary-edit span {
+  display: block;
+  color: var(--muted);
+  font-size: 0.875rem;
+  margin-top: 4px;
+}
+.diary-edit span .icon {
+  width: 14px;
+  height: 14px;
+  margin-left: 4px;
+  color: #b8d5c2;
+}
+.food-result {
+  gap: 10px;
+}
+.quick-portion {
+  background: #243b2d;
+  color: #c3efcf;
+  border: 1px solid #425e4b;
+  border-radius: 12px;
+  padding: 8px 10px;
+  font-size: 0.875rem;
+  min-height: 46px;
+  flex-shrink: 0;
+  font-variant-numeric: tabular-nums;
+}
+.quick-portion .icon {
+  width: 16px;
+  height: 16px;
+}
+.meal-pick {
+  display: flex;
+  align-items: center;
+  width: 100%;
+  gap: 12px;
+  padding: 16px 4px;
+  text-align: left;
+  background: none;
+  border: 0;
+  border-bottom: 1px solid var(--line);
+  color: var(--ink);
+  border-radius: 8px;
+}
+.meal-pick > span:nth-child(2) {
+  flex: 1;
+  min-width: 0;
+}
+.meal-pick strong {
+  display: block;
+  font-size: 1rem;
+  overflow-wrap: anywhere;
+}
+.meal-pick small {
+  display: block;
+  font-size: 0.875rem;
+  color: var(--muted);
+  margin-top: 4px;
+}
+.picker-create {
+  padding-top: 18px;
+  display: grid;
+  gap: 6px;
+}
+.picker-create .button {
+  font-size: 0.875rem;
+}
+.picker-footer {
+  display: flex;
+  gap: 16px;
+  justify-content: space-between;
+  align-items: center;
+  position: sticky;
+  bottom: -26px;
+  margin: 18px -4px -10px;
+  padding: 16px 4px 10px;
+  background: #171d24;
+  border-top: 1px solid #45524b;
+  box-shadow: 0 -8px 20px #171d2490;
+}
+.picker-footer > span {
+  font-size: 0.875rem;
+  color: var(--muted);
+}
+.picker-footer strong {
+  display: block;
+  color: var(--ink);
+  font-size: 1.125rem;
+  font-variant-numeric: tabular-nums;
+}
+.picker-footer .button {
+  min-width: 110px;
+}
+.picker-empty {
+  text-align: center;
+  padding: 24px 12px;
+}
+.picker-empty > .icon {
+  color: var(--green);
+  width: 32px;
+  height: 32px;
+}
+.picker-empty p {
+  font-size: 0.875rem;
+  color: var(--muted);
+  margin: 12px 0 18px;
+}
+.portion-name {
+  margin-bottom: 2px;
+}
+.portion-input {
+  color: var(--muted);
+}
+.portion-input > span {
+  display: flex;
+  align-items: baseline;
+  gap: 12px;
+  margin-top: 8px;
+  background: #0e151a;
+  padding: 12px 18px;
+  border: 1px solid #5b7063;
+  border-radius: 18px;
+}
+.portion-input input {
+  font-size: clamp(2.25rem, 10vw, 3rem);
+  width: 100%;
+  min-width: 0;
+  padding: 0;
+  min-height: 58px;
+  font-weight: 750;
+  border: 0;
+  border-radius: 6px;
+  background: transparent;
+  font-variant-numeric: tabular-nums;
+}
+.portion-input b {
+  font-size: 1rem;
+  font-weight: 500;
+}
+.portion-presets {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.portion-presets .button {
+  min-height: 44px;
+  padding: 8px 12px;
+  border: 1px solid #42544a;
+  background: #212e27;
+  font-size: 0.875rem;
+  border-radius: 12px;
+}
+.portion-presets [aria-pressed="true"] {
+  color: #d1f7dc;
+  border-color: #91c8a2;
+  background: #324c3c;
+}
+.portion-preview {
+  padding: 18px;
+  border-radius: 18px;
+  background: #24382c;
+  border: 1px solid #46634e;
+}
+.portion-preview > span {
+  color: #b9d4c0;
+  font-size: 0.875rem;
+}
+.portion-preview > strong {
+  display: block;
+  font-size: 2rem;
+  margin: 4px 0 12px;
+  font-variant-numeric: tabular-nums;
+}
+.portion-preview > strong small {
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: #b9d4c0;
+}
+.portion-macros {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 20px;
+  font-size: 1rem;
+}
+.portion-macros b {
+  font-weight: 650;
+}
+.portion-components {
+  color: #bed0c1;
+  font-size: 0.875rem;
+  margin-top: 14px;
+}
+.macro-inline > div:nth-child(1) progress {
+  accent-color: #a4d9b7;
+}
+.macro-inline > div:nth-child(2) progress {
+  accent-color: #ffbc84;
+}
+.macro-inline > div:nth-child(3) progress {
+  accent-color: #b8b9ee;
+}
+.macro-inline > div:nth-child(1) progress::-webkit-progress-value {
+  background: #a4d9b7;
+}
+.macro-inline > div:nth-child(2) progress::-webkit-progress-value {
+  background: #ffbc84;
+}
+.macro-inline > div:nth-child(3) progress::-webkit-progress-value {
+  background: #b8b9ee;
+}
+.macro-inline > div:nth-child(1) progress::-moz-progress-bar {
+  background: #a4d9b7;
+}
+.macro-inline > div:nth-child(2) progress::-moz-progress-bar {
+  background: #ffbc84;
+}
+.macro-inline > div:nth-child(3) progress::-moz-progress-bar {
+  background: #b8b9ee;
+}
+.strength-comparison {
+  border-top: 1px solid var(--line);
+}
+.strength-comparison > summary {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  padding: 18px 0;
+  list-style: none;
+  cursor: pointer;
+}
+.strength-name {
+  flex: 1;
+  min-width: 0;
+}
+.strength-name strong {
+  display: block;
+  font-size: 1rem;
+  overflow-wrap: anywhere;
+}
+.strength-name small {
+  display: block;
+  color: #c6d1cb;
+  font-size: 0.875rem;
+  margin-top: 6px;
+}
+.comparison-dates {
+  display: block;
+  color: var(--muted);
+  font-size: 0.8125rem;
+  margin-top: 5px;
+}
+.strength-badge {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  padding: 8px 6px 8px 10px;
+  border-radius: 12px;
+  background: #293139;
+  color: #c4ced8;
+  font-weight: 750;
+  font-size: 1rem;
+  flex-shrink: 0;
+  font-variant-numeric: tabular-nums;
+}
+.strength-badge.up {
+  color: #b0e9c3;
+  background: #263d30;
+}
+.strength-badge.down {
+  color: #f6c1a2;
+  background: #3b2b23;
+}
+.strength-comparison[open] .fold-chevron {
+  transform: rotate(90deg);
+}
+.strength-comparison > .fold-content {
+  padding: 0 0 18px;
+}
+.comparison-reason {
+  color: var(--muted);
+  font-size: 0.875rem;
+  margin-bottom: 14px;
+}
+.comparison-session {
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  padding: 12px 14px;
+  background: #11181f;
+  margin: 8px 0;
+}
+.comparison-session > span {
+  display: block;
+  font-size: 0.875rem;
+  color: #d3dce5;
+}
+.comparison-session small {
+  display: block;
+  color: var(--muted);
+  font-size: 0.8125rem;
+  margin: 4px 0 8px;
+}
+.comparison-session > strong {
+  display: block;
+  font-weight: 650;
+  font-size: 0.875rem;
+  overflow-wrap: anywhere;
+}
+.comparison-session.current-session {
+  border-color: #5e5849;
+  background: #24251f;
+}
+.chart-area {
+  fill: var(--accent);
+  opacity: 0.07;
+  stroke: none;
+}
+@media (max-width: 699px) {
+  dialog[data-kind="food-search"],
+  dialog[data-kind="food-amount"],
+  dialog[data-kind="food-edit"],
+  dialog[data-kind="meal-amount"] {
+    inset: auto 0 0;
+    margin: 0;
+    width: 100%;
+    max-width: 100%;
+    max-height: 92dvh;
+    border-radius: 26px 26px 0 0;
+    padding: 20px 18px max(18px, env(safe-area-inset-bottom));
+  }
+  .picker-footer {
+    bottom: -18px;
+    padding-bottom: max(12px, env(safe-area-inset-bottom));
+  }
+  .food-picker-flow .dialog-heading {
+    margin-bottom: 12px;
+  }
+}
+@media (max-width: 359px) {
+  .food-picker-tabs .button {
+    font-size: 0.875rem;
+    padding-inline: 2px;
+  }
+  .quick-portion {
+    padding-inline: 8px;
+    gap: 3px;
+  }
+  .quick-portion .icon {
+    display: none;
+  }
+  .strength-badge {
+    font-size: 0.875rem;
+  }
+  .strength-comparison > summary {
+    gap: 8px;
+  }
+}
+@media (prefers-reduced-motion: no-preference) {
+  .food-picker-flow {
+    animation: food-step-in 0.24s ease-out;
+  }
+  .picker-feedback:not(:empty) .icon {
+    animation: tick-draw 0.32s ease-out;
+  }
+  .entry-arrive {
+    animation: entry-highlight 0.7s ease-out;
+  }
+  .saved-flash {
+    animation: saved-outline 0.7s ease-out;
+  }
+  .view-enter .chart-area,
+  .chart-enter .chart-area {
+    animation: area-reveal 1s ease-out;
+  }
+  @keyframes food-step-in {
+    from {
+      opacity: 0.3;
+      transform: translateY(8px);
+    }
+    to {
+      opacity: 1;
+      transform: none;
+    }
+  }
+  @keyframes entry-highlight {
+    0% {
+      background-color: #40674d;
+      transform: translateY(6px);
+    }
+    100% {
+      background-color: transparent;
+      transform: none;
+    }
+  }
+  @keyframes area-reveal {
+    from {
+      opacity: 0;
+    }
+    to {
+      opacity: 0.07;
+    }
+  }
+  @keyframes saved-outline {
+    from {
+      box-shadow: 0 0 0 3px #b7eacb99;
+    }
+    to {
+      box-shadow: 0 0 0 0 #b7eacb00;
     }
   }
 }
