@@ -4,13 +4,7 @@ import assert from "node:assert/strict";
 const active = (await readdir("app"))
   .filter((p) => p.endsWith(".mjs"))
   .map((p) => "app/" + p);
-for (const file of [
-  ...active,
-  "sw.js",
-  "dva-kota/sw.js",
-  "dva-kota/v5/sw.js",
-  "dva-kota/v6/sw.js",
-])
+for (const file of [...active, "sw.js"])
   execFileSync(process.execPath, ["--check", file]);
 const first = await readFile("index.html", "utf8"),
   second = await readFile("index-v2.html", "utf8");
