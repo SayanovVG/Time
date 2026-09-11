@@ -49,3 +49,5 @@ next-env.d.ts
 # Standalone GitHub Pages output and user attachments
 /github-pages/
 /upload/
+
+/planner-dist/
