@@ -1,0 +1,19 @@
+{
+  "id": "./",
+  "name": "День — ежедневник",
+  "short_name": "День",
+  "lang": "ru",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#13151c",
+  "theme_color": "#13151c",
+  "icons": [
+    {
+      "src": "./favicon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}
