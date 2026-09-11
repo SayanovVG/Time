@@ -95,7 +95,7 @@ test("offline installation caches every native module, entry and local font with
   w.handlers.message({ data: { type: "SKIP_WAITING" } });
   assert.equal(w.skipped(), true);
 });
-test("activation deletes only MAX TIME caches and bypasses the adjacent game", async () => {
+test("activation deletes only MAX TIME caches and ignores apps outside its scope", async () => {
   const w = await worker();
   let pending;
   w.handlers.activate({ waitUntil: (p) => (pending = p) });
@@ -105,7 +105,7 @@ test("activation deletes only MAX TIME caches and bypasses the adjacent game", a
   let intercepted = false;
   w.handlers.fetch({
     request: {
-      url: "https://example.test/Time/dva-kota/index.html",
+      url: "https://example.test/ritm/index.html",
       method: "GET",
       mode: "navigate",
     },
