@@ -2,20 +2,11 @@
 <html lang="ru">
   <head>
     <meta charset="utf-8" />
-    <meta
-      name="viewport"
-      content="width=device-width, initial-scale=1, viewport-fit=cover"
-    />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
     <meta name="theme-color" content="#101215" />
-    <meta
-      name="description"
-      content="MAX TIME — тренировки, питание и прогресс. Личный журнал с сохранением на устройстве."
-    />
+    <meta name="description" content="MAX TIME — тренировки, питание и прогресс. Личный журнал с сохранением на устройстве." />
     <meta name="apple-mobile-web-app-capable" content="yes" />
-    <meta
-      name="apple-mobile-web-app-status-bar-style"
-      content="black-translucent"
-    />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
     <title>MAX TIME — тренировки и прогресс</title>
     <link rel="icon" href="./icon.svg" type="image/svg+xml" />
     <link rel="apple-touch-icon" href="./icons/icon-192.png" />
@@ -23,34 +14,25 @@
     <link rel="stylesheet" href="./app/app.css" />
     <link rel="stylesheet" href="./app/refinement.css" />
     <script type="module" src="./app/main.mjs"></script>
+    <style>
+      #iibrain-intro{position:fixed;inset:0;z-index:99999;display:grid;place-items:center;background:#0b0d10;transition:opacity .44s ease,visibility .44s ease}
+      #iibrain-intro.out{opacity:0;visibility:hidden;pointer-events:none}
+      .ii-sign{display:grid;place-items:center;gap:11px;text-align:center;animation:ii-in .62s cubic-bezier(.2,.8,.2,1) both}
+      .ii-mark{width:52px;height:52px;border-radius:17px;position:relative;background:linear-gradient(145deg,#31d1ff 0%,#566eff 48%,#9a42ff 100%);box-shadow:0 16px 46px rgba(75,80,235,.24),inset 0 1px rgba(255,255,255,.22)}
+      .ii-mark:before{content:"";position:absolute;left:12px;right:12px;top:25px;height:3px;border-radius:4px;background:#fff;box-shadow:7px -8px 0 rgba(255,255,255,.94),7px 8px 0 rgba(255,255,255,.94);transform:rotate(-10deg)}
+      .ii-sign strong{font:850 19px/1.1 system-ui,sans-serif;letter-spacing:.22em;color:#f7f8ff}.ii-sign span{font:650 9px/1 system-ui,sans-serif;letter-spacing:.31em;color:#77829f;text-transform:uppercase}
+      .ii-line{width:88px;height:1px;background:linear-gradient(90deg,transparent,#35d4ff,#8758ff,transparent);box-shadow:0 0 14px rgba(90,103,255,.4)}
+      @keyframes ii-in{from{opacity:0;transform:translateY(9px) scale(.97)}to{opacity:1;transform:none}}
+      @media(prefers-reduced-motion:reduce){#iibrain-intro,.ii-sign{animation:none!important;transition:none!important}}
+    </style>
   </head>
   <body>
-    <div id="error-bar" class="error-bar" role="alert" hidden>
-      <span></span
-      ><button
-        class="icon-button"
-        data-action="dismiss-error"
-        aria-label="Закрыть уведомление"
-      >
-        ×
-      </button>
-    </div>
-    <button
-      id="update-app"
-      class="button primary update-button"
-      data-action="update-app"
-      hidden
-    >
-      Доступно обновление
-    </button>
-    <div id="app">
-      <main class="app-main recovery-screen">
-        <h1>MAX TIME</h1>
-        <p>Открываю журнал…</p>
-        <noscript>Для работы журнала включите JavaScript в браузере.</noscript>
-      </main>
-    </div>
+    <div id="iibrain-intro" aria-hidden="true"><div class="ii-sign"><div class="ii-mark"></div><strong>IIBRAIN</strong><div class="ii-line"></div><span>Created by IIBRAIN</span></div></div>
+    <div id="error-bar" class="error-bar" role="alert" hidden><span></span><button class="icon-button" data-action="dismiss-error" aria-label="Закрыть уведомление">×</button></div>
+    <button id="update-app" class="button primary update-button" data-action="update-app" hidden>Доступно обновление</button>
+    <div id="app"><main class="app-main recovery-screen"><h1>MAX TIME</h1><p>Открываю журнал…</p><noscript>Для работы журнала включите JavaScript в браузере.</noscript></main></div>
     <dialog id="dialog" aria-labelledby="dialog-title"></dialog>
     <div id="toast" class="toast" role="status" hidden></div>
+    <script>addEventListener('load',()=>setTimeout(()=>{const e=document.getElementById('iibrain-intro');if(!e)return;e.classList.add('out');setTimeout(()=>e.remove(),520)},matchMedia('(prefers-reduced-motion: reduce)').matches?40:650),{once:true});</script>
   </body>
 </html>
