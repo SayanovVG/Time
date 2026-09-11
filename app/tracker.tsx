@@ -1,7 +1,7 @@
 'use client';
 
 import { useCallback, useEffect, useMemo, useRef, useState, type CSSProperties, type FormEvent } from 'react';
-import { Activity, ArrowUpRight, BookOpen, BriefcaseBusiness, CalendarDays, Check, ChevronLeft, ChevronRight, CircleCheck, CloudCheck, Droplets, Ellipsis, Flame, Heart, Loader2, Moon, Pencil, Plus, RefreshCw, Sparkles, Sun, Target, Trash2, X } from 'lucide-react';
+import { Activity, ArrowUpRight, BookOpen, BriefcaseBusiness, CalendarDays, Check, ChevronLeft, ChevronRight, CircleCheck, CloudCheck, Download, Upload, Smartphone, Droplets, Ellipsis, Flame, Heart, Loader2, Moon, Pencil, Plus, RefreshCw, Sparkles, Sun, Target, Trash2, X } from 'lucide-react';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogClose } from '@/components/ui/dialog';
 import { DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator } from '@/components/ui/dropdown-menu';
@@ -11,6 +11,8 @@ import { Empty, EmptyHeader, EmptyTitle, EmptyDescription } from '@/components/u
 import { Progress } from '@/components/ui/progress';
 import { Toaster } from '@/components/ui/sonner';
 import { toast } from 'sonner';
+import { readLocalTracker, writeLocalTracker, subscribeLocalTracker } from '@/lib/local-store';
+import { makeBackup, readBackup } from '@/lib/local-data';
 import { COLORS, ICONS, MIN_DAY, dayKey, parseDay, validDay, shiftDay, shiftMonth, monthStart, monthDays, weekDays, entriesSet, entryKey, dayProgress, currentStreak, monthStats, russianDays, type Habit, type TrackerData } from '@/lib/habits';
 
 const iconMap = { target: Target, move: Activity, book: BookOpen, briefcase: BriefcaseBusiness, water: Droplets, moon: Moon, heart: Heart, sun: Sun };
@@ -25,7 +27,10 @@ type Change = { habitId: string; day: string; done: boolean };
 function HabitIcon({ name, size = 23 }: { name: string; size?: number }) { const Icon = iconMap[name as keyof typeof iconMap] || Target; return <Icon size={size} aria-hidden />; }
 function CloseButton() { return <DialogClose asChild><button className="icon-button modal-close" aria-label="Закрыть"><X size={20} /></button></DialogClose>; }
 
-export default function Tracker() {
+export default function Tracker({ storageMode = 'cloud' }: { storageMode?: 'cloud' | 'device' }) {
+  const device = storageMode === 'device';
+  const importFile = useRef<HTMLInputElement>(null);
+  const [importData, setImportData] = useState<TrackerData | null>(null);
   const [today, setToday] = useState('');
   const [selected, setSelected] = useState('');
   const [month, setMonth] = useState('');
@@ -51,6 +56,7 @@ export default function Tracker() {
   const stats = useMemo(() => month && today ? monthStats(data.habits, completed, month, today) : { total: 0, done: 0, perfect: 0, percent: 0 }, [month, today, data.habits, completed]);
 
   const request = useCallback(async (body?: Record<string, unknown>) => {
+    if (device) return body ? writeLocalTracker(body) : readLocalTracker();
     const response = await fetch('/api/tracker', { method: body ? 'POST' : 'GET', cache: 'no-store', headers: { 'Content-Type': 'application/json', 'x-time-zone': Intl.DateTimeFormat().resolvedOptions().timeZone }, ...(body ? { body: JSON.stringify(body) } : {}), signal: AbortSignal.timeout(20000) });
     const raw: unknown = await response.json();
     if (!raw || typeof raw !== 'object') throw new Error('Не удалось прочитать ответ. Обнови страницу.');
@@ -58,7 +64,7 @@ export default function Tracker() {
     if (!response.ok) { if (result.signIn) { setSignIn(true); setLoadError(result.error || 'Войди в ChatGPT.'); } throw new Error(result.error || 'Не удалось получить данные.'); }
     if (!Array.isArray(result.habits) || !Array.isArray(result.entries)) throw new Error('Не удалось прочитать ответ. Обнови страницу.');
     return result as TrackerData;
-  }, []);
+  }, [device]);
 
   const refresh = useCallback(async () => {
     if (busy.current) return;
@@ -77,6 +83,7 @@ export default function Tracker() {
     const timer = setInterval(tick, 30000); window.addEventListener('focus', focus); document.addEventListener('visibilitychange', focus);
     return () => { clearInterval(timer); window.removeEventListener('focus', focus); document.removeEventListener('visibilitychange', focus); };
   }, [refresh]);
+  useEffect(() => { if (device) return subscribeLocalTracker(() => void refresh()); }, [device, refresh]);
   useEffect(() => { if (!celebrating) return; const timer = setTimeout(() => setCelebrating(false), 1300); return () => clearTimeout(timer); }, [celebrating]);
 
   const mutate = useCallback(async (body: Record<string, unknown>, optimistic?: (current: TrackerData) => TrackerData) => {
@@ -139,11 +146,30 @@ export default function Tracker() {
     if (!deleting) return;
     try { await mutate({ action: 'delete', id: deleting.id }); setDeleting(null); toast.success('Привычка удалена'); } catch {}
   }
+  async function exportBackup() {
+    try {
+      const latest = await readLocalTracker();
+      const url = URL.createObjectURL(new Blob([makeBackup(latest)], { type: 'application/json' }));
+      const link = document.createElement('a'); link.href = url; link.download = `ritm-backup-${dayKey()}.json`; document.body.appendChild(link); link.click(); link.remove();
+      setTimeout(() => URL.revokeObjectURL(url), 1000);
+      toast.success('Копия подготовлена для скачивания');
+    } catch (error) { toast.error(error instanceof Error ? error.message : 'Не удалось создать копию.'); }
+  }
+  async function selectBackup(file?: File) {
+    if (!file) return;
+    try { if (file.size > 12000000) throw new Error('Максимальный размер копии — 12 МБ.'); setImportData(readBackup(await file.text())); }
+    catch (error) { toast.error(error instanceof Error ? error.message : 'Не удалось прочитать копию.'); }
+    finally { if (importFile.current) importFile.current.value = ''; }
+  }
+  async function restoreBackup() {
+    if (!importData) return;
+    try { await mutate({ action: 'restore', data: importData }); setImportData(null); toast.success('Привычки и отметки восстановлены'); } catch {}
+  }
   const isPast = selected && selected !== today;
   const allowed = !loading && !loadError && !signIn;
 
   return <div className="app-shell">
-    <header className="topbar"><a href="/" className="brand" aria-label="Ритм — главная"><span className="brand-mark" aria-hidden><i /><i /><i /></span><span>ритм<span className="brand-period">.</span></span></a><span className="brand-caption">ТРЕКЕР ПРИВЫЧЕК</span><div className="cloud-status"><CloudCheck size={17} /><span>Личный трекер</span></div></header>
+    <header className="topbar"><a href={device ? "./" : "/"} className="brand" aria-label="Ритм — главная"><span className="brand-mark" aria-hidden><i /><i /><i /></span><span>ритм<span className="brand-period">.</span></span></a><span className="brand-caption">ТРЕКЕР ПРИВЫЧЕК</span><div className="cloud-status">{device ? <Smartphone size={17} /> : <CloudCheck size={17} />}<span>{device ? 'На этом устройстве' : 'Личный трекер'}</span></div>{device && <DropdownMenu><DropdownMenuTrigger asChild><button className="icon-button backup-menu-button" aria-label="Резервные копии" disabled={pending}><Download size={20} /></button></DropdownMenuTrigger><DropdownMenuContent align="end" className="app-menu"><DropdownMenuItem disabled={pending || loading || !!loadError} onSelect={() => void exportBackup()}><Download />Скачать резервную копию</DropdownMenuItem><DropdownMenuItem disabled={pending} onSelect={() => importFile.current?.click()}><Upload />Восстановить из файла</DropdownMenuItem></DropdownMenuContent></DropdownMenu>}</header>{device && <input type="file" ref={importFile} accept="application/json,.json" className="hidden" aria-label="Файл резервной копии" onChange={e => void selectBackup(e.target.files?.[0])} />}
     <main className="workspace">
       <div className="page-heading"><div><div className="eyebrow">МАЛЕНЬКИЕ ШАГИ. КАЖДЫЙ ДЕНЬ.</div><h1>Мои привычки<span className="heading-dot">.</span></h1></div><button className="primary-button" onClick={() => newHabit()} disabled={!allowed || pending}><Plus size={20} /><span>Новая привычка</span></button></div>
       {loadError && <div className="error-banner" role="alert"><span>{loadError}</span>{signIn ? <a href="/signin-with-chatgpt?return_to=%2F" target="_top" className="small-button">Войти в ChatGPT</a> : <button className="small-button" onClick={() => void refresh()}><RefreshCw size={16} />Повторить</button>}</div>}
@@ -164,7 +190,7 @@ export default function Tracker() {
             })}
           </div>
           {!!data.habits.length && <button className="add-row" disabled={pending || !allowed} onClick={() => newHabit()}><Plus size={18} />Добавить привычку</button>}
-          <div className="save-status" role="status">{pending ? <><Loader2 size={14} className="spin" />Сохраняем…</> : saveError ? <><RefreshCw size={14} /><button onClick={() => void refresh()}>Сохранение не подтверждено · обновить</button></> : allowed ? <><CloudCheck size={15} />Все изменения сохранены</> : null}</div>
+          <div className="save-status" role="status">{pending ? <><Loader2 size={14} className="spin" />Сохраняем…</> : saveError ? <><RefreshCw size={14} /><button onClick={() => void refresh()}>Сохранение не подтверждено · обновить</button></> : allowed ? <>{device ? <Smartphone size={15} /> : <CloudCheck size={15} />}{device ? "Сохранено на этом устройстве" : "Все изменения сохранены"}</> : null}</div>
         </section>
         <aside className="side-column" aria-label="Прогресс и календарь">
           <section className={`progress-card ${celebrating ? 'celebrate' : ''}`}><div className="progress-copy"><span className="eyebrow">{isPast ? 'ВЫБРАННЫЙ ДЕНЬ' : 'ТВОЙ ДЕНЬ'}</span><h2>{progress.total && progress.done === progress.total ? 'Всё получилось' : progress.done ? 'Ритм набирается' : 'Всё впереди'}</h2><p>{progress.total ? `${progress.done} из ${progress.total} выполнено` : 'Здесь будет твой прогресс'}</p></div><div className="progress-ring" role="img" aria-label={`Выполнено ${progress.percent}%`}><svg viewBox="0 0 116 116" aria-hidden><circle className="ring-track" cx="58" cy="58" r="48" /><circle className="ring-value" cx="58" cy="58" r="48" style={{ strokeDasharray: 302, strokeDashoffset: 302 * (1 - progress.percent / 100) }} /></svg><span>{progress.percent}<small>%</small></span></div>{celebrating && <div className="confetti" aria-hidden>{Array.from({ length: 14 }, (_, i) => <i key={i} style={{ '--i': i } as CSSProperties} />)}</div>}</section>
@@ -173,6 +199,7 @@ export default function Tracker() {
           <div className="quiet-tip"><CalendarDays size={19} /><p>Забыл поставить галочку?<br /><span>«Заполнить дни» — и история в порядке.</span></p></div>
         </aside>
       </div>
+      {device && <div className="device-data-note"><Smartphone size={18} /><p>Отметки хранятся в этом браузере. Перед сменой телефона или очисткой данных сохрани резервную копию.</p><button className="text-button" disabled={pending || loading || !!loadError} onClick={() => void exportBackup()}><Download size={16} />Скачать копию</button></div>}
       <footer className="page-footer"><span>ритм<span>.</span></span><p>Твой темп. Твой прогресс.</p></footer>
     </main>
 
@@ -183,6 +210,7 @@ export default function Tracker() {
     <Dialog open={dateOpen} onOpenChange={setDateOpen}><DialogContent className="app-dialog" showCloseButton={false}><CloseButton /><DialogHeader><DialogTitle>К какому дню вернуться?</DialogTitle><DialogDescription>Выбирай любую прошлую дату.</DialogDescription></DialogHeader><form onSubmit={e => { e.preventDefault(); if (validDay(jumpDate) && jumpDate <= today) { chooseDay(jumpDate); setDateOpen(false); } }}><label className="field-label" htmlFor="jump-date">Дата</label><input id="jump-date" className="text-input" type="date" min={MIN_DAY} max={today} required value={jumpDate} onChange={e => setJumpDate(e.target.value)} /><button className="primary-button full-width date-submit" disabled={!validDay(jumpDate) || jumpDate > today}>Перейти к дню</button></form></DialogContent></Dialog>
 
     <AlertDialog open={!!deleting} onOpenChange={open => { if (!open && !pending) setDeleting(null); }}><AlertDialogContent className="app-dialog"><AlertDialogHeader><AlertDialogTitle>Удалить привычку?</AlertDialogTitle><AlertDialogDescription>«{deleting?.name}» и все её отметки будут удалены. Восстановить их не получится.</AlertDialogDescription></AlertDialogHeader><AlertDialogFooter><AlertDialogCancel disabled={pending}>Оставить</AlertDialogCancel><AlertDialogAction className="delete-button" disabled={pending} onClick={e => { e.preventDefault(); void deleteHabit(); }}>{pending ? 'Удаляем…' : 'Удалить'}</AlertDialogAction></AlertDialogFooter></AlertDialogContent></AlertDialog>
+    <AlertDialog open={!!importData} onOpenChange={open => { if (!open && !pending) setImportData(null); }}><AlertDialogContent className="app-dialog"><AlertDialogHeader><AlertDialogTitle>Восстановить резервную копию?</AlertDialogTitle><AlertDialogDescription>В файле: привычек — {importData?.habits.length}, отметок — {importData?.entries.length}. Они заменят текущие привычки и отметки на этом устройстве. Сохрани текущую копию, если хочешь оставить и её.</AlertDialogDescription></AlertDialogHeader><AlertDialogFooter><AlertDialogCancel disabled={pending}>Отмена</AlertDialogCancel><AlertDialogAction disabled={pending} onClick={e => { e.preventDefault(); void restoreBackup(); }}>{pending ? 'Восстанавливаем…' : 'Восстановить'}</AlertDialogAction></AlertDialogFooter></AlertDialogContent></AlertDialog>
     <Toaster theme="dark" position="bottom-center" closeButton richColors />
   </div>;
 }
