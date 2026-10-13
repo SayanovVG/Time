@@ -276,6 +276,7 @@ export function sessionDescription(session) {
     .join(" · ");
 }
 function loadText(t) {
+  if (t.summary) return t.summary;
   if (t.status === "review") return "Проверить запись · процент прогресса не рассчитан";
   if (!t?.current || !t?.previous) return t?.current ? `${t.current.reps} ${t.metric} · ${t.label}` : "";
   if (t.comparison) return `${t.comparison.before} → ${t.comparison.after} ${t.comparison.unit}`;
