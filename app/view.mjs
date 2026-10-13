@@ -283,12 +283,18 @@ function loadText(t) {
   return `${t.previous.reps} → ${t.current.reps} ${unit} · ${t.label}`;
 }
 function strengthTrend(t) {
+  const suspiciousReps = [t.previous, t.current].filter(Boolean).some((session) =>
+    session.kind !== "time" && session.repetitions.some((value) => value > 100)
+  );
+  const dataWarning = suspiciousReps
+    ? '<p class="comparison-reason">В одном из подходов указано более 100 повторений. Проверь запись: возможно, вместо повторов были внесены секунды. Исходные данные не изменены.</p>'
+    : "";
   const badge = t.badge || (t.pct !== null ? `${t.pct > 0 ? "+" : ""}${t.pct}%` : t.status === "incomplete" ? `${t.current.sets}/${t.current.expectedSets}` : "Данные");
   return `<details class="strength-comparison" data-fold="strength-${esc(t.id)}"><summary>
     <span class="strength-name"><strong>${esc(t.name)}</strong><small>${esc(loadText(t))}</small>
     <span class="comparison-dates">${t.previous ? formatDate(t.previous.date) + " → " : ""}${formatDate(t.current.date)}</span></span>
     <span class="strength-badge ${esc(t.status)}">${esc(badge)}${icon("next", "fold-chevron")}</span></summary>
-    <div class="fold-content"><p class="comparison-reason">${esc(t.reason)}</p>${[t.previous,t.current].filter(Boolean).map((r,i,rows)=>
+    <div class="fold-content"><p class="comparison-reason">${esc(t.reason)}</p>${dataWarning}${[t.previous,t.current].filter(Boolean).map((r,i,rows)=>
       `<div class="comparison-session ${i===rows.length-1?"current-session":""}"><span>${formatDate(r.date)} <small>${r.sets}/${r.expectedSets} подходов · RIR ${r.rir}</small></span><strong>${esc(sessionDescription(r))}</strong></div>`
     ).join("")}</div></details>`;
 }
