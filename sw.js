@@ -1,4 +1,4 @@
-const CACHE = "max-time-v3-20261013-six-fixes-1";
+const CACHE = "max-time-v3-20261013-compact-bands-2";
 const ASSETS = [
   "./",
   "./index.html",
