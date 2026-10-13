@@ -84,7 +84,7 @@ const section = (name, content, cls = "") =>
 const empty = (title, text) =>
   `<div class="empty-state">${icon("chart")}<strong>${title}</strong><p>${text}</p></div>`;
 export function header(ui) {
-  return `<a class="skip-link" href="#main">К содержимому</a><header class="app-header"><a href="./index-v2.html" class="brand" aria-label="MAX TIME — начало"><span class="brand-mark">M<span>／</span></span><span>MAX TIME<small>Сила и рекомпозиция</small></span></a><span class="version">${VERSION}</span></header><nav class="main-nav" aria-label="Разделы">${[
+  return `<a class="skip-link" href="#main">К содержимому</a><header class="app-header"><a href="./index-v2.html" class="brand" aria-label="MAX TIME — начало"><span class="brand-mark"><img src="./icon.svg" alt="" width="44" height="44"></span><span>MAX TIME<small>Сила и рекомпозиция</small></span></a><span class="version">${VERSION}</span></header><nav class="main-nav" aria-label="Разделы">${[
     ["training", "train", "Тренировки"],
     ["nutrition", "food", "Питание"],
     ["analytics", "chart", "Прогресс"],
