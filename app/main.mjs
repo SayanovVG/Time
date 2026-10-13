@@ -1,4 +1,4 @@
-import { PROGRAM } from "./program.mjs";
+import { PROGRAM, BANDS } from "./program.mjs";
 import { Store, MAX_IMPORT_BYTES } from "./store.mjs";
 import {
   VERSION,
@@ -836,6 +836,23 @@ document.addEventListener("click", async (event) => {
         );
         render({ top: true });
         break;
+      case "band-add": {
+        const widget = button.closest(".band-load");
+        if (!widget) break;
+        widget.querySelector(".band-second").hidden = false;
+        button.hidden = true;
+        widget.querySelector('[data-field="band-secondary"]')?.focus();
+        break;
+      }
+      case "band-remove": {
+        writableWorkout();
+        const current = rowsFor(store.state, ui.date, ex)[index];
+        const first = String(current.load || "").split(" + ")[0];
+        commit((s) => updateSet(s, ex, index, (r) => setInput(ex, r, "load", first)));
+        render();
+        notify("Вторая резинка убрана");
+        break;
+      }
       case "check-set": {
         writableWorkout();
         if (
@@ -1245,6 +1262,22 @@ document.addEventListener("change", async (event) => {
         throw new Error("Выберите сегодняшний или прошедший день.");
       flushVisibleMetrics();
       ui.foodDate = field.value;
+      render();
+      return;
+    }
+    if (kind === "band-primary" || kind === "band-secondary") {
+      writableWorkout();
+      const exercise = exerciseById(id);
+      const widget = field.closest(".band-load");
+      const first = widget?.querySelector('[data-field="band-primary"]')?.value || "";
+      const second = widget?.querySelector('[data-field="band-secondary"]')?.value || "";
+      if (second && !first) throw new Error("Сначала выбери первую резинку.");
+      const load = [first, second]
+        .filter(Boolean)
+        .sort((a, b) => BANDS.indexOf(a) - BANDS.indexOf(b))
+        .join(" + ");
+      commit((s) => updateSet(s, exercise, +index, (r) => setInput(exercise, r, "load", load)));
+      field.removeAttribute("aria-invalid");
       render();
       return;
     }
