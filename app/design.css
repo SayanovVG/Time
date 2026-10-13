@@ -27,7 +27,8 @@ small, .helper, .eyebrow { color: var(--mt-muted); }
 .app-main { padding-bottom: 12px; }
 .page-title { gap: 12px; }
 .page-title .eyebrow { font-size: 12px; letter-spacing: .07em; }
-.app-header .brand-mark { overflow: hidden; letter-spacing: 0; border-radius: 13px; }
+.app-header .brand-mark { overflow: hidden; letter-spacing: 0; border-radius: 13px; padding: 0; background: transparent; box-shadow: none; }
+.app-header .brand-mark img { display: block; width: 44px; height: 44px; border-radius: 13px; }
 .main-nav { gap: 6px; }
 .nav-button { font-weight: 690; letter-spacing: -.015em; }
 .nav-button .icon { width: 21px; height: 21px; }
