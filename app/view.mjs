@@ -1,4 +1,4 @@
-import { PROGRAM, BANDS } from "./program.mjs";
+import { PROGRAM, BANDS, BAND_LOADS } from "./program.mjs";
 import {
   VERSION,
   TARGET,
@@ -98,7 +98,7 @@ export function training(s, ui) {
     today = dateKey(),
     past = ui.date < today,
     future = ui.date > today,
-    locked = future || (past && !ui.editPast),
+    locked = future,
     exs = day.ex,
     done = exs.reduce(
       (n, ex) =>
@@ -107,7 +107,7 @@ export function training(s, ui) {
       0,
     ),
     all = exs.reduce((n, ex) => n + ex.s, 0);
-  return `${ui.focus ? `<header class="focus-header">${btn("focus-exit", icon("back") + "Обзор", "quiet")}<div><span>${formatDate(ui.date)}</span><strong>${ui.focusIndex + 1} / ${exs.length}</strong></div><span class="focus-count">${done}/${all}</span></header>` : `<div class="page-title"><div><span class="eyebrow">Твой план на неделю</span><h1>Тренировки</h1></div><label class="date-control"><span class="sr-only">Дата тренировки</span><input type="date" data-field="training-date" value="${ui.date}"></label></div><div class="week-tabs" aria-label="Программа по дням">${["Пн", "Вт", "Ср", "Чт", "Пт"].map((n, i) => `<button class="week-day ${ui.day === i + 1 ? "selected" : ""}" data-action="day" data-day="${i + 1}" aria-pressed="${ui.day === i + 1}"><span>${n}</span><strong>${parseDate(selectedDate(i + 1, ui.date)).getDate()}</strong></button>`).join("")}</div><section class="workout-heading"><div><span class="eyebrow">${formatDate(ui.date)}${past ? " · История" : future ? " · План" : " · Сегодня"}</span><h2>${esc(day.n)}</h2><p>${esc(day.note)}</p></div>${btn("focus-start", icon("play") + (done ? "Продолжить" : "Начать"), "primary", future ? "disabled" : "")}</section><div class="workout-progress"><span>${done} из ${all} подходов</span><span>${Math.round((done / all) * 100)}%</span><progress value="${done}" max="${all}" aria-label="Прогресс тренировки"></progress></div><div class="training-meta"><span>Тренажёры и резинки</span>${past ? btn("edit-past", ui.editPast ? "Закончить редактирование" : "Изменить запись", "text-button") : ""}</div>${past ? `<p class="notice">${ui.editPast ? "Редактирование истории включено." : "История сохранена. Для изменения нажмите «Изменить запись»."}</p>` : ""}${future ? '<p class="notice">Это будущая дата. Выполнение можно отмечать в день тренировки.</p>' : ""}`}
+  return `${ui.focus ? `<header class="focus-header">${btn("focus-exit", icon("back") + "Обзор", "quiet")}<div><span>${formatDate(ui.date)}</span><strong>${ui.focusIndex + 1} / ${exs.length}</strong></div><span class="focus-count">${done}/${all}</span></header>` : `<div class="page-title"><div><span class="eyebrow">Твой план на неделю</span><h1>Тренировки</h1></div><label class="date-control"><span class="sr-only">Дата тренировки</span><input type="date" data-field="training-date" value="${ui.date}"></label></div><div class="week-tabs" aria-label="Программа по дням">${["Пн", "Вт", "Ср", "Чт", "Пт"].map((n, i) => `<button class="week-day ${ui.day === i + 1 ? "selected" : ""}" data-action="day" data-day="${i + 1}" aria-pressed="${ui.day === i + 1}"><span>${n}</span><strong>${parseDate(selectedDate(i + 1, ui.date)).getDate()}</strong></button>`).join("")}</div><section class="workout-heading"><div><span class="eyebrow">${formatDate(ui.date)}${past ? " · История" : future ? " · План" : " · Сегодня"}</span><h2>${esc(day.n)}</h2><p>${esc(day.note)}</p></div>${btn("focus-start", icon("play") + (done ? "Продолжить" : "Начать"), "primary", future ? "disabled" : "")}</section><div class="workout-progress"><span>${done} из ${all} подходов</span><span>${Math.round((done / all) * 100)}%</span><progress value="${done}" max="${all}" aria-label="Прогресс тренировки"></progress></div><div class="training-meta"><span>Тренажёры и резинки</span></div>${past ? `<p class="notice">Можно записать пропущенную тренировку и исправить прошлые подходы. Изменения сохраняются автоматически.</p>` : ""}${future ? '<p class="notice">Это будущая дата. Выполнение можно отмечать в день тренировки.</p>' : ""}`}
   <div class="exercise-list">${(ui.focus ? [exs[ui.focusIndex]] : exs).map((ex) => exercise(s, ui, ex, locked)).join("")}</div>${done === all ? `<section class="completion"><span>${icon("check")}</span><div><h2>Тренировка завершена</h2><p>${done} подходов сохранены. Теперь восстановление.</p></div></section>` : ""}${ui.focus ? `<nav class="focus-navigation" aria-label="Упражнения">${btn("focus-prev", icon("back") + "Назад", "secondary", ui.focusIndex === 0 ? "disabled" : "")}${btn("focus-next", "Следующее" + icon("next"), "primary", ui.focusIndex === exs.length - 1 ? "disabled" : "")}</nav>` : ""}`;
 }
 function exercise(s, ui, ex, locked) {
@@ -123,9 +123,9 @@ function exercise(s, ui, ex, locked) {
       const base = `data-ex="${ex.id}" data-index="${i}"`,
         ref = prev[i],
         previous = ref?.done
-          ? `${ex.band ? ref.load : ref.load !== "" ? ref.load + " кг" : "Свой вес"} · ${ref.reps}${ex.time ? " сек" : " повт."} · RIR ${ref.rir}`
+          ? `${ex.band || BAND_LOADS.includes(ref.load) ? ref.load : ref.load !== "" ? ref.load + " кг" : "Свой вес"} · ${ref.reps}${ex.time ? " сек" : " повт."} · RIR ${ref.rir}`
           : "";
-      return `<div class="set-group ${r.done ? "done" : ""}"><div class="set-row"><span class="set-number">${i + 1}</span>${ex.time ? "" : ex.band ? `<select ${base} data-field="set-load" aria-label="${esc(ex.n)}, подход ${i + 1}: резинка" ${locked ? "disabled" : ""}><option value="">Выбрать</option>${BANDS.map((v, j) => `<option value="${esc(v)}" ${r.load === v ? "selected" : ""}>${["Красная", "Чёрная", "Фиолетовая", "Зелёная"][j]} · ${v.split(" ").slice(1).join(" ")}</option>`).join("")}</select>` : `<input ${base} data-field="set-load" inputmode="decimal" aria-label="${esc(ex.n)}, подход ${i + 1}: дополнительный вес в килограммах" placeholder="${["pullup", "dips", "legraise"].includes(ex.id) ? "0" : "кг"}" value="${esc(r.load)}" ${locked ? "readonly" : ""}>`}<input ${base} data-field="set-reps" inputmode="${ex.time ? "numeric" : "numeric"}" aria-label="${esc(ex.n)}, подход ${i + 1}: ${ex.time ? "секунды" : "повторения"}" placeholder="${ex.time ? ex.min : ex.min + "–" + ex.max}" value="${esc(r.reps)}" ${locked ? "readonly" : ""}><select ${base} data-field="set-rir" aria-label="${esc(ex.n)}, подход ${i + 1}: RIR" ${locked ? "disabled" : ""}>${[0, 1, 2, 3].map((v) => `<option value="${v}" ${+r.rir === v ? "selected" : ""}>${v === 3 ? "3+" : v}</option>`).join("")}</select><button class="set-check ${r.done ? "checked" : ""}" data-action="check-set" ${base} aria-label="${r.done ? "Снять отметку" : "Завершить"}: ${esc(ex.n)}, подход ${i + 1}" aria-pressed="${r.done}" ${locked ? "disabled" : ""}>${icon("check")}</button></div>${previous ? `<div class="previous">Было: ${esc(previous)}</div>` : ""}${ex.time ? `<div class="timed-row">${btn("duration-down", "−10", "quiet", `${base} ${locked ? "disabled" : ""} aria-label="Уменьшить время подхода ${i + 1} на 10 секунд"`)}<span>${r.reps || s.exerciseDurations[ex.id] || ex.min} сек</span>${btn("duration-up", "+10", "quiet", `${base} ${locked ? "disabled" : ""} aria-label="Увеличить время подхода ${i + 1} на 10 секунд"`)}${btn("exercise-timer", icon("play") + "Старт", "secondary", `${base} ${locked ? "disabled" : ""}`)}</div>` : ""}</div>`;
+      return `<div class="set-group ${r.done ? "done" : ""}"><div class="set-row"><span class="set-number">${i + 1}</span>${ex.time ? "" : (ex.band || (ex.id === "legcurlband" && BAND_LOADS.includes(r.load))) ? `<select ${base} data-field="set-load" aria-label="${esc(ex.n)}, подход ${i + 1}: резинка" ${locked ? "disabled" : ""}><option value="">Выбрать</option>${BANDS.map((v, j) => `<option value="${esc(v)}" ${r.load === v ? "selected" : ""}>${["Красная", "Чёрная", "Фиолетовая", "Зелёная"][j]} · ${v.split(" ").slice(1).join(" ")}</option>`).join("")}${BAND_LOADS.slice(BANDS.length).map((v) => `<option value="${esc(v)}" ${r.load === v ? "selected" : ""}>${esc(v.split(" + ").map((part) => part.split(" ")[0]).join(" + "))} · две резинки</option>`).join("")}</select>` : `<input ${base} data-field="set-load" inputmode="decimal" aria-label="${esc(ex.n)}, подход ${i + 1}: дополнительный вес в килограммах" placeholder="${["pullup", "dips", "legraise"].includes(ex.id) ? "0" : "кг"}" value="${esc(r.load)}" ${locked ? "readonly" : ""}>`}<input ${base} data-field="set-reps" inputmode="${ex.time ? "numeric" : "numeric"}" aria-label="${esc(ex.n)}, подход ${i + 1}: ${ex.time ? "секунды" : "повторения"}" placeholder="${ex.time ? ex.min : ex.min + "–" + ex.max}" value="${esc(r.reps)}" ${locked ? "readonly" : ""}><select ${base} data-field="set-rir" aria-label="${esc(ex.n)}, подход ${i + 1}: RIR" ${locked ? "disabled" : ""}>${[0, 1, 2, 3].map((v) => `<option value="${v}" ${+r.rir === v ? "selected" : ""}>${v === 3 ? "3+" : v}</option>`).join("")}</select><button class="set-check ${r.done ? "checked" : ""}" data-action="check-set" ${base} aria-label="${r.done ? "Снять отметку" : "Завершить"}: ${esc(ex.n)}, подход ${i + 1}" aria-pressed="${r.done}" ${locked ? "disabled" : ""}>${icon("check")}</button></div>${previous ? `<div class="previous">Было: ${esc(previous)}</div>` : ""}${ex.time ? `<div class="timed-row">${btn("duration-down", "−10", "quiet", `${base} ${locked ? "disabled" : ""} aria-label="Уменьшить время подхода ${i + 1} на 10 секунд"`)}<span>${r.reps || s.exerciseDurations[ex.id] || ex.min} сек</span>${btn("duration-up", "+10", "quiet", `${base} ${locked ? "disabled" : ""} aria-label="Увеличить время подхода ${i + 1} на 10 секунд"`)}${btn("exercise-timer", icon("play") + "Старт", "secondary", `${base} ${locked ? "disabled" : ""}`)}</div>` : ""}</div>`;
     })
     .join(
       "",
@@ -187,11 +187,11 @@ export function nutrition(s, ui) {
           `<div><span>${label}</span><strong>${Math.round(t[k])}<small> / ${TARGET[k]} г</small></strong><progress value="${Math.min(t[k], TARGET[k])}" max="${TARGET[k]}" aria-label="${label}"></progress></div>`,
       )
       .join("")}</div></section>
-    <div class="food-primary-actions">${btn("add-product", icon("plus") + "Добавить еду", "primary", future ? "disabled" : "")}${btn("pick-meals", icon("food") + "Блюда", "secondary", future ? "disabled" : "")}</div>
-    <section class="panel diary-panel"><div class="compact-heading"><h2>Дневник</h2>${entries.length ? btn("complete-food-day", complete ? "Открыть день" : "Завершить день", "text-button", future ? "disabled" : "") : ""}</div>${entries.length ? diary(s, entries) : '<div class="diary-empty"><span>' + icon("food") + "</span><p>Что сегодня на тарелке?</p><small>Добавь продукт или выбери своё блюдо.</small></div>"}</section>
+    <div class="food-primary-actions">${btn("add-product", icon("plus") + "Добавить еду", "primary", future ? "disabled" : "")}</div>
+    <section class="panel diary-panel"><div class="compact-heading"><h2>Дневник</h2>${entries.length ? btn("complete-food-day", complete ? "Открыть день" : "Завершить день", "text-button", future ? "disabled" : "") : ""}</div>${entries.length ? diary(s, entries) : '<div class="diary-empty"><span>' + icon("food") + "</span><p>Что сегодня на тарелке?</p><small>Добавь любую еду в один список.</small></div>"}</section>
     ${fold(
       "meals",
-      "Мои блюда",
+      "Сохранённые рецепты",
       `${meals.length} рецептов · редактировать состав и порции`,
       `<div class="recipe-list">${meals
         .map((m) => {
@@ -206,68 +206,27 @@ export function nutrition(s, ui) {
     )}
     ${fold("supplements", "Добавки", "Отметить приём", SUPPLEMENTS.map((supp) => `<div class="supplement-row"><strong>${supp.name}</strong><p>${supp.text}</p><div>${supp.intakes.map((x) => `<button class="supplement-check ${s[`supplements_${date}`]?.[x.id] ? "checked" : ""}" data-action="supplement" data-id="${x.id}" aria-pressed="${!!s[`supplements_${date}`]?.[x.id]}">${icon("check")}${x.time}</button>`).join("")}</div></div>`).join(""))}`;
 }
-export function foodPicker(s, picker) {
-  return `<div class="food-picker-flow"><p class="picker-date">${formatDate(picker.date)} · дневник питания</p><div class="food-picker-tabs" aria-label="Что добавить">${[
-    ["recent", "Недавние"],
-    ["foods", "Продукты"],
-    ["meals", "Блюда"],
-  ]
-    .map(([id, name]) =>
-      btn(
-        "food-tab",
-        name,
-        picker.tab === id ? "selected" : "",
-        `data-tab="${id}" aria-pressed="${picker.tab === id}"`,
-      ),
-    )
-    .join(
-      "",
-    )}</div><label class="search-label"><span class="sr-only">Найти ${picker.tab === "meals" ? "блюдо" : "продукт"}</span><input type="search" id="food-search" placeholder="${picker.tab === "meals" ? "Название блюда или коктейля" : "Название продукта"}" value="${esc(picker.query)}" autocomplete="off"></label><div class="picker-feedback" role="status">${picker.message ? icon("check") + `<span>${esc(picker.message)}</span>` : ""}${picker.lastIds?.length ? btn("undo-food", "Отменить", "text-button") : ""}</div><div id="search-status" role="status"></div><div id="food-results"></div><div class="picker-create">${picker.tab === "meals" ? btn("recipe-new", icon("plus") + "Своё блюдо или коктейль", "secondary wide") : btn("custom-product", icon("plus") + "Продукт по этикетке", "secondary wide")}${picker.tab !== "meals" ? btn("online-search", "Поиск в интернете", "quiet wide") : ""}</div><footer class="picker-footer"><span>${picker.added ? `Добавлено: ${picker.added}` : "За день"}<strong>${Math.round(totals(s, picker.date).cal)} ккал</strong></span>${btn("close-dialog", "Готово", "primary")}</footer></div>`;
+export function foodPicker(s,picker){
+  return `<div class="food-picker-flow"><p class="picker-date">${formatDate(picker.date)} · дневник питания</p><p class="picker-hint">Продукты, блюда и коктейли — всё в одном списке. Недавнее можно записать одним нажатием.</p><label class="search-label"><span class="sr-only">Название еды</span><input type="search" id="food-search" placeholder="Что съел? Творог, омлет..." value="${esc(picker.query || "")}" autocomplete="off"></label><div class="picker-feedback" role="status">${picker.message ? icon("check") + `<span>${esc(picker.message)}</span>` : ""}${picker.lastIds?.length ? btn("undo-food","Отменить","text-button") : ""}</div><div id="search-status" role="status"></div><div id="food-results"></div><div class="picker-create">${btn("custom-product",icon("plus")+"Своя еда по этикетке","secondary wide")}${btn("online-search","Поиск в базе продуктов","quiet wide")}</div><footer class="picker-footer"><span>${picker.added ? `Добавлено: ${picker.added}` : "За день"}<strong>${Math.round(totals(s,picker.date).cal)} ккал</strong></span>${btn("close-dialog","Готово","primary")}</footer></div>`;
 }
-export function foodResults(s, picker, online = []) {
-  const query = picker.query
-    .trim()
-    .toLocaleLowerCase("ru")
-    .replaceAll("ё", "е");
-  const matches = (name) =>
-    name.toLocaleLowerCase("ru").replaceAll("ё", "е").includes(query);
-  if (picker.tab === "meals") {
-    const meals = allMeals(s).filter((m) => matches(m.title));
-    return meals.length
-      ? meals
-          .map(
-            (m) =>
-              `<button class="meal-pick" data-action="choose-meal" data-id="${esc(m.id)}"><span class="diary-symbol">${icon("food")}</span><span><strong>${esc(m.title)}</strong><small>${Math.round(mealTotals(s, m).cal)} ккал · 1 порция</small></span>${icon("next")}</button>`,
-          )
-          .join("")
-      : '<p class="empty-message">Блюдо не найдено. Можно сохранить свой рецепт.</p>';
-  }
-  const quick = picker.tab === "recent" && !query;
-  const recent = recentFoods(s, picker.date, 12);
-  const local = quick
-    ? recent.map((r) => r.food)
-    : s.foods.filter((f) => matches(f.name)).slice(0, 60);
-  const seen = new Set(local.map((f) => f.name.toLocaleLowerCase("ru")));
-  const rows = [
-    ...local,
-    ...online.filter(
-      (f) => matches(f.name) && !seen.has(f.name.toLocaleLowerCase("ru")),
-    ),
-  ];
-  return rows.length
-    ? (quick
-        ? '<p class="picker-hint">Кнопка с порцией сразу запишет еду. Нажми на название, чтобы изменить количество.</p>'
-        : "") +
-        rows
-          .map((f) => {
-            const amount = quick
-              ? recent.find((r) => r.food.id === f.id).amount
-              : defaultAmount(s, f, picker.date);
-            const total = portionTotals(f, amount);
-            return `<div class="food-result"><button class="food-choice" data-action="choose-food" data-id="${esc(f.id)}"><strong>${esc(f.name)}</strong><small>${quick ? `${amount} ${unitLabel(f)} · ${Math.round(total.cal)} ккал` : `${Math.round(f.cal)} ккал / ${f.unit === "piece" ? "1 шт." : "100 " + unitLabel(f)}`}</small></button>${btn(quick ? "quick-food" : "choose-food", quick ? icon("plus") + `${amount} ${unitLabel(f)}` : icon("plus"), quick ? "quick-portion" : "icon-button", `data-id="${esc(f.id)}" data-amount="${amount}" aria-label="${quick ? "Записать " + amount + " " + unitLabel(f) + ": " : "Выбрать порцию: "}${esc(f.name)}"`)}</div>`;
-          })
-          .join("")
-    : `<div class="picker-empty">${icon("food")}<p>${quick ? "Здесь появятся продукты, которые ты записываешь." : "Продукт не найден. Добавь данные с этикетки."}</p>${quick ? btn("food-tab", "Выбрать продукт", "secondary", 'data-tab="foods"') : ""}</div>`;
+export function foodResults(s,picker,online=[]){
+  const query=String(picker.query||"").trim().toLocaleLowerCase("ru").replaceAll("ё","е");
+  const matches=(name)=>String(name).toLocaleLowerCase("ru").replaceAll("ё","е").includes(query);
+  const recent=recentFoods(s,picker.date,12);
+  const amounts=new Map(recent.map(r=>[r.food.id,r.amount]));
+  const combined=new Map();
+  if(!query)for(const r of recent)combined.set(r.food.id,r.food);
+  for(const f of [...s.foods,...online].filter(f=>matches(f.name)))if(!combined.has(f.id))combined.set(f.id,f);
+  const products=[...combined.values()].slice(0,65).map(food=>{
+    const quick=!query&&amounts.has(food.id);
+    const amount=quick?amounts.get(food.id):defaultAmount(s,food,picker.date);
+    const summary=quick?`${amount} ${unitLabel(food)} · ${Math.round(portionTotals(food,amount).cal)} ккал`:`${Math.round(food.cal)} ккал / ${food.unit==="piece"?"1 шт.":"100 "+unitLabel(food)}`;
+    return `<div class="food-result"><button class="food-choice" data-action="choose-food" data-id="${esc(food.id)}"><strong>${esc(food.name)}</strong><small>${summary}</small></button>${btn(quick?"quick-food":"choose-food",quick?icon("plus")+`${amount} ${unitLabel(food)}`:icon("plus"),quick?"quick-portion":"icon-button",`data-id="${esc(food.id)}" data-amount="${amount}" aria-label="${quick?"Записать ":"Выбрать порцию: "}${esc(food.name)}"`)}</div>`;
+  }).join("");
+  const recipes=allMeals(s).filter(m=>matches(m.title)).slice(0,30).map(m=>
+    `<button class="meal-pick" data-action="choose-meal" data-id="${esc(m.id)}"><span class="diary-symbol">${icon("food")}</span><span><strong>${esc(m.title)}</strong><small>${Math.round(mealTotals(s,m).cal)} ккал · рецепт, 1 порция</small></span>${icon("next")}</button>`
+  ).join("");
+  return products+recipes || `<div class="picker-empty">${icon("food")}<p>Еда не найдена. Добавь её по этикетке.</p></div>`;
 }
 export function amountForm({
   id,
@@ -305,7 +264,7 @@ export function sessionDescription(session) {
 }
 function strengthTrend(t) {
   const comparable = t.pct !== null;
-  return `<details class="strength-comparison" data-fold="strength-${esc(t.id)}"><summary><span class="strength-name"><strong>${esc(t.name)}</strong><small>${comparable ? `${t.previous.reps} → ${t.current.reps} ${t.metric} · ${t.current.sets} подхода` : esc(t.label)}</small><span class="comparison-dates">${t.previous ? formatDate(t.previous.date) + " → " : ""}${formatDate(t.current.date)}</span></span><span class="strength-badge ${t.status}">${comparable ? `${t.pct > 0 ? "+" : ""}${t.pct}%` : t.status === "incomplete" ? t.current.sets + "/" + t.current.expectedSets : "—"}${icon("next", "fold-chevron")}</span></summary><div class="fold-content"><p class="comparison-reason">${esc(t.reason)}</p>${[
+  return `<details class="strength-comparison" data-fold="strength-${esc(t.id)}"><summary><span class="strength-name"><strong>${esc(t.name)}</strong><small>${comparable ? `${t.previous.reps} → ${t.current.reps} ${t.metric} · ${t.current.sets} подхода` : `${t.current.reps} ${t.metric} · ${esc(t.label)}`}</small><span class="comparison-dates">${t.previous ? formatDate(t.previous.date) + " → " : ""}${formatDate(t.current.date)}</span></span><span class="strength-badge ${t.status}">${comparable ? `${t.pct > 0 ? "+" : ""}${t.pct}%` : t.status === "incomplete" ? t.current.sets + "/" + t.current.expectedSets : "—"}${icon("next", "fold-chevron")}</span></summary><div class="fold-content"><p class="comparison-reason">${esc(t.reason)}</p>${[
     t.previous,
     t.current,
   ]
@@ -343,7 +302,7 @@ export function progress(s, ui, store) {
       )
     : null;
   return `<div class="page-title"><div><span class="eyebrow">Твой путь к результату</span><h1>Прогресс</h1></div>${btn("preview-report", icon("download"), "icon-button", 'aria-label="Отчёт для Макса"')}</div>
-    <div class="period-selector" aria-label="Период">${[7, 14, 28].map((n) => btn("period", n + " дней", ui.period === n ? "selected" : "", `data-days="${n}" aria-pressed="${ui.period === n}"`)).join("")}</div>
+    <div class="period-selector" aria-label="Период">${[7, 14, 28, 90, 365, 36500].map((n) => btn("period", n === 36500 ? "Всё" : n + " дней", ui.period === n ? "selected" : "", `data-days="${n}" aria-pressed="${ui.period === n}"`)).join("")}</div>
     <section class="panel progress-feature"><div class="metric-tabs" aria-label="График замеров">${[
       ["weight", "Вес"],
       ["waist", "Талия"],
@@ -358,7 +317,7 @@ export function progress(s, ui, store) {
       )
       .join(
         "",
-      )}</div><div class="progress-reading"><strong>${last ?? "—"}<small>${unit}</small></strong><span>${delta === null ? "Добавляй замеры в питании" : `${delta > 0 ? "+" : ""}${delta} ${unit} за ${ui.period} дней`}</span></div>${chart(series, { moving: metric === "weight", label: metric === "weight" ? "Вес" : "Талия" })}${series.length >= 2 && metric === "weight" ? '<p class="chart-caption">Яркая линия — среднее за 7 дней</p>' : ""}</section>
+      )}</div><div class="progress-reading"><strong>${last ?? "—"}<small>${unit}</small></strong><span>${delta === null ? "Добавляй замеры в питании" : `${delta > 0 ? "+" : ""}${delta} ${unit} ${ui.period === 36500 ? "за всё время" : "за " + ui.period + " дней"}`}</span></div>${chart(series, { moving: metric === "weight", label: metric === "weight" ? "Вес" : "Талия" })}${series.length >= 2 && metric === "weight" ? '<p class="chart-caption">Яркая линия — среднее за 7 дней</p>' : ""}</section>
     <section class="overview-lines" aria-label="Итоги периода"><div><span class="overview-icon">${icon("train")}</span><div><strong>${a.trainingDays} ${plural(a.trainingDays, "тренировочный день", "тренировочных дня", "тренировочных дней")}</strong><span>${a.sets} ${plural(a.sets, "выполненный подход", "выполненных подхода", "выполненных подходов")}</span></div></div><div><span class="overview-icon food-tone">${icon("food")}</span><div><strong>${avg === null ? "Питание пока без среднего" : `${avg} ккал в среднем`}</strong><span>${a.completed.length} ${plural(a.completed.length, "завершённый день", "завершённых дня", "завершённых дней")} из ${ui.period}</span></div></div></section>
     <div class="report-action">${btn("preview-report", "Отчёт для Макса" + icon("next"), "secondary wide")}</div>
     ${fold("strength", "Силовые показатели", "К предыдущей тренировке · подробности по нажатию", a.trends.length ? a.trends.map(strengthTrend).join("") : empty("Пока нет выполненных подходов", "Здесь появятся сравнения по упражнениям."))}

@@ -1,4 +1,4 @@
-import { PROGRAM, BANDS, DEFAULT_FOODS } from "./program.mjs";
+import { PROGRAM, BAND_LOADS, DEFAULT_FOODS } from "./program.mjs";
 
 export const VERSION = "3.2.0";
 export const SCHEMA = 3;
@@ -41,6 +41,9 @@ export function selectedDate(day, today = dateKey()) {
 export function inPeriod(date, days, end = dateKey()) {
   return !!parseDate(date) && date >= shiftDate(end, 1 - days) && date <= end;
 }
+// Group day-specific IDs for history only; keep raw journal keys untouched.
+export const exerciseGroupId = (id) =>
+  ({ bandcurl: "curlband", wedcurl: "curlband", calfB: "calfA" })[id] || id;
 export const exerciseById = (id) =>
   Object.values(PROGRAM)
     .flatMap((d) => d.ex)
@@ -146,7 +149,7 @@ export function normalizeState(input, { source = "import" } = {}) {
       if (typeof set.done !== "boolean")
         throw new Error("Некорректная отметка подхода.");
       if (set.load !== "" && set.load !== undefined && set.load !== null) {
-        if (!BANDS.includes(set.load))
+        if (!BAND_LOADS.includes(set.load))
           optionalNumber(set.load, 0, 2000, "Нагрузка");
       }
       optionalNumber(set.reps, 0, ex?.time ? 7200 : 1000, "Повторения");
@@ -377,7 +380,9 @@ export function validSet(ex, s) {
     rir > 3
   )
     return false;
-  if (ex?.band) return BANDS.includes(s.load);
+  if (BAND_LOADS.includes(s.load))
+    return !!ex?.band || ex?.id === "legcurlband"; // Keep past band entries after machine replacement.
+  if (ex?.band) return false;
   if (ex?.time || ["pullup", "dips", "legraise"].includes(ex?.id)) return true;
   return number(s.load) !== null && number(s.load) >= 0;
 }
@@ -386,8 +391,8 @@ export function setInput(ex, row, field, value) {
     throw new Error("Неизвестное поле подхода.");
   let v = value;
   if (v !== "" && field === "load") {
-    if (ex.band) {
-      if (!BANDS.includes(v)) throw new Error("Выберите резинку из списка.");
+    if (ex.band || (ex.id === "legcurlband" && BAND_LOADS.includes(v))) {
+      if (!BAND_LOADS.includes(v)) throw new Error("Выберите резинку из списка.");
     } else v = bounded(v, 0, 2000, "Вес");
   }
   if (v !== "" && field === "reps") {
@@ -425,7 +430,7 @@ export function previousRows(s, date, ex) {
   const keys = Object.keys(s.train)
     .filter(
       (k) =>
-        k.endsWith(`_${ex.id}`) &&
+        exerciseGroupId(k.slice(11)) === exerciseGroupId(ex.id) &&
         k.slice(0, 10) < date &&
         !s.legacy.duplicateKeys.includes(k) &&
         s.train[k].some((row) => row.done && validSet(ex, row)),
@@ -530,13 +535,13 @@ export function trainingSessions(s, days, end = dateKey()) {
     if (!done.length) continue;
     const reps = done.reduce((n, r) => n + number(r.reps), 0),
       numericLoad = done.every(
-        (r) => number(r.load) !== null && !BANDS.includes(r.load),
+        (r) => number(r.load) !== null && !BAND_LOADS.includes(r.load),
       );
     const volume =
       numericLoad && !ex?.time
         ? round(done.reduce((n, r) => n + number(r.reps) * number(r.load), 0))
         : null;
-    const id = ex?.id || key.slice(11),
+    const id = exerciseGroupId(ex?.id || key.slice(11)),
       canonical = `${date}_${id}`,
       expectedSets = Math.max(ex?.s || 0, rows.length);
     if (!by.has(canonical) || key === canonical)
@@ -551,13 +556,13 @@ export function trainingSessions(s, days, end = dateKey()) {
         complete: done.length === expectedSets,
         kind: ex?.time
           ? "time"
-          : ex?.band || done.some((r) => BANDS.includes(r.load))
+          : done.some((r) => BAND_LOADS.includes(r.load))
             ? "band"
             : "weight",
         loads: done.map((r) =>
           ex?.time
             ? null
-            : BANDS.includes(r.load)
+            : BAND_LOADS.includes(r.load)
               ? r.load
               : (number(r.load) ?? 0),
         ),

@@ -260,7 +260,8 @@ test("RIR 3 and 3+ both render as 3+, never zero; empty and fractional completed
   const html = training(s, { day: 1, date, focus: false, editPast: false });
   assert.match(html, /<option value="3" selected>3\+/);
   assert.match(html, /class="set-check checked"/);
-  assert.match(html, /aria-pressed="true" disabled/);
+  assert.match(html, /aria-pressed="true"/);
+  assert.doesNotMatch(html, /aria-pressed="true" disabled/);
 });
 test("suspected copied legacy sessions are counted once and originals remain stored", () => {
   const s = normalizeState({

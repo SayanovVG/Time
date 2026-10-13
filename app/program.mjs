@@ -365,14 +365,15 @@ export const PROGRAM = {
       },
       {
         id: "legcurlband",
-        n: "Сгибание ноги с резинкой",
+        n: "Сгибание ног в тренажёре",
         s: 3,
         min: 10,
         max: 15,
         r: 2,
         rest: 75,
-        band: true,
-        h: "Основная: задняя поверхность бедра — двуглавая, полусухожильная и полуперепончатая мышцы.",
+        machine: true,
+        band: false,
+        h: "Сгибание ног в тренажёре на площадке. Основная: задняя поверхность бедра — двуглавая, полусухожильная и полуперепончатая мышцы. Указывай нагрузку в кг, если она известна.",
         v: "https://www.youtube.com/results?search_query=%D1%81%D0%B3%D0%B8%D0%B1%D0%B0%D0%BD%D0%B8%D0%B5%20%D0%BD%D0%BE%D0%B3%20%D1%81%20%D1%80%D0%B5%D0%B7%D0%B8%D0%BD%D0%BA%D0%BE%D0%B9%20%D0%B1%D0%B8%D1%86%D0%B5%D0%BF%D1%81%20%D0%B1%D0%B5%D0%B4%D1%80%D0%B0%20%D1%82%D0%B5%D1%85%D0%BD%D0%B8%D0%BA%D0%B0",
       },
       {
@@ -431,6 +432,11 @@ export const BANDS = [
   "Чёрная 11–29 кг",
   "Фиолетовая 16–39 кг",
   "Зелёная 22–57 кг",
+];
+// Describes the actual bands, not an invented summed force in kilograms.
+export const BAND_LOADS = [
+  ...BANDS,
+  ...BANDS.flatMap((first, i) => BANDS.slice(i).map((second) => first + " + " + second)),
 ];
 export const DEFAULT_FOODS = [
   {
