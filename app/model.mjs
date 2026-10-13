@@ -1,6 +1,6 @@
 import { PROGRAM, BAND_LOADS, DEFAULT_FOODS } from "./program.mjs";
 
-export const VERSION = "3.2.2";
+export const VERSION = "3.2.3";
 export const SCHEMA = 3;
 export const TARGET = { cal: 2450, p: 180, f: 75, c: 264 };
 export const clone = (value) => JSON.parse(JSON.stringify(value));
