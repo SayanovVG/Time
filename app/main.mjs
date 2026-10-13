@@ -18,6 +18,7 @@ import {
   addFood,
   setMetric,
   exerciseById,
+  exerciseGroupId,
   trainingSessions,
   sameSessionConditions,
   report,
@@ -98,7 +99,8 @@ let wakeLock = null,
   recipeDraft = null,
   recipeProductIndex = null,
   picker = null,
-  nutritionFrame = null;
+  nutritionFrame = null,
+  draftSaveTimer = null;
 const installed =
   ["standalone", "fullscreen", "minimal-ui"].some(
     (mode) => matchMedia(`(display-mode: ${mode})`).matches,
@@ -247,8 +249,6 @@ function exportData() {
 function writableWorkout() {
   if (ui.date > dateKey())
     throw new Error("Нельзя отмечать будущую тренировку.");
-  if (ui.date < dateKey() && !ui.editPast)
-    throw new Error("Сначала включите редактирование истории.");
 }
 function updateSet(s, ex, index, edit) {
   const key = `${ui.date}_${ex.id}`,
@@ -261,7 +261,6 @@ function flushVisibleSets() {
   if (
     ui.tab !== "training" ||
     ui.date > dateKey() ||
-    (ui.date < dateKey() && !ui.editPast) ||
     store.recoveryRaw
   )
     return;
@@ -287,6 +286,11 @@ function flushVisibleSets() {
       }
     }
   });
+}
+function saveDraftSets() {
+  clearTimeout(draftSaveTimer);
+  draftSaveTimer = null;
+  try { flushVisibleSets(); } catch (error) { showError(error.message || "Не удалось сохранить подход."); }
 }
 function flushVisibleMetrics() {
   if (ui.tab !== "nutrition" || store.recoveryRaw) return;
@@ -941,7 +945,7 @@ document.addEventListener("click", async (event) => {
       }
       case "history": {
         const rows = trainingSessions(store.state, 36500)
-          .filter((r) => r.id === exId)
+          .filter((r) => r.id === exerciseGroupId(exId))
           .slice(-10);
         const reference = rows.findLast((r) => r.complete);
         const comparable = rows.filter(
@@ -959,7 +963,7 @@ document.addEventListener("click", async (event) => {
                 },
               ) +
               '<p class="helper">График: одинаковые нагрузка и число подходов.</p>'
-            : '<p class="helper">График появится после двух полностью записанных тренировок с одинаковой нагрузкой и числом подходов.</p>') +
+            : '<p class="helper">Для графика нужны два полностью записанных занятия при одинаковой нагрузке. Вся история показана ниже, даже если вес или резинка менялись.</p>') +
             rows
               .slice()
               .reverse()
@@ -1177,6 +1181,10 @@ document.addEventListener("click", async (event) => {
   }
 });
 document.addEventListener("input", (event) => {
+  if (event.target.matches?.('[data-field="set-load"],[data-field="set-reps"]')) {
+    clearTimeout(draftSaveTimer);
+    draftSaveTimer = setTimeout(saveDraftSets, 700);
+  }
   if (
     ["food-amount-form", "food-edit-form", "meal-amount-form"].includes(
       event.target.form?.id,
@@ -1346,6 +1354,7 @@ window.addEventListener("storage", (event) => {
     );
 });
 document.addEventListener("visibilitychange", () => {
+  if (document.hidden) saveDraftSets();
   if (!document.hidden) {
     timer.tick();
     if (ui.focus) fullscreen(true);
@@ -1362,6 +1371,7 @@ document.addEventListener("visibilitychange", () => {
     sessionDay = newDate;
   }
 });
+window.addEventListener("pagehide", saveDraftSets);
 let sessionDay = dateKey();
 window.addEventListener("error", (event) => {
   console.error("MAX TIME", event.message);
