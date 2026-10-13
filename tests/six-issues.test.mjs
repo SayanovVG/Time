@@ -94,7 +94,7 @@ test("machine versus old band has separate comparable type and no misleading per
   assert.equal(t.status,"equipment");
   assert.equal(t.pct,null);
   assert.equal(t.badge,"Смена");
-  const html=progress(s,{period:14},{snapshots:()=>[]});
+  const html=progress(s,{period:90},{snapshots:()=>[]});
   assert.match(html,/Смена оборудования/);
   assert.match(html,/резинка → тренажёр/);
 });
