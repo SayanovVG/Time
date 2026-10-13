@@ -1,0 +1,288 @@
+/* MAX TIME — 2026 unified visual system. Applied after app.css + refinement.css. */
+:root {
+  --mt-text-lg: clamp(24px, 5.4vw, 31px);
+  --mt-title: 19px;
+  --mt-body: 15px;
+  --mt-caption: 13px;
+  --mt-control: 48px;
+  --mt-gap: 12px;
+  --mt-card-radius: 20px;
+  --mt-card: #171e25;
+  --mt-card-line: #34414b;
+  --mt-muted: #afbbc8;
+}
+html { font-family: Manrope, system-ui, sans-serif; font-synthesis: none; }
+body { -webkit-font-smoothing: antialiased; text-rendering: optimizeLegibility; }
+button, input, select, textarea { font-family: inherit; }
+h1, h2, h3, strong { font-synthesis: none; }
+h1, .page-title h1 { font-size: var(--mt-text-lg); line-height: 1.18; font-weight: 760; letter-spacing: -.035em; }
+h2 { font-size: 20px; line-height: 1.27; font-weight: 720; letter-spacing: -.02em; }
+h3 { font-size: 17px; line-height: 1.35; font-weight: 720; letter-spacing: -.015em; }
+p, small, .helper { line-height: 1.48; }
+small, .helper, .eyebrow { color: var(--mt-muted); }
+.button { min-height: 44px; border-radius: 13px; font-weight: 680; font-size: 14px; letter-spacing: 0; }
+.button.primary { color: #24170f; background: linear-gradient(115deg, #ffb984, #ff9b5d); }
+.button:focus-visible, .food-choice:focus-visible, .meal-pick:focus-visible, .picker-more summary:focus-visible { outline: 2px solid #ffc18c; outline-offset: 3px; }
+.panel { border-radius: var(--mt-card-radius); }
+.app-main { padding-bottom: 12px; }
+.page-title { gap: 12px; }
+.page-title .eyebrow { font-size: 12px; letter-spacing: .07em; }
+.app-header .brand-mark { overflow: hidden; letter-spacing: 0; border-radius: 13px; padding: 0; background: transparent; box-shadow: none; }
+.app-header .brand-mark img { display: block; width: 44px; height: 44px; border-radius: 13px; }
+.main-nav { gap: 6px; }
+.nav-button { font-weight: 690; letter-spacing: -.015em; }
+.nav-button .icon { width: 21px; height: 21px; }
+.nav-button.selected { border: 1px solid rgba(255,174,115,.22); }
+.app-footer { font-size: 13px; letter-spacing: .01em; }
+.compact-heading h2, .fold-panel > summary strong { font-size: 18px; font-weight: 720; }
+.fold-panel > summary small { font-size: 13px; line-height: 1.45; }
+.exercise-header h3 { font-size: 19px; line-height: 1.32; }
+.exercise-header p, .previous { font-size: 13px; }
+.strength-name strong { font-size: 16px; font-weight: 725; }
+.strength-name small { font-size: 13px; line-height: 1.5; }
+.strength-badge { font-weight: 750; border-radius: 12px; }
+.progress-reading strong { letter-spacing: -.04em; }
+
+/* Food picker: one search, clear sections, equal-row product and recipe controls. */
+dialog[data-kind="food-search"] {
+  width: min(600px, calc(100% - 24px));
+  max-height: min(92dvh, 900px);
+  padding: 22px 18px 0;
+  border: 1px solid #47574e;
+  border-radius: 24px;
+  background: #151c23;
+  scrollbar-width: thin;
+}
+dialog[data-kind="food-search"] .dialog-heading {
+  margin-bottom: 10px;
+  padding: 0 4px;
+}
+dialog[data-kind="food-search"] .dialog-heading h2 {
+  font-size: 22px;
+  letter-spacing: -.025em;
+}
+.food-picker-flow .picker-date {
+  font-size: 12px;
+  color: #aac3b5;
+  font-weight: 700;
+  margin-bottom: 4px;
+}
+.food-picker-flow .picker-hint {
+  font-size: 13px;
+  color: var(--mt-muted);
+  line-height: 1.45;
+  margin-bottom: 16px;
+}
+.food-picker-flow .search-label { display: block; position: relative; margin: 0 0 18px; }
+.food-picker-flow .search-label > .icon {
+  position: absolute;
+  z-index: 1;
+  top: 50%;
+  left: 16px;
+  transform: translateY(-50%);
+  width: 20px;
+  height: 20px;
+  color: #b5c7bc;
+}
+.food-picker-flow #food-search {
+  display: block;
+  width: 100%;
+  min-height: 54px;
+  padding: 12px 14px 12px 47px;
+  font-size: 16px;
+  line-height: 1.25;
+  background: #0e151b;
+  border: 1px solid #405148;
+  border-radius: 16px;
+  color: #f1f5f2;
+}
+.food-picker-flow #food-search::placeholder { color: #84938f; }
+.food-picker-flow #search-status:not(:empty) { padding: 4px 2px 12px; font-size: 13px; color: var(--mt-muted); }
+#food-results { min-width: 0; }
+.picker-section { min-width: 0; margin: 0 0 12px; }
+.picker-section h3, .picker-more > summary {
+  font-size: 13px;
+  letter-spacing: .025em;
+  color: #b8c5ca;
+  font-weight: 750;
+  padding: 9px 3px;
+  margin: 0;
+}
+.picker-section-body { display: grid; gap: 8px; }
+.picker-section .food-result, .picker-section .meal-pick {
+  margin: 0;
+  border: 1px solid #303d46;
+  border-radius: 16px;
+  background: linear-gradient(120deg, #1d252d, #192128);
+  min-height: 80px;
+  padding: 12px 14px;
+  box-shadow: none;
+}
+.picker-section .food-result {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+.picker-section .food-choice { flex: 1; min-width: 0; padding: 0; min-height: 48px; text-align: left; }
+.picker-section .food-choice strong, .picker-section .meal-pick strong {
+  display: block;
+  color: #f1f5f5;
+  font-size: 15px;
+  font-weight: 720;
+  letter-spacing: -.015em;
+  line-height: 1.32;
+}
+.picker-section .food-choice small, .picker-section .meal-pick small {
+  display: block;
+  font-size: 13px;
+  color: #aebcc7;
+  margin-top: 6px;
+  line-height: 1.35;
+}
+.picker-section .food-add, .picker-section .quick-portion {
+  min-height: 44px;
+  width: 46px;
+  height: 46px;
+  border: 1px solid #47535e;
+  border-radius: 13px;
+  display: grid;
+  place-content: center;
+  padding: 0;
+  background: #26313c;
+  color: #e1ebf3;
+  flex: 0 0 auto;
+}
+.picker-section .food-add > .icon { width: 20px; height: 20px; }
+.picker-section .quick-portion {
+  display: inline-flex;
+  width: auto;
+  min-width: 92px;
+  padding: 0 12px;
+  gap: 5px;
+  font-size: 13px;
+  font-weight: 740;
+  border-color: #486451;
+  background: #263a30;
+  color: #bae9c8;
+}
+.picker-section .meal-pick {
+  display: grid;
+  grid-template-columns: 42px minmax(0,1fr) 20px;
+  gap: 12px;
+  text-align: left;
+  width: 100%;
+  color: #f1f5f5;
+  align-items: center;
+}
+.picker-section .meal-pick > span:nth-child(2) { min-width: 0; }
+.picker-section .meal-pick > .icon { width: 18px; height: 18px; color: #adbdc9; }
+.picker-section .meal-pick .diary-symbol {
+  width: 42px;
+  height: 42px;
+  border-radius: 13px;
+  background: #25392f;
+  color: #9dddaf;
+  display: grid;
+  place-content: center;
+}
+.picker-section .meal-pick .diary-symbol .icon { width: 21px; height: 21px; }
+.picker-more { border: 0; }
+.picker-more > summary {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  min-height: 48px;
+  padding: 12px 14px;
+  background: #202a33;
+  color: #e1eaf2;
+  border: 1px solid #34434d;
+  border-radius: 13px;
+  cursor: pointer;
+  list-style: none;
+}
+.picker-more > summary .icon { width: 18px; height: 18px; transition: transform .15s; }
+.picker-more[open] > summary .icon { transform: rotate(90deg); }
+.picker-more > .picker-section-body { margin-top: 8px; }
+.picker-create {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+  padding-top: 12px;
+  padding-bottom: 4px;
+}
+.picker-create .button {
+  min-height: 46px;
+  font-size: 13px;
+  padding: 10px 8px;
+  border-radius: 12px;
+}
+.picker-create .button .icon { width: 17px; height: 17px; }
+.picker-footer {
+  position: sticky;
+  bottom: 0;
+  z-index: 3;
+  margin: 18px -18px 0;
+  padding: 16px 18px max(18px, env(safe-area-inset-bottom));
+  min-height: 82px;
+  background: #151d25f5;
+  border-top: 1px solid #394a42;
+  box-shadow: 0 -12px 30px rgba(8, 14, 18, .78);
+  backdrop-filter: blur(14px);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+}
+.picker-footer > span { color: #adbbc5; font-size: 12px; line-height: 1.3; }
+.picker-footer strong { font-size: 20px; font-weight: 760; letter-spacing: -.02em; color: #f1f3f4; margin-top: 5px; }
+.picker-footer .button { min-width: 132px; min-height: 50px; font-size: 15px; border-radius: 14px; }
+.picker-feedback:not(:empty) { padding: 10px 12px; margin: 8px 0 14px; border-radius: 13px; }
+
+/* Main nutrition cards, training and progress share the same elevation language. */
+.recipe-card { padding: 15px 0; border-color: #303a43; }
+.recipe-card-heading h3 { font-size: 16px; line-height: 1.3; }
+.recipe-card-heading > span { font-size: 20px; }
+.recipe-card > p { font-size: 13px; line-height: 1.45; margin-top: 8px; }
+.food-primary-actions .button { min-height: 50px; border-radius: 14px; }
+.diary-panel, .fold-panel, .exercise-card, .progress-feature { border-color: #35414b; }
+.exercise-card { border-radius: 20px; }
+.set-row input, .set-row select, .band-picker-trigger { border-radius: 12px; }
+.comparison-session { border-radius: 14px; border-color: #34414b; }
+.strength-comparison > summary { padding: 16px 0; }
+
+/* Small screens: maximum information without tiny tap controls. */
+@media (max-width: 699px) {
+  .app-header { padding: 15px 20px 12px; }
+  .app-main { padding-inline: 18px; }
+  .page-title { margin-block: 18px 20px; }
+  .main-nav {
+    left: 10px;
+    right: 10px;
+    bottom: 8px;
+    border-radius: 22px;
+    padding: 5px 4px calc(5px + env(safe-area-inset-bottom));
+  }
+  .nav-button { min-height: 52px; font-size: 12px; border-radius: 15px; }
+  dialog[data-kind="food-search"] {
+    position: fixed;
+    inset: auto 0 0;
+    margin: 0;
+    width: 100%;
+    max-width: 100%;
+    max-height: 92dvh;
+    padding: 19px 16px 0;
+    border-radius: 24px 24px 0 0;
+  }
+  dialog[data-kind="food-search"] .dialog-heading { margin-bottom: 10px; }
+  .picker-footer { margin-inline: -16px; padding-inline: 16px; bottom: 0; }
+  .picker-section .food-result, .picker-section .meal-pick { padding: 12px; min-height: 76px; }
+  .picker-section .food-choice strong, .picker-section .meal-pick strong { font-size: 15px; }
+}
+@media (max-width: 359px) {
+  .picker-create { grid-template-columns: 1fr; }
+  .picker-section .quick-portion { min-width: 76px; padding-inline: 7px; }
+  .picker-footer .button { min-width: 110px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .picker-more > summary .icon { transition: none; }
+}

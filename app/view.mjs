@@ -47,6 +47,7 @@ const paths = {
   next: "m9 6 6 6-6 6",
   train: "m4 7 13 13M2 9l7-7M15 22l7-7M1 6l5-5M18 23l5-5",
   food: "M5 3v6a3 3 0 0 0 6 0V3M8 3v18M19 3c-4 4-4 9 0 9V3m0 9v9",
+  search: "m21 21-4.35-4.35M11 19a8 8 0 1 0 0-16 8 8 0 0 0 0 16",
   chart: "M4 20V4m0 16h16M8 16v-4m5 4V8m5 8V4",
   history: "M3 11a9 9 0 1 1 2 7M3 4v7h7M12 7v6l3 2",
   download: "M12 3v12m-5-5 5 5 5-5M4 16v5h16v-5",
@@ -83,7 +84,7 @@ const section = (name, content, cls = "") =>
 const empty = (title, text) =>
   `<div class="empty-state">${icon("chart")}<strong>${title}</strong><p>${text}</p></div>`;
 export function header(ui) {
-  return `<a class="skip-link" href="#main">К содержимому</a><header class="app-header"><a href="./index-v2.html" class="brand" aria-label="MAX TIME — начало"><span class="brand-mark">M<span>／</span></span><span>MAX TIME<small>Сила и рекомпозиция</small></span></a><span class="version">${VERSION}</span></header><nav class="main-nav" aria-label="Разделы">${[
+  return `<a class="skip-link" href="#main">К содержимому</a><header class="app-header"><a href="./index-v2.html" class="brand" aria-label="MAX TIME — начало"><span class="brand-mark"><img src="./icon.svg" alt="" width="44" height="44"></span><span>MAX TIME<small>Сила и рекомпозиция</small></span></a><span class="version">${VERSION}</span></header><nav class="main-nav" aria-label="Разделы">${[
     ["training", "train", "Тренировки"],
     ["nutrition", "food", "Питание"],
     ["analytics", "chart", "Прогресс"],
@@ -219,27 +220,54 @@ export function nutrition(s, ui) {
     )}
     ${fold("supplements", "Добавки", "Отметить приём", SUPPLEMENTS.map((supp) => `<div class="supplement-row"><strong>${supp.name}</strong><p>${supp.text}</p><div>${supp.intakes.map((x) => `<button class="supplement-check ${s[`supplements_${date}`]?.[x.id] ? "checked" : ""}" data-action="supplement" data-id="${x.id}" aria-pressed="${!!s[`supplements_${date}`]?.[x.id]}">${icon("check")}${x.time}</button>`).join("")}</div></div>`).join(""))}`;
 }
-export function foodPicker(s,picker){
-  return `<div class="food-picker-flow"><p class="picker-date">${formatDate(picker.date)} · дневник питания</p><p class="picker-hint">Продукты, блюда и коктейли — всё в одном списке. Недавнее можно записать одним нажатием.</p><label class="search-label"><span class="sr-only">Название еды</span><input type="search" id="food-search" placeholder="Что съел? Творог, омлет..." value="${esc(picker.query || "")}" autocomplete="off"></label><div class="picker-feedback" role="status">${picker.message ? icon("check") + `<span>${esc(picker.message)}</span>` : ""}${picker.lastIds?.length ? btn("undo-food","Отменить","text-button") : ""}</div><div id="search-status" role="status"></div><div id="food-results"></div><div class="picker-create">${btn("custom-product",icon("plus")+"Своя еда по этикетке","secondary wide")}${btn("online-search","Поиск в базе продуктов","quiet wide")}</div><footer class="picker-footer"><span>${picker.added ? `Добавлено: ${picker.added}` : "За день"}<strong>${Math.round(totals(s,picker.date).cal)} ккал</strong></span>${btn("close-dialog","Готово","primary")}</footer></div>`;
+export function foodPicker(s, picker) {
+  const calories = Math.round(totals(s, picker.date).cal);
+  return `<div class="food-picker-flow">
+    <p class="picker-date">${formatDate(picker.date)} · дневник питания</p>
+    <p class="picker-hint">Найди продукт или готовое блюдо. Часто используемая еда — вверху списка.</p>
+    <label class="search-label"><span class="sr-only">Название еды</span>${icon("search")}<input type="search" id="food-search" placeholder="Найти еду или рецепт" value="${esc(picker.query || "")}" autocomplete="off" spellcheck="false"></label>
+    <div class="picker-feedback" role="status">${picker.message ? icon("check") + `<span>${esc(picker.message)}</span>` : ""}${picker.lastIds?.length ? btn("undo-food", "Отменить", "text-button") : ""}</div>
+    <div id="search-status" role="status"></div>
+    <div id="food-results"></div>
+    <div class="picker-create">${btn("custom-product", icon("plus") + "Своя еда", "secondary")}${btn("online-search", "Поиск по базе", "quiet")}</div>
+    <footer class="picker-footer"><span>${picker.added ? `Добавлено: ${picker.added}` : "В дневнике за день"}<strong>${calories} ккал</strong></span>${btn("close-dialog", "Готово", "primary")}</footer>
+  </div>`;
 }
-export function foodResults(s,picker,online=[]){
-  const query=String(picker.query||"").trim().toLocaleLowerCase("ru").replaceAll("ё","е");
-  const matches=(name)=>String(name).toLocaleLowerCase("ru").replaceAll("ё","е").includes(query);
-  const recent=recentFoods(s,picker.date,12);
-  const amounts=new Map(recent.map(r=>[r.food.id,r.amount]));
-  const combined=new Map();
-  if(!query)for(const r of recent)combined.set(r.food.id,r.food);
-  for(const f of [...s.foods,...online].filter(f=>matches(f.name)))if(!combined.has(f.id))combined.set(f.id,f);
-  const products=[...combined.values()].slice(0,65).map(food=>{
-    const quick=!query&&amounts.has(food.id);
-    const amount=quick?amounts.get(food.id):defaultAmount(s,food,picker.date);
-    const summary=quick?`${amount} ${unitLabel(food)} · ${Math.round(portionTotals(food,amount).cal)} ккал`:`${Math.round(food.cal)} ккал / ${food.unit==="piece"?"1 шт.":"100 "+unitLabel(food)}`;
-    return `<div class="food-result"><button class="food-choice" data-action="choose-food" data-id="${esc(food.id)}"><strong>${esc(food.name)}</strong><small>${summary}</small></button>${btn(quick?"quick-food":"choose-food",quick?icon("plus")+`${amount} ${unitLabel(food)}`:icon("plus"),quick?"quick-portion":"icon-button",`data-id="${esc(food.id)}" data-amount="${amount}" aria-label="${quick?"Записать ":"Выбрать порцию: "}${esc(food.name)}"`)}</div>`;
-  }).join("");
-  const recipes=allMeals(s).filter(m=>matches(m.title)).slice(0,30).map(m=>
-    `<button class="meal-pick" data-action="choose-meal" data-id="${esc(m.id)}"><span class="diary-symbol">${icon("food")}</span><span><strong>${esc(m.title)}</strong><small>${Math.round(mealTotals(s,m).cal)} ккал · рецепт, 1 порция</small></span>${icon("next")}</button>`
-  ).join("");
-  return products+recipes || `<div class="picker-empty">${icon("food")}<p>Еда не найдена. Добавь её по этикетке.</p></div>`;
+export function foodResults(s, picker, online = []) {
+  const query = String(picker.query || "").trim().toLocaleLowerCase("ru").replaceAll("ё", "е");
+  const matches = (name) => String(name).toLocaleLowerCase("ru").replaceAll("ё", "е").includes(query);
+  const recent = recentFoods(s, picker.date, 12);
+  const amounts = new Map(recent.map((r) => [r.food.id, r.amount]));
+  const section = (title, content, details = false) => !content ? "" :
+    details
+      ? `<details class="picker-section picker-more"><summary><strong>${title}</strong>${icon("next", "fold-chevron")}</summary><div class="picker-section-body">${content}</div></details>`
+      : `<section class="picker-section" aria-label="${title}"><h3>${title}</h3><div class="picker-section-body">${content}</div></section>`;
+  const productCard = (food) => {
+    const quick = !query && amounts.has(food.id);
+    const amount = quick ? amounts.get(food.id) : defaultAmount(s, food, picker.date);
+    const summary = quick
+      ? `${amount} ${unitLabel(food)} · ${Math.round(portionTotals(food, amount).cal)} ккал`
+      : `${Math.round(food.cal)} ккал / ${food.unit === "piece" ? "1 шт." : "100 " + unitLabel(food)}`;
+    return `<div class="food-result"><button class="food-choice" data-action="choose-food" data-id="${esc(food.id)}"><strong>${esc(food.name)}</strong><small>${esc(summary)}</small></button>${btn(quick ? "quick-food" : "choose-food", quick ? icon("plus") + `${amount} ${unitLabel(food)}` : icon("plus"), quick ? "quick-portion" : "icon-button food-add", `data-id="${esc(food.id)}" data-amount="${amount}" aria-label="${quick ? "Записать " : "Выбрать порцию: "}${esc(food.name)}"`)}</div>`;
+  };
+  const recipeCard = (meal) =>
+    `<button class="meal-pick" data-action="choose-meal" data-id="${esc(meal.id)}"><span class="diary-symbol">${icon("food")}</span><span><strong>${esc(meal.title)}</strong><small>${Math.round(mealTotals(s, meal).cal)} ккал · 1 порция</small></span>${icon("next")}</button>`;
+  const allProducts = new Map();
+  for (const food of [...s.foods, ...online]) {
+    if (matches(food.name) && !allProducts.has(food.id)) allProducts.set(food.id, food);
+  }
+  const recipes = allMeals(s).filter((m) => matches(m.title)).slice(0, 30);
+  if (query) {
+    const productHtml = [...allProducts.values()].slice(0, 65).map(productCard).join("");
+    return section("Продукты", productHtml) + section("Готовые блюда", recipes.map(recipeCard).join("")) ||
+      `<div class="picker-empty">${icon("food")}<p>По запросу ничего не найдено. Добавь свою еду ниже.</p></div>`;
+  }
+  const recentIds = new Set(recent.map((r) => r.food.id));
+  const frequent = recent.map((r) => productCard(r.food)).join("");
+  const catalog = [...allProducts.values()].filter((food) => !recentIds.has(food.id)).slice(0, 65).map(productCard).join("");
+  return section("Недавно добавляли", frequent) +
+    section("Сохранённые блюда", recipes.slice(0, 12).map(recipeCard).join("")) +
+    section("Все продукты", catalog, true);
 }
 export function amountForm({
   id,
