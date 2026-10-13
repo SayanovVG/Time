@@ -71,18 +71,27 @@ test("comparison uses the previous complete exercise, including just outside the
   }
 });
 
-test("changed resistance and different set counts remain neutral instead of inventing a strength percentage", () => {
-  for (const [id, before, after] of [
-    ["row", sets([12, 12, 12], 40), sets([10, 10, 10], 45)],
-    ["curlband", sets([15, 15, 15], BANDS[0]), sets([10, 10, 10], BANDS[1])],
-    ["pullup", sets([10, 10, 10, 10], 0), sets([10, 10, 10, 10], 5)],
-    ["row", sets([10, 10, 10, 10], 40), sets([12, 12, 12], 40)],
+test("changing weights or bands reports actual load changes without making up a strength percentage", () => {
+  for (const [id, before, after, expectedBadge] of [
+    ["row", sets([12, 12, 12], 40), sets([10, 10, 10], 45), "+5 кг"],
+    ["curlband", sets([15, 15, 15], BANDS[0]), sets([10, 10, 10], BANDS[1]), "Резинки"],
+    ["pullup", sets([10, 10, 10, 10], 0), sets([10, 10, 10, 10], 5), "+5 кг"],
   ]) {
     const t = trend(stateWith(id, before, after));
     assert.equal(t.pct, null);
-    assert.ok(["load", "sets"].includes(t.status));
+    assert.equal(t.status, "load");
+    assert.equal(t.badge, expectedBadge);
     assert.equal(sameSessionConditions(t.current, t.previous), false);
+    assert.match(t.reason, /→/);
   }
+});
+test("different set counts with identical load compare per-set averages, not total volume", () => {
+  const t = trend(stateWith("row", sets([10, 10, 10, 10], 40), sets([12, 12, 12], 40)));
+  assert.equal(t.status, "up");
+  assert.equal(t.pct, 20);
+  assert.deepEqual(t.comparison, { before: 10, after: 12, unit: "повт./подход" });
+  assert.match(t.reason, /среднее на подход/);
+  assert.equal(sameSessionConditions(t.current, t.previous), false);
 });
 
 test("real declines are retained and times, bands and bodyweight are compared in their own units", () => {
