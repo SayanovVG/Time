@@ -133,7 +133,7 @@ function exercise(s, ui, ex, locked) {
   ).join("");
   return `<div class="band-load">
     <select ${base} data-field="band-primary" aria-label="${esc(ex.n)}, подход ${i+1}: первая резинка" ${locked ? "disabled" : ""}><option value="">Выбрать</option>${options(first)}</select>
-    <button type="button" class="band-add" data-action="band-add" ${base} ${!first || locked || second ? "disabled" : ""} ${second ? "hidden" : ""}>+ 2-я резинка</button>
+    <button type="button" class="band-add" data-action="band-add" ${base} ${locked ? "disabled" : ""} ${!first || second ? "hidden" : ""}>+ 2-я резинка</button>
     <div class="band-second" ${second ? "" : "hidden"}>
       <select ${base} data-field="band-secondary" aria-label="${esc(ex.n)}, подход ${i+1}: вторая резинка" ${locked ? "disabled" : ""}><option value="">2-я резинка</option>${options(second)}</select>
       <button type="button" class="band-remove" data-action="band-remove" ${base} aria-label="Убрать вторую резинку" ${locked ? "disabled" : ""}>×</button>
