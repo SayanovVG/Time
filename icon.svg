@@ -1,1 +1,14 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><rect width="512" height="512" rx="96" fill="#101215"/><rect x="80" y="80" width="352" height="352" rx="85" fill="#ffae73"/><path d="M144 334V178h44l46 78 46-78h44v156h-43V252l-47 77-47-77v82z" fill="#20150d"/><path d="m352 178-40 156h26l40-156z" fill="#20150d"/></svg>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-labelledby="title desc">
+  <title id="title">MAX TIME</title><desc id="desc">Таймер тренировок и монограмма M</desc>
+  <defs>
+    <linearGradient id="base" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#222a34"/><stop offset="1" stop-color="#0d151d"/></linearGradient>
+    <linearGradient id="ember" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#ffd09d"/><stop offset=".6" stop-color="#ffad6f"/><stop offset="1" stop-color="#f58a58"/></linearGradient>
+  </defs>
+  <rect width="512" height="512" rx="112" fill="#10151c"/>
+  <rect x="26" y="26" width="460" height="460" rx="104" fill="url(#base)" stroke="#394754" stroke-width="5"/>
+  <circle cx="256" cy="256" r="164" fill="none" stroke="#3c4b57" stroke-width="17" opacity=".85"/>
+  <path d="M 143 376 A 164 164 0 1 1 416 289" fill="none" stroke="url(#ember)" stroke-width="21" stroke-linecap="round"/>
+  <path d="M 160 317 V 199 L 228 283 L 296 199 V 317" fill="none" stroke="#f3eee7" stroke-width="28" stroke-linecap="round" stroke-linejoin="round"/>
+  <path d="M 363 196 L 328 318" fill="none" stroke="url(#ember)" stroke-width="24" stroke-linecap="round"/>
+  <circle cx="413" cy="289" r="10" fill="#ffad6f"/>
+</svg>
