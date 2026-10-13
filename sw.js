@@ -1,4 +1,4 @@
-const CACHE = "max-time-v3-20261013-progress-metrics-4";
+const CACHE = "max-time-v3-20261013-unified-ui-brand-5";
 const ASSETS = [
   "./",
   "./index.html",
@@ -14,12 +14,15 @@ const ASSETS = [
   "./app/view.mjs",
   "./app/app.css",
   "./app/refinement.css",
+  "./app/design.css",
   "./app/fonts/manrope-latin-wght-normal.woff2",
   "./app/fonts/manrope-cyrillic-wght-normal.woff2",
   "./manifest.json",
   "./icon.svg",
   "./icons/icon-192.png",
   "./icons/icon-512.png",
+  "./icons/max-time-192-20261013.png",
+  "./icons/max-time-512-20261013.png",
 ];
 const OWN_CACHE = (name) => name.startsWith("max-time-") || /^mt-v\d+$/.test(name);
 self.addEventListener("install", (event) => {
