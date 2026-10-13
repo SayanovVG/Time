@@ -125,7 +125,21 @@ function exercise(s, ui, ex, locked) {
         previous = ref?.done
           ? `${ex.band || BAND_LOADS.includes(ref.load) ? ref.load : ref.load !== "" ? ref.load + " кг" : "Свой вес"} · ${ref.reps}${ex.time ? " сек" : " повт."} · RIR ${ref.rir}`
           : "";
-      return `<div class="set-group ${r.done ? "done" : ""}"><div class="set-row"><span class="set-number">${i + 1}</span>${ex.time ? "" : (ex.band || (ex.id === "legcurlband" && BAND_LOADS.includes(r.load))) ? `<select ${base} data-field="set-load" aria-label="${esc(ex.n)}, подход ${i + 1}: резинка" ${locked ? "disabled" : ""}><option value="">Выбрать</option>${BANDS.map((v, j) => `<option value="${esc(v)}" ${r.load === v ? "selected" : ""}>${["Красная", "Чёрная", "Фиолетовая", "Зелёная"][j]} · ${v.split(" ").slice(1).join(" ")}</option>`).join("")}${BAND_LOADS.slice(BANDS.length).map((v) => `<option value="${esc(v)}" ${r.load === v ? "selected" : ""}>${esc(v.split(" + ").map((part) => part.split(" ")[0]).join(" + "))} · две резинки</option>`).join("")}</select>` : `<input ${base} data-field="set-load" inputmode="decimal" aria-label="${esc(ex.n)}, подход ${i + 1}: дополнительный вес в килограммах" placeholder="${["pullup", "dips", "legraise"].includes(ex.id) ? "0" : "кг"}" value="${esc(r.load)}" ${locked ? "readonly" : ""}>`}<input ${base} data-field="set-reps" inputmode="${ex.time ? "numeric" : "numeric"}" aria-label="${esc(ex.n)}, подход ${i + 1}: ${ex.time ? "секунды" : "повторения"}" placeholder="${ex.time ? ex.min : ex.min + "–" + ex.max}" value="${esc(r.reps)}" ${locked ? "readonly" : ""}><select ${base} data-field="set-rir" aria-label="${esc(ex.n)}, подход ${i + 1}: RIR" ${locked ? "disabled" : ""}>${[0, 1, 2, 3].map((v) => `<option value="${v}" ${+r.rir === v ? "selected" : ""}>${v === 3 ? "3+" : v}</option>`).join("")}</select><button class="set-check ${r.done ? "checked" : ""}" data-action="check-set" ${base} aria-label="${r.done ? "Снять отметку" : "Завершить"}: ${esc(ex.n)}, подход ${i + 1}" aria-pressed="${r.done}" ${locked ? "disabled" : ""}>${icon("check")}</button></div>${previous ? `<div class="previous">Было: ${esc(previous)}</div>` : ""}${ex.time ? `<div class="timed-row">${btn("duration-down", "−10", "quiet", `${base} ${locked ? "disabled" : ""} aria-label="Уменьшить время подхода ${i + 1} на 10 секунд"`)}<span>${r.reps || s.exerciseDurations[ex.id] || ex.min} сек</span>${btn("duration-up", "+10", "quiet", `${base} ${locked ? "disabled" : ""} aria-label="Увеличить время подхода ${i + 1} на 10 секунд"`)}${btn("exercise-timer", icon("play") + "Старт", "secondary", `${base} ${locked ? "disabled" : ""}`)}</div>` : ""}</div>`;
+      return `<div class="set-group ${r.done ? "done" : ""}"><div class="set-row"><span class="set-number">${i + 1}</span>${ex.time ? "" : (ex.band || (ex.id === "legcurlband" && BAND_LOADS.includes(r.load))) ? (() => {
+  const [first, second] = String(r.load || "").split(" + ");
+  const names = ["Красная", "Чёрная", "Фиолетовая", "Зелёная"];
+  const options = (selected) => BANDS.map((v,j) =>
+    `<option value="${esc(v)}" ${selected === v ? "selected" : ""}>${names[j]} · ${v.split(" ").slice(1).join(" ")}</option>`
+  ).join("");
+  return `<div class="band-load">
+    <select ${base} data-field="band-primary" aria-label="${esc(ex.n)}, подход ${i+1}: первая резинка" ${locked ? "disabled" : ""}><option value="">Выбрать</option>${options(first)}</select>
+    <button type="button" class="band-add" data-action="band-add" ${base} ${!first || locked || second ? "disabled" : ""} ${second ? "hidden" : ""}>+ 2-я резинка</button>
+    <div class="band-second" ${second ? "" : "hidden"}>
+      <select ${base} data-field="band-secondary" aria-label="${esc(ex.n)}, подход ${i+1}: вторая резинка" ${locked ? "disabled" : ""}><option value="">2-я резинка</option>${options(second)}</select>
+      <button type="button" class="band-remove" data-action="band-remove" ${base} aria-label="Убрать вторую резинку" ${locked ? "disabled" : ""}>×</button>
+    </div>
+  </div>`;
+})() : `<input ${base} data-field="set-load" inputmode="decimal" aria-label="${esc(ex.n)}, подход ${i + 1}: дополнительный вес в килограммах" placeholder="${["pullup", "dips", "legraise"].includes(ex.id) ? "0" : "кг"}" value="${esc(r.load)}" ${locked ? "readonly" : ""}>`}<input ${base} data-field="set-reps" inputmode="${ex.time ? "numeric" : "numeric"}" aria-label="${esc(ex.n)}, подход ${i + 1}: ${ex.time ? "секунды" : "повторения"}" placeholder="${ex.time ? ex.min : ex.min + "–" + ex.max}" value="${esc(r.reps)}" ${locked ? "readonly" : ""}><select ${base} data-field="set-rir" aria-label="${esc(ex.n)}, подход ${i + 1}: RIR" ${locked ? "disabled" : ""}>${[0, 1, 2, 3].map((v) => `<option value="${v}" ${+r.rir === v ? "selected" : ""}>${v === 3 ? "3+" : v}</option>`).join("")}</select><button class="set-check ${r.done ? "checked" : ""}" data-action="check-set" ${base} aria-label="${r.done ? "Снять отметку" : "Завершить"}: ${esc(ex.n)}, подход ${i + 1}" aria-pressed="${r.done}" ${locked ? "disabled" : ""}>${icon("check")}</button></div>${previous ? `<div class="previous">Было: ${esc(previous)}</div>` : ""}${ex.time ? `<div class="timed-row">${btn("duration-down", "−10", "quiet", `${base} ${locked ? "disabled" : ""} aria-label="Уменьшить время подхода ${i + 1} на 10 секунд"`)}<span>${r.reps || s.exerciseDurations[ex.id] || ex.min} сек</span>${btn("duration-up", "+10", "quiet", `${base} ${locked ? "disabled" : ""} aria-label="Увеличить время подхода ${i + 1} на 10 секунд"`)}${btn("exercise-timer", icon("play") + "Старт", "secondary", `${base} ${locked ? "disabled" : ""}`)}</div>` : ""}</div>`;
     })
     .join(
       "",
@@ -262,18 +276,21 @@ export function sessionDescription(session) {
     .map((reps, i) => `${load(session.loads[i])} × ${reps}`)
     .join(" · ");
 }
+function loadText(t) {
+  if (!t?.current || !t?.previous) return t?.current ? `${t.current.reps} ${t.metric} · ${t.label}` : "";
+  if (t.comparison) return `${t.comparison.before} → ${t.comparison.after} ${t.comparison.unit}`;
+  const unit = t.current.kind === "time" ? "сек" : "повт.";
+  return `${t.previous.reps} → ${t.current.reps} ${unit} · ${t.label}`;
+}
 function strengthTrend(t) {
-  const comparable = t.pct !== null;
-  return `<details class="strength-comparison" data-fold="strength-${esc(t.id)}"><summary><span class="strength-name"><strong>${esc(t.name)}</strong><small>${comparable ? `${t.previous.reps} → ${t.current.reps} ${t.metric} · ${t.current.sets} подхода` : `${t.current.reps} ${t.metric} · ${esc(t.label)}`}</small><span class="comparison-dates">${t.previous ? formatDate(t.previous.date) + " → " : ""}${formatDate(t.current.date)}</span></span><span class="strength-badge ${t.status}">${comparable ? `${t.pct > 0 ? "+" : ""}${t.pct}%` : t.status === "incomplete" ? t.current.sets + "/" + t.current.expectedSets : "—"}${icon("next", "fold-chevron")}</span></summary><div class="fold-content"><p class="comparison-reason">${esc(t.reason)}</p>${[
-    t.previous,
-    t.current,
-  ]
-    .filter(Boolean)
-    .map(
-      (r, i, rows) =>
-        `<div class="comparison-session ${i === rows.length - 1 ? "current-session" : ""}"><span>${formatDate(r.date)} <small>${r.sets}/${r.expectedSets} подходов · RIR ${r.rir}</small></span><strong>${esc(sessionDescription(r))}</strong></div>`,
-    )
-    .join("")}</div></details>`;
+  const badge = t.badge || (t.pct !== null ? `${t.pct > 0 ? "+" : ""}${t.pct}%` : t.status === "incomplete" ? `${t.current.sets}/${t.current.expectedSets}` : "Данные");
+  return `<details class="strength-comparison" data-fold="strength-${esc(t.id)}"><summary>
+    <span class="strength-name"><strong>${esc(t.name)}</strong><small>${esc(loadText(t))}</small>
+    <span class="comparison-dates">${t.previous ? formatDate(t.previous.date) + " → " : ""}${formatDate(t.current.date)}</span></span>
+    <span class="strength-badge ${esc(t.status)}">${esc(badge)}${icon("next", "fold-chevron")}</span></summary>
+    <div class="fold-content"><p class="comparison-reason">${esc(t.reason)}</p>${[t.previous,t.current].filter(Boolean).map((r,i,rows)=>
+      `<div class="comparison-session ${i===rows.length-1?"current-session":""}"><span>${formatDate(r.date)} <small>${r.sets}/${r.expectedSets} подходов · RIR ${r.rir}</small></span><strong>${esc(sessionDescription(r))}</strong></div>`
+    ).join("")}</div></details>`;
 }
 export function chart(rows, { moving = false, label = "" } = {}) {
   if (rows.length < 2)
