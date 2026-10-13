@@ -1,4 +1,4 @@
-const CACHE = "max-time-v3-20261013-palette-progress-audit-3";
+const CACHE = "max-time-v3-20261013-progress-metrics-4";
 const ASSETS = [
   "./",
   "./index.html",
