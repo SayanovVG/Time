@@ -95,7 +95,7 @@ test("working weight percentage and repetition changes are separate metrics", ()
   for (const [id,oldWeight,newWeight,oldReps,newReps,badge] of [
     ["bench",40,42.5,10,6,"+6.25% веса"],
     ["calfA",37.2,40,15,17,"+7.53% веса"],
-    ["hipabduct",20,22.5,15,12,"+12.5% веса"],
+    ["abduct",20,22.5,15,12,"+12.5% веса"],
   ]) {
     const t=trend(stateWith(id,sets([oldReps,oldReps,oldReps],oldWeight),sets([newReps,newReps,newReps],newWeight)));
     assert.equal(t.pct,null);
