@@ -832,7 +832,7 @@ export function report(s, days, end = dateKey()) {
   );
   for (const t of a.trends)
     lines.push(
-      `- ${t.name}: ${t.current.date}, ${t.current.sets}/${t.current.expectedSets} подходов, ${t.current.reps} ${t.metric}; RIR ${t.rir}. ${t.pct === null ? t.label + ". " + t.reason : `${t.pct > 0 ? "+" : ""}${t.pct}% к предыдущей тренировке ${t.previous.date}: ${t.previous.reps} → ${t.current.reps} ${t.metric}. ${t.reason}.`}`,
+      `- ${t.name}: ${t.current.date}, ${t.current.sets}/${t.current.expectedSets} подходов, ${t.current.reps} ${t.metric}; RIR ${t.rir}. ${t.pct === null ? (t.summary ? t.summary + ". " : "") + t.reason : `${t.pct > 0 ? "+" : ""}${t.pct}% повторений к предыдущей тренировке ${t.previous.date}: ${t.previous.reps} → ${t.current.reps} ${t.metric}. ${t.reason}.`}`,
       `  Подходы сейчас: ${t.current.repetitions.map((reps, i) => `${t.current.kind === "time" ? "" : t.current.loads[i] + (t.current.kind === "band" ? "" : " кг") + " × "}${reps}${t.current.kind === "time" ? " сек" : ""}`).join("; ")}.${t.previous ? ` Ранее (${t.previous.date}): ${t.previous.repetitions.map((reps, i) => `${t.previous.kind === "time" ? "" : t.previous.loads[i] + (t.previous.kind === "band" ? "" : " кг") + " × "}${reps}${t.previous.kind === "time" ? " сек" : ""}`).join("; ")}.` : ""}`,
     );
   if (!a.trends.length)
