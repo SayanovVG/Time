@@ -1,6 +1,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
+import { inflateSync } from "node:zlib";
 import { freshState, VERSION } from "../app/model.mjs";
 import { foodPicker, foodResults, header } from "../app/view.mjs";
 
@@ -54,4 +55,31 @@ test("PWA icon replacements preserve storage identity and audio assets", () => {
   assert.match(sw, /max-time-512-20261013\.png/);
   assert.match(sw, /app\/audio\/original-gong\.mp3/);
   assert.match(sw, /app\/audio\.mjs/);
+});
+
+test("both newly installed Android icons are valid PNGs with decoded pixel payloads", () => {
+  for (const size of [192, 512]) {
+    const png = readFileSync(new URL(`../icons/max-time-${size}-20261013.png`, import.meta.url));
+    assert.equal(png.subarray(0, 8).toString("hex"), "89504e470d0a1a0a");
+    let off = 8, idat = [], width, height;
+    while (off < png.length) {
+      const len = png.readUInt32BE(off);
+      const type = png.toString("ascii", off + 4, off + 8);
+      const body = png.subarray(off + 8, off + 8 + len);
+      if (type === "IHDR") {
+        width = body.readUInt32BE(0);
+        height = body.readUInt32BE(4);
+        assert.equal(body[8], 8);
+        assert.equal(body[9], 6);
+      }
+      if (type === "IDAT") idat.push(body);
+      off += 12 + len;
+      if (type === "IEND") break;
+    }
+    assert.equal(width, size);
+    assert.equal(height, size);
+    const pixels = inflateSync(Buffer.concat(idat));
+    assert.equal(pixels.length, (size * 4 + 1) * size);
+    for (let y = 0; y < size; y++) assert.equal(pixels[y * (size * 4 + 1)], 0);
+  }
 });
