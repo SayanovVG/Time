@@ -9,6 +9,7 @@ import {
   rowsFor,
   previousRows,
   validSet,
+  suspiciousRepetitions,
   totals,
   nutritionDays,
   analytics,
@@ -110,6 +111,18 @@ export function training(s, ui) {
   return `${ui.focus ? `<header class="focus-header">${btn("focus-exit", icon("back") + "Обзор", "quiet")}<div><span>${formatDate(ui.date)}</span><strong>${ui.focusIndex + 1} / ${exs.length}</strong></div><span class="focus-count">${done}/${all}</span></header>` : `<div class="page-title"><div><span class="eyebrow">Твой план на неделю</span><h1>Тренировки</h1></div><label class="date-control"><span class="sr-only">Дата тренировки</span><input type="date" data-field="training-date" value="${ui.date}"></label></div><div class="week-tabs" aria-label="Программа по дням">${["Пн", "Вт", "Ср", "Чт", "Пт"].map((n, i) => `<button class="week-day ${ui.day === i + 1 ? "selected" : ""}" data-action="day" data-day="${i + 1}" aria-pressed="${ui.day === i + 1}"><span>${n}</span><strong>${parseDate(selectedDate(i + 1, ui.date)).getDate()}</strong></button>`).join("")}</div><section class="workout-heading"><div><span class="eyebrow">${formatDate(ui.date)}${past ? " · История" : future ? " · План" : " · Сегодня"}</span><h2>${esc(day.n)}</h2><p>${esc(day.note)}</p></div>${btn("focus-start", icon("play") + (done ? "Продолжить" : "Начать"), "primary", future ? "disabled" : "")}</section><div class="workout-progress"><span>${done} из ${all} подходов</span><span>${Math.round((done / all) * 100)}%</span><progress value="${done}" max="${all}" aria-label="Прогресс тренировки"></progress></div><div class="training-meta"><span>Тренажёры и резинки</span></div>${past ? `<p class="notice">Можно записать пропущенную тренировку и исправить прошлые подходы. Изменения сохраняются автоматически.</p>` : ""}${future ? '<p class="notice">Это будущая дата. Выполнение можно отмечать в день тренировки.</p>' : ""}`}
   <div class="exercise-list">${(ui.focus ? [exs[ui.focusIndex]] : exs).map((ex) => exercise(s, ui, ex, locked)).join("")}</div>${done === all ? `<section class="completion"><span>${icon("check")}</span><div><h2>Тренировка завершена</h2><p>${done} подходов сохранены. Теперь восстановление.</p></div></section>` : ""}${ui.focus ? `<nav class="focus-navigation" aria-label="Упражнения">${btn("focus-prev", icon("back") + "Назад", "secondary", ui.focusIndex === 0 ? "disabled" : "")}${btn("focus-next", "Следующее" + icon("next"), "primary", ui.focusIndex === exs.length - 1 ? "disabled" : "")}</nav>` : ""}`;
 }
+const BAND_SWATCHES = {
+  "Красная": "red",
+  "Чёрная": "black",
+  "Фиолетовая": "violet",
+  "Зелёная": "green",
+};
+function bandSelector(load, base, ex, index, locked) {
+  const colors = String(load || "").split(" + ").filter(Boolean).map((name) => name.split(" ")[0]);
+  const dots = colors.map((name) => `<span class="band-dot band-dot--${BAND_SWATCHES[name] || "unknown"}" aria-hidden="true"></span>`).join("");
+  const label = colors.length ? colors.join(" + ") : "Выбрать";
+  return `<button type="button" class="band-picker-trigger" data-action="band-open" ${base} aria-label="${esc(ex.n)}, подход ${index+1}: выбрать резинки. Сейчас: ${esc(label)}" ${locked ? "disabled" : ""}><span class="band-picker-dots">${dots}</span><span class="band-picker-text">${esc(label)}</span>${icon("next")}</button>`;
+}
 function exercise(s, ui, ex, locked) {
   const rows = rowsFor(s, ui.date, ex),
     prev = previousRows(s, ui.date, ex),
@@ -125,21 +138,7 @@ function exercise(s, ui, ex, locked) {
         previous = ref?.done
           ? `${ex.band || BAND_LOADS.includes(ref.load) ? ref.load : ref.load !== "" ? ref.load + " кг" : "Свой вес"} · ${ref.reps}${ex.time ? " сек" : " повт."} · RIR ${ref.rir}`
           : "";
-      return `<div class="set-group ${r.done ? "done" : ""}"><div class="set-row"><span class="set-number">${i + 1}</span>${ex.time ? "" : (ex.band || (ex.id === "legcurlband" && BAND_LOADS.includes(r.load))) ? (() => {
-  const [first, second] = String(r.load || "").split(" + ");
-  const names = ["Красная", "Чёрная", "Фиолетовая", "Зелёная"];
-  const options = (selected) => BANDS.map((v,j) =>
-    `<option value="${esc(v)}" ${selected === v ? "selected" : ""}>${names[j]} · ${v.split(" ").slice(1).join(" ")}</option>`
-  ).join("");
-  return `<div class="band-load">
-    <select ${base} data-field="band-primary" aria-label="${esc(ex.n)}, подход ${i+1}: первая резинка" ${locked ? "disabled" : ""}><option value="">Выбрать</option>${options(first)}</select>
-    <button type="button" class="band-add" data-action="band-add" ${base} ${locked ? "disabled" : ""} ${!first || second ? "hidden" : ""}>+ 2-я резинка</button>
-    <div class="band-second" ${second ? "" : "hidden"}>
-      <select ${base} data-field="band-secondary" aria-label="${esc(ex.n)}, подход ${i+1}: вторая резинка" ${locked ? "disabled" : ""}><option value="">2-я резинка</option>${options(second)}</select>
-      <button type="button" class="band-remove" data-action="band-remove" ${base} aria-label="Убрать вторую резинку" ${locked ? "disabled" : ""}>×</button>
-    </div>
-  </div>`;
-})() : `<input ${base} data-field="set-load" inputmode="decimal" aria-label="${esc(ex.n)}, подход ${i + 1}: дополнительный вес в килограммах" placeholder="${["pullup", "dips", "legraise"].includes(ex.id) ? "0" : "кг"}" value="${esc(r.load)}" ${locked ? "readonly" : ""}>`}<input ${base} data-field="set-reps" inputmode="${ex.time ? "numeric" : "numeric"}" aria-label="${esc(ex.n)}, подход ${i + 1}: ${ex.time ? "секунды" : "повторения"}" placeholder="${ex.time ? ex.min : ex.min + "–" + ex.max}" value="${esc(r.reps)}" ${locked ? "readonly" : ""}><select ${base} data-field="set-rir" aria-label="${esc(ex.n)}, подход ${i + 1}: RIR" ${locked ? "disabled" : ""}>${[0, 1, 2, 3].map((v) => `<option value="${v}" ${+r.rir === v ? "selected" : ""}>${v === 3 ? "3+" : v}</option>`).join("")}</select><button class="set-check ${r.done ? "checked" : ""}" data-action="check-set" ${base} aria-label="${r.done ? "Снять отметку" : "Завершить"}: ${esc(ex.n)}, подход ${i + 1}" aria-pressed="${r.done}" ${locked ? "disabled" : ""}>${icon("check")}</button></div>${previous ? `<div class="previous">Было: ${esc(previous)}</div>` : ""}${ex.time ? `<div class="timed-row">${btn("duration-down", "−10", "quiet", `${base} ${locked ? "disabled" : ""} aria-label="Уменьшить время подхода ${i + 1} на 10 секунд"`)}<span>${r.reps || s.exerciseDurations[ex.id] || ex.min} сек</span>${btn("duration-up", "+10", "quiet", `${base} ${locked ? "disabled" : ""} aria-label="Увеличить время подхода ${i + 1} на 10 секунд"`)}${btn("exercise-timer", icon("play") + "Старт", "secondary", `${base} ${locked ? "disabled" : ""}`)}</div>` : ""}</div>`;
+      return `<div class="set-group ${r.done ? "done" : ""}"><div class="set-row"><span class="set-number">${i + 1}</span>${ex.time ? "" : (ex.band || (ex.id === "legcurlband" && BAND_LOADS.includes(r.load))) ? bandSelector(r.load, base, ex, i, locked) : `<input ${base} data-field="set-load" inputmode="decimal" aria-label="${esc(ex.n)}, подход ${i + 1}: дополнительный вес в килограммах" placeholder="${["pullup", "dips", "legraise"].includes(ex.id) ? "0" : "кг"}" value="${esc(r.load)}" ${locked ? "readonly" : ""}>`}<input ${base} data-field="set-reps" inputmode="${ex.time ? "numeric" : "numeric"}" aria-label="${esc(ex.n)}, подход ${i + 1}: ${ex.time ? "секунды" : "повторения"}" placeholder="${ex.time ? ex.min : ex.min + "–" + ex.max}" value="${esc(r.reps)}" ${locked ? "readonly" : ""}><select ${base} data-field="set-rir" aria-label="${esc(ex.n)}, подход ${i + 1}: RIR" ${locked ? "disabled" : ""}>${[0, 1, 2, 3].map((v) => `<option value="${v}" ${+r.rir === v ? "selected" : ""}>${v === 3 ? "3+" : v}</option>`).join("")}</select><button class="set-check ${r.done ? "checked" : ""}" data-action="check-set" ${base} aria-label="${r.done ? "Снять отметку" : "Завершить"}: ${esc(ex.n)}, подход ${i + 1}" aria-pressed="${r.done}" ${locked ? "disabled" : ""}>${icon("check")}</button></div>${previous ? `<div class="previous ${suspiciousRepetitions(ex, ref.reps) ? "previous-review" : ""}">${suspiciousRepetitions(ex, ref.reps) ? "Проверь старую запись: " : "Было: "}${esc(previous)}</div>` : ""}${ex.time ? `<div class="timed-row">${btn("duration-down", "−10", "quiet", `${base} ${locked ? "disabled" : ""} aria-label="Уменьшить время подхода ${i + 1} на 10 секунд"`)}<span>${r.reps || s.exerciseDurations[ex.id] || ex.min} сек</span>${btn("duration-up", "+10", "quiet", `${base} ${locked ? "disabled" : ""} aria-label="Увеличить время подхода ${i + 1} на 10 секунд"`)}${btn("exercise-timer", icon("play") + "Старт", "secondary", `${base} ${locked ? "disabled" : ""}`)}</div>` : ""}</div>`;
     })
     .join(
       "",
@@ -277,24 +276,25 @@ export function sessionDescription(session) {
     .join(" · ");
 }
 function loadText(t) {
+  if (t.status === "review") return "Проверить запись · процент прогресса не рассчитан";
   if (!t?.current || !t?.previous) return t?.current ? `${t.current.reps} ${t.metric} · ${t.label}` : "";
   if (t.comparison) return `${t.comparison.before} → ${t.comparison.after} ${t.comparison.unit}`;
   const unit = t.current.kind === "time" ? "сек" : "повт.";
   return `${t.previous.reps} → ${t.current.reps} ${unit} · ${t.label}`;
 }
 function strengthTrend(t) {
-  const suspiciousReps = [t.previous, t.current].filter(Boolean).some((session) =>
-    session.kind !== "time" && session.repetitions.some((value) => value > 100)
-  );
+  const suspiciousReps = [t.previous, t.current].filter(Boolean).some((session) => session.suspicious);
   const dataWarning = suspiciousReps
-    ? '<p class="comparison-reason">В одном из подходов указано более 100 повторений. Проверь запись: возможно, вместо повторов были внесены секунды. Исходные данные не изменены.</p>'
+    ? '<p class="comparison-reason">Один или несколько подходов выглядят неправдоподобно. Проверь исходные повторения. Данные сохранены без изменений.</p>'
     : "";
   const badge = t.badge || (t.pct !== null ? `${t.pct > 0 ? "+" : ""}${t.pct}%` : t.status === "incomplete" ? `${t.current.sets}/${t.current.expectedSets}` : "Данные");
   return `<details class="strength-comparison" data-fold="strength-${esc(t.id)}"><summary>
     <span class="strength-name"><strong>${esc(t.name)}</strong><small>${esc(loadText(t))}</small>
     <span class="comparison-dates">${t.previous ? formatDate(t.previous.date) + " → " : ""}${formatDate(t.current.date)}</span></span>
     <span class="strength-badge ${esc(t.status)}">${esc(badge)}${icon("next", "fold-chevron")}</span></summary>
-    <div class="fold-content"><p class="comparison-reason">${esc(t.reason)}</p>${dataWarning}${[t.previous,t.current].filter(Boolean).map((r,i,rows)=>
+    <div class="fold-content"><p class="comparison-reason">${esc(t.reason)}</p>${dataWarning}${[t.previous,t.current].filter((r) => r?.suspicious).map((r) =>
+      btn("repair-workout", "Исправить " + formatDate(r.date), "secondary", `data-date="${esc(r.date)}" data-ex="${esc(r.exerciseId)}"`)
+    ).join("")}${[t.previous,t.current].filter(Boolean).map((r,i,rows)=>
       `<div class="comparison-session ${i===rows.length-1?"current-session":""}"><span>${formatDate(r.date)} <small>${r.sets}/${r.expectedSets} подходов · RIR ${r.rir}</small></span><strong>${esc(sessionDescription(r))}</strong></div>`
     ).join("")}</div></details>`;
 }

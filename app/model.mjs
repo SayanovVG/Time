@@ -1,6 +1,6 @@
 import { PROGRAM, BAND_LOADS, DEFAULT_FOODS } from "./program.mjs";
 
-export const VERSION = "3.2.1";
+export const VERSION = "3.2.2";
 export const SCHEMA = 3;
 export const TARGET = { cal: 2450, p: 180, f: 75, c: 264 };
 export const clone = (value) => JSON.parse(JSON.stringify(value));
@@ -366,6 +366,13 @@ const comparableSet = (s) => ({
   rir: s.rir,
   done: s.done,
 });
+// Historical anomalies remain stored; flag their comparisons instead of making
+// a suspiciously high repetition count look like a strength improvement.
+export function suspiciousRepetitions(ex, value) {
+  if (!ex || ex.time) return false;
+  const reps = number(value);
+  return reps !== null && reps > Math.max(60, (ex.max || 20) * 3);
+}
 export function validSet(ex, s) {
   const reps = number(s?.reps),
     rir = number(s?.rir);
@@ -541,6 +548,9 @@ export function trainingSessions(s, days, end = dateKey()) {
       numericLoad && !ex?.time
         ? round(done.reduce((n, r) => n + number(r.reps) * number(r.load), 0))
         : null;
+    const suspiciousSets = done.flatMap((r, i) =>
+      suspiciousRepetitions(ex, r.reps) ? [{ index: i + 1, reps: number(r.reps) }] : []
+    );
     const id = exerciseGroupId(ex?.id || key.slice(11)),
       canonical = `${date}_${id}`,
       expectedSets = Math.max(ex?.s || 0, rows.length);
@@ -548,7 +558,10 @@ export function trainingSessions(s, days, end = dateKey()) {
       by.set(canonical, {
         date,
         id,
+        exerciseId: ex?.id || key.slice(11),
         name: ex?.n || id,
+        suspicious: suspiciousSets.length > 0,
+        suspiciousSets,
         sets: done.length,
         reps,
         volume,
@@ -594,6 +607,18 @@ export function exerciseTrend(current, previous, count) {
     pct: null,
     delta: null,
   };
+  if (current.suspicious || previous?.suspicious) {
+    const flagged = [previous, current].filter((r) => r?.suspicious);
+    return {
+      ...trend,
+      status: "review",
+      label: "Проверить запись",
+      badge: "Проверить",
+      reason: flagged.map((r) =>
+        `${r.date}: ${r.suspiciousSets.map((set) => `подход ${set.index} — ${set.reps} повторений`).join(", ")}`
+      ).join("; ") + ". Значения сохранены как введены, но исключены из сравнения прогресса до проверки. Открой тренировку по кнопке ниже и исправь ошибку, если она есть.",
+    };
+  }
   if (!current.complete)
     return {
       ...trend,

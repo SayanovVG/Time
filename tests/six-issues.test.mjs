@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { freshState, normalizeState, exerciseById, exerciseGroupId, setInput, validSet, previousRows, trainingSessions, analytics, addFood } from "../app/model.mjs";
+import { freshState, normalizeState, suspiciousRepetitions, report, exerciseById, exerciseGroupId, setInput, validSet, previousRows, trainingSessions, analytics, addFood } from "../app/model.mjs";
 import { BANDS, BAND_LOADS } from "../app/program.mjs";
 import { training, foodPicker, foodResults, progress } from "../app/view.mjs";
 const row = (load, reps=12) => ({ load, reps, rir: 2, done: true });
@@ -77,10 +77,11 @@ test("band selector stays compact: four colors and optional second color, not te
     {load:"",reps:"",rir:2,done:false},
   ];
   const html=training(s,{day:1,date:"2026-09-07",focus:false});
-  assert.match(html,/data-field="band-primary"/);
-  assert.match(html,/data-field="band-secondary"/);
-  assert.match(html,/data-action="band-add"/);
-  assert.match(html,/data-action="band-remove"/);
+  assert.match(html,/data-action="band-open"/);
+  assert.match(html,/class="band-picker-trigger"/);
+  assert.match(html,/band-dot--black/);
+  assert.match(html,/band-dot--green/);
+  assert.doesNotMatch(html,/data-field="band-primary"|data-action="band-add"/);
   assert.match(html,/Зелёная/);
   assert.doesNotMatch(html,/>Зелёная \+ Чёрная · две резинки/);
   assert.equal(validSet(ex,s.train["2026-09-07_curlband"][0]),true);
@@ -97,4 +98,44 @@ test("machine versus old band has separate comparable type and no misleading per
   const html=progress(s,{period:90},{snapshots:()=>[]});
   assert.match(html,/Смена оборудования/);
   assert.match(html,/резинка → тренажёр/);
+});
+
+test("implausible old repetitions are retained but cannot create a false training progress percentage", () => {
+  const s = freshState();
+  const original = [row(BANDS[3],113),row(BANDS[3],113)];
+  s.train["2026-10-07_wedcurl"] = original;
+  s.train["2026-10-12_curlband"] = [row(BANDS[3],14),row(BANDS[3],14),row(BANDS[3],14)];
+  const previous = trainingSessions(s,28,"2026-10-13").find((r) => r.date === "2026-10-07" && r.id === "curlband");
+  const t = analytics(s,28,"2026-10-13").trends.find((r) => r.id === "curlband");
+  assert.equal(previous.suspicious,true);
+  assert.deepEqual(previous.suspiciousSets,[{index:1,reps:113},{index:2,reps:113}]);
+  assert.equal(t.status,"review");
+  assert.equal(t.pct,null);
+  assert.match(t.reason,/113/);
+  assert.equal(s.train["2026-10-07_wedcurl"][0].reps,113);
+  const html = progress(s,{period:28},{snapshots:()=>[]});
+  assert.match(html,/Проверить запись/);
+  assert.match(html,/data-action="repair-workout"/);
+  assert.match(html,/data-date="2026-10-07"/);
+  const workout = training(s,{day:1,date:"2026-10-12",focus:false});
+  assert.match(workout,/Проверь старую запись/);
+  const text = report(s,28,"2026-10-13");
+  assert.match(text,/Проверить запись/);
+  assert.doesNotMatch(text,/226.*%/);
+});
+
+test("suspect thresholds do not confuse timed exercises with strength reps", () => {
+  assert.equal(suspiciousRepetitions(exerciseById("plank"),180),false);
+  assert.equal(suspiciousRepetitions(exerciseById("legcurlband"),210),true);
+  assert.equal(suspiciousRepetitions(exerciseById("hammer"),112),true);
+  assert.equal(suspiciousRepetitions(exerciseById("bench"),14),false);
+  const s=freshState();
+  s.train["2026-10-02_legcurlband"]=[row(BANDS[1],210),row(BANDS[1],210),row(BANDS[1],210)];
+  s.train["2026-10-09_legcurlband"]=[row(BANDS[1],212),row(BANDS[1],212),row(BANDS[1],212)];
+  const t=analytics(s,28,"2026-10-13").trends.find((x)=>x.id==="legcurlband");
+  assert.equal(t.status,"review");
+  assert.equal(t.pct,null);
+  const before=JSON.stringify(s.train);
+  normalizeState(s);
+  assert.equal(JSON.stringify(s.train),before);
 });
