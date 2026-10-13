@@ -1438,3 +1438,70 @@ dialog[data-kind="meal-amount"] {
     stroke-dasharray: none;
   }
 }
+
+/* MAX TIME: compact first band, optional second band; no long OS dropdown. */
+.set-row .band-load {
+  min-width: 0;
+  display: grid;
+  gap: 4px;
+  align-self: start;
+}
+.set-row .band-load > select {
+  width: 100%;
+  min-width: 0;
+  font-size: 13px;
+  text-align: left;
+  padding-inline: 5px;
+  text-overflow: ellipsis;
+}
+.band-load .band-add {
+  display: inline-flex;
+  align-items: center;
+  justify-content: flex-start;
+  padding: 3px 2px;
+  border: 0;
+  background: transparent;
+  color: #9cbeec;
+  font-size: 12px;
+  font-weight: 650;
+  line-height: 1.35;
+  min-height: 25px;
+  cursor: pointer;
+}
+.band-load .band-add:disabled {
+  opacity: .4;
+  cursor: default;
+}
+.band-load .band-second {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 24px;
+  align-items: center;
+  gap: 3px;
+}
+.set-row .band-second select {
+  width: 100%;
+  min-width: 0;
+  height: 40px;
+  padding: 6px 2px;
+  font-size: 12px;
+  text-align: left;
+  text-overflow: ellipsis;
+}
+.band-load .band-remove {
+  width: 24px;
+  min-height: 36px;
+  padding: 0;
+  font-size: 20px;
+  color: #f0c0c0;
+  background: transparent;
+  border: 0;
+  cursor: pointer;
+}
+.band-load .band-add[hidden],
+.band-load .band-second[hidden] {
+  display: none !important;
+}
+@media (max-width: 699px) {
+  .set-row .band-load > select { font-size: 12px; }
+  .band-load .band-add { font-size: 11px; }
+}

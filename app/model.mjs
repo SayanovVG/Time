@@ -1,6 +1,6 @@
 import { PROGRAM, BAND_LOADS, DEFAULT_FOODS } from "./program.mjs";
 
-export const VERSION = "3.2.0";
+export const VERSION = "3.2.1";
 export const SCHEMA = 3;
 export const TARGET = { cal: 2450, p: 180, f: 75, c: 264 };
 export const clone = (value) => JSON.parse(JSON.stringify(value));
@@ -599,43 +599,98 @@ export function exerciseTrend(current, previous, count) {
       ...trend,
       status: "incomplete",
       label: "Не все подходы",
-      reason: `Выполнено ${current.sets} из ${current.expectedSets} подходов. Сравнение появится после завершения упражнения.`,
+      reason: `Выполнено ${current.sets} из ${current.expectedSets} подходов. Записанные подходы видны ниже, но сравнение появится после завершения упражнения.`,
     };
   if (!previous?.complete)
     return {
       ...trend,
       status: "first",
       label: "Первая запись",
-      reason:
-        "Для сравнения нужна предыдущая полностью записанная тренировка этого упражнения.",
+      reason: "Для сравнения нужна предыдущая полностью записанная тренировка этого упражнения. Текущий результат сохранён.",
     };
-  if (current.sets !== previous.sets)
+
+  // Never conflate a machine weight with a band or time under the same exercise ID.
+  if (current.kind !== previous.kind)
     return {
       ...trend,
-      status: "sets",
-      label: "Разное число подходов",
-      reason:
-        "Общий результат не сравнивается, когда число подходов различается.",
+      status: "equipment",
+      label: "Смена оборудования",
+      badge: "Смена",
+      reason: "Тип нагрузки изменился (например, резинка → тренажёр). Обе тренировки сохранены, но процент силы между разными типами нагрузки недостоверен.",
     };
-  if (!sameSessionConditions(current, previous))
+
+  if (sameSessionConditions(current, previous)) {
+    const delta = current.reps - previous.reps;
+    return {
+      ...trend,
+      delta,
+      pct: round((delta / previous.reps) * 100),
+      status: delta > 0 ? "up" : delta < 0 ? "down" : "same",
+      label: delta > 0 ? "Больше" : delta < 0 ? "Меньше" : "Без изменений",
+      reason: current.kind === "time"
+        ? "При одинаковом числе подходов"
+        : "При одинаковой нагрузке и числе подходов",
+    };
+  }
+
+  // With a constant load, different set counts can be compared fairly per set,
+  // but this is NOT a percentage of total workout volume or strength.
+  const uniform = (entry) =>
+    entry.loads.length > 0 && entry.loads.every((load) => load === entry.loads[0]);
+  if (
+    current.sets !== previous.sets &&
+    uniform(current) && uniform(previous) &&
+    current.loads[0] === previous.loads[0]
+  ) {
+    const before = round(previous.reps / previous.sets);
+    const after = round(current.reps / current.sets);
+    const delta = round(after - before);
+    return {
+      ...trend,
+      delta,
+      pct: round((delta / before) * 100),
+      comparison: {
+        before, after,
+        unit: current.kind === "time" ? "сек/подход" : "повт./подход",
+      },
+      status: delta > 0 ? "up" : delta < 0 ? "down" : "same",
+      label: "Среднее на подход",
+      reason: `Одинаковая нагрузка, но подходов ${previous.sets} → ${current.sets}. Сравнивается среднее на подход, а не суммарный объём тренировки.`,
+    };
+  }
+
+  // Weight progression is visible in kg even when repetition counts differ.
+  // It must not be shown as a percentage of strength.
+  if (current.kind === "weight") {
+    const oldMax = Math.max(...previous.loads);
+    const newMax = Math.max(...current.loads);
+    const loadChange = round(newMax - oldMax);
     return {
       ...trend,
       status: "load",
-      label: current.kind === "band" ? "Другая резинка" : "Другой вес",
-      reason:
-        "Нагрузка изменилась. Процент повторов здесь не показывает рост или падение силы.",
+      label: `Вес ${oldMax} → ${newMax} кг`,
+      badge: loadChange === 0 ? "Вес" : `${loadChange > 0 ? "+" : ""}${loadChange} кг`,
+      reason: `Максимальная нагрузка: ${oldMax} → ${newMax} кг; повторения: ${previous.reps} → ${current.reps}; подходы: ${previous.sets} → ${current.sets}. Это фактическое изменение веса, а не процент прироста силы.`,
     };
-  const delta = current.reps - previous.reps;
+  }
+  if (current.kind === "band") {
+    const compact = (loads) => [...new Set(loads)].map((load) =>
+      String(load).split(" + ").map((part) => part.split(" ")[0]).join(" + ")
+    ).join(", ");
+    return {
+      ...trend,
+      status: "load",
+      label: "Изменились резинки",
+      badge: "Резинки",
+      reason: `Резинки: ${compact(previous.loads)} → ${compact(current.loads)}. Повторения: ${previous.reps} → ${current.reps}; подходы: ${previous.sets} → ${current.sets}. Разные резинки нельзя честно сравнить одним процентом.`,
+    };
+  }
   return {
     ...trend,
-    delta,
-    pct: round((delta / previous.reps) * 100),
-    status: delta > 0 ? "up" : delta < 0 ? "down" : "same",
-    label: delta > 0 ? "Больше" : delta < 0 ? "Меньше" : "Без изменений",
-    reason:
-      current.kind === "time"
-        ? "При одинаковом числе подходов"
-        : "При одинаковой нагрузке и числе подходов",
+    status: "sets",
+    label: "Изменилось число подходов",
+    badge: `${previous.sets}→${current.sets}`,
+    reason: `Подходы: ${previous.sets} → ${current.sets}; секунды: ${previous.reps} → ${current.reps}. Для точного процента нужно одинаковое число подходов.`,
   };
 }
 export function measureSeries(s, field, days, end = dateKey()) {

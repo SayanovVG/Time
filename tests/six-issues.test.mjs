@@ -67,3 +67,34 @@ test("progress offers 90 days, 365 days and all-time history", () => {
   const html=progress(s,{period:36500},{snapshots:()=>[]});
   assert.match(html,/Всё/);assert.match(html,/90 дней/);assert.match(html,/365 дней/);
 });
+
+test("band selector stays compact: four colors and optional second color, not ten long combinations", () => {
+  const s=freshState();
+  const ex=exerciseById("curlband");
+  s.train["2026-09-07_curlband"]=[
+    {load:BANDS[1]+" + "+BANDS[3],reps:12,rir:2,done:true},
+    {load:BANDS[3],reps:10,rir:2,done:true},
+    {load:"",reps:"",rir:2,done:false},
+  ];
+  const html=training(s,{day:1,date:"2026-09-07",focus:false});
+  assert.match(html,/data-field="band-primary"/);
+  assert.match(html,/data-field="band-secondary"/);
+  assert.match(html,/data-action="band-add"/);
+  assert.match(html,/data-action="band-remove"/);
+  assert.match(html,/Зелёная/);
+  assert.doesNotMatch(html,/>Зелёная \+ Чёрная · две резинки/);
+  assert.equal(validSet(ex,s.train["2026-09-07_curlband"][0]),true);
+});
+
+test("machine versus old band has separate comparable type and no misleading percentage", () => {
+  const s=freshState();
+  s.train["2026-09-03_legcurlband"]=[row(BANDS[0]),row(BANDS[0]),row(BANDS[0])];
+  s.train["2026-09-10_legcurlband"]=[row(25),row(25),row(25)];
+  const t=analytics(s,14,"2026-09-10").trends.find(x=>x.id==="legcurlband");
+  assert.equal(t.status,"equipment");
+  assert.equal(t.pct,null);
+  assert.equal(t.badge,"Смена");
+  const html=progress(s,{period:90},{snapshots:()=>[]});
+  assert.match(html,/Смена оборудования/);
+  assert.match(html,/резинка → тренажёр/);
+});
