@@ -13,21 +13,22 @@
     <link rel="manifest" href="./manifest.json" />
     <link rel="stylesheet" href="./app/app.css" />
     <link rel="stylesheet" href="./app/refinement.css" />
+    <link rel="stylesheet" href="./app/design.css" />
     <script type="module" src="./app/main.mjs"></script>
     <style>
-      #iibrain-intro{position:fixed;inset:0;z-index:99999;display:grid;place-items:center;background:#0b0d10;transition:opacity .44s ease,visibility .44s ease}
-      #iibrain-intro.out{opacity:0;visibility:hidden;pointer-events:none}
-      .ii-sign{display:grid;place-items:center;gap:11px;text-align:center;animation:ii-in .62s cubic-bezier(.2,.8,.2,1) both}
-      .ii-mark{width:52px;height:52px;border-radius:17px;position:relative;background:linear-gradient(145deg,#31d1ff 0%,#566eff 48%,#9a42ff 100%);box-shadow:0 16px 46px rgba(75,80,235,.24),inset 0 1px rgba(255,255,255,.22)}
-      .ii-mark:before{content:"";position:absolute;left:12px;right:12px;top:25px;height:3px;border-radius:4px;background:#fff;box-shadow:7px -8px 0 rgba(255,255,255,.94),7px 8px 0 rgba(255,255,255,.94);transform:rotate(-10deg)}
-      .ii-sign strong{font:850 19px/1.1 system-ui,sans-serif;letter-spacing:.22em;color:#f7f8ff}.ii-sign span{font:650 9px/1 system-ui,sans-serif;letter-spacing:.31em;color:#77829f;text-transform:uppercase}
-      .ii-line{width:88px;height:1px;background:linear-gradient(90deg,transparent,#35d4ff,#8758ff,transparent);box-shadow:0 0 14px rgba(90,103,255,.4)}
-      @keyframes ii-in{from{opacity:0;transform:translateY(9px) scale(.97)}to{opacity:1;transform:none}}
-      @media(prefers-reduced-motion:reduce){#iibrain-intro,.ii-sign{animation:none!important;transition:none!important}}
+      #mt-intro{position:fixed;inset:0;z-index:99999;display:grid;place-items:center;background:radial-gradient(circle at 50% 42%,#25303b 0,#121820 45%,#0d1117 100%);transition:opacity .28s ease,visibility .28s ease}
+      #mt-intro.out{opacity:0;visibility:hidden;pointer-events:none}
+      .mt-splash{display:flex;flex-direction:column;align-items:center;gap:10px;text-align:center;animation:mt-in .42s ease-out both}
+      .mt-splash img{width:82px;height:82px;border-radius:22px;box-shadow:0 20px 55px #0008}
+      .mt-splash strong{font:760 21px/1.2 Manrope,system-ui,sans-serif;letter-spacing:.055em;color:#f6f1ec;margin-top:10px}
+      .mt-splash span{font:600 12px/1.5 Manrope,system-ui,sans-serif;letter-spacing:.09em;color:#9eadbb}
+      .mt-splash i{display:block;width:80px;height:3px;border-radius:10px;background:linear-gradient(90deg,#f7c79d,#f58e58)}
+      @keyframes mt-in{from{opacity:0;transform:translateY(8px) scale(.98)}to{opacity:1;transform:none}}
+      @media(prefers-reduced-motion:reduce){#mt-intro,.mt-splash{animation:none!important;transition:none!important}}
     </style>
   </head>
   <body>
-    <div id="iibrain-intro" aria-hidden="true"><div class="ii-sign"><div class="ii-mark"></div><strong>IIBRAIN</strong><div class="ii-line"></div><span>Created by IIBRAIN</span></div></div>
+    <div id="mt-intro" aria-hidden="true"><div class="mt-splash"><img src="./icon.svg" width="82" height="82" alt=""><strong>MAX TIME</strong><i></i><span>Тренировки · Питание · Прогресс</span></div></div>
     <div id="error-bar" class="error-bar" role="alert" hidden>
       <span></span><button class="icon-button" data-action="dismiss-error" aria-label="Закрыть уведомление">×</button>
     </div>
@@ -42,7 +43,15 @@
     <dialog id="dialog" aria-labelledby="dialog-title"></dialog>
     <div id="toast" class="toast" role="status" hidden></div>
     <script>
-      addEventListener('load',()=>setTimeout(()=>{const e=document.getElementById('iibrain-intro');if(!e)return;e.classList.add('out');setTimeout(()=>e.remove(),520)},matchMedia('(prefers-reduced-motion: reduce)').matches?40:650),{once:true});
+      addEventListener("DOMContentLoaded", () => {
+        const intro = document.getElementById("mt-intro");
+        if (!intro) return;
+        const delay = matchMedia("(prefers-reduced-motion: reduce)").matches ? 0 : 420;
+        setTimeout(() => {
+          intro.classList.add("out");
+          setTimeout(() => intro.remove(), 320);
+        }, delay);
+      }, {once: true});
     </script>
   </body>
 </html>
