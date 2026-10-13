@@ -71,19 +71,47 @@ test("comparison uses the previous complete exercise, including just outside the
   }
 });
 
-test("changing weights or bands reports actual load changes without making up a strength percentage", () => {
-  for (const [id, before, after, expectedBadge] of [
-    ["row", sets([12, 12, 12], 40), sets([10, 10, 10], 45), "+5 кг"],
-    ["curlband", sets([15, 15, 15], BANDS[0]), sets([10, 10, 10], BANDS[1]), "Резинки"],
-    ["pullup", sets([10, 10, 10, 10], 0), sets([10, 10, 10, 10], 5), "+5 кг"],
-  ]) {
-    const t = trend(stateWith(id, before, after));
-    assert.equal(t.pct, null);
-    assert.equal(t.status, "load");
-    assert.equal(t.badge, expectedBadge);
-    assert.equal(sameSessionConditions(t.current, t.previous), false);
-    assert.match(t.reason, /→/);
+test("when loads change: show exact weight percentage or actual band colors, not fake strength percent", () => {
+  const examples = [
+    {id:"row", before: sets([12,12,12],40), after: sets([10,10,10],45),
+      badge:"+12.5% веса", loadPct:12.5, summary:"40 → 45 кг · 12 → 10 повт./подход"},
+    {id:"curlband", before: sets([15,15,15],BANDS[0]), after: sets([10,10,10],BANDS[1]),
+      badge:"Смена", loadPct:undefined, summary:"Красная → Чёрная · 15 → 10 повт./подход"},
+    {id:"pullup", before: sets([10,10,10,10],0), after: sets([10,10,10,10],5),
+      badge:"+5 кг", loadPct:null, summary:"0 → 5 кг · 10 → 10 повт./подход"},
+  ];
+  for (const x of examples) {
+    const t = trend(stateWith(x.id,x.before,x.after));
+    assert.equal(t.pct,null);
+    assert.equal(t.status,"load");
+    assert.equal(t.badge,x.badge);
+    assert.equal(t.loadPct,x.loadPct);
+    assert.equal(t.summary,x.summary);
+    assert.equal(sameSessionConditions(t.current,t.previous),false);
+    assert.match(t.reason,/→/);
   }
+});
+test("working weight percentage and repetition changes are separate metrics", () => {
+  for (const [id,oldWeight,newWeight,oldReps,newReps,badge] of [
+    ["bench",40,42.5,10,6,"+6.25% веса"],
+    ["calfA",37.2,40,15,17,"+7.53% веса"],
+    ["hipabduct",20,22.5,15,12,"+12.5% веса"],
+  ]) {
+    const t=trend(stateWith(id,sets([oldReps,oldReps,oldReps],oldWeight),sets([newReps,newReps,newReps],newWeight)));
+    assert.equal(t.pct,null);
+    assert.equal(t.badge,badge);
+    assert.match(t.summary,new RegExp(`${oldReps} → ${newReps} повт\\./подход`));
+    assert.match(t.reason,/не процент прироста силы/);
+  }
+});
+test("band progression names the real colors, not a vague «Резинки» badge", () => {
+  const t=trend(stateWith("facepull",sets([20,20,20],BANDS[2]),sets([12,12,12],BANDS[3])));
+  assert.equal(t.pct,null);
+  assert.equal(t.badge,"Смена");
+  assert.equal(t.label,"Фиолетовая → Зелёная");
+  assert.equal(t.summary,"Фиолетовая → Зелёная · 20 → 12 повт./подход");
+  assert.doesNotMatch(t.summary,/Резинки/);
+  assert.match(t.reason,/процент прироста силы/);
 });
 test("different set counts with identical load compare per-set averages, not total volume", () => {
   const t = trend(stateWith("row", sets([10, 10, 10, 10], 40), sets([12, 12, 12], 40)));
