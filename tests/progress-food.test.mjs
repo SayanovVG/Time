@@ -97,7 +97,8 @@ test("working weight percentage and repetition changes are separate metrics", ()
     ["calfA",37.2,40,15,17,"+7.53% веса"],
     ["abduct",20,22.5,15,12,"+12.5% веса"],
   ]) {
-    const t=trend(stateWith(id,sets([oldReps,oldReps,oldReps],oldWeight),sets([newReps,newReps,newReps],newWeight)));
+    const repsCount = id === "bench" ? 4 : 3;
+    const t=trend(stateWith(id,sets(Array(repsCount).fill(oldReps),oldWeight),sets(Array(repsCount).fill(newReps),newWeight)));
     assert.equal(t.pct,null);
     assert.equal(t.badge,badge);
     assert.match(t.summary,new RegExp(`${oldReps} → ${newReps} повт\\./подход`));
