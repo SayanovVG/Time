@@ -113,6 +113,23 @@ test("band progression names the real colors, not a vague «Резинки» bad
   assert.doesNotMatch(t.summary,/Резинки/);
   assert.match(t.reason,/процент прироста силы/);
 });
+test("progress overview contains real weight percentages and colored band transition", () => {
+  const s=freshState();
+  s.train["2026-10-05_bench"]=sets([10,10,10,10],40);
+  s.train["2026-10-12_bench"]=sets([6,6,6,6],42.5);
+  s.train["2026-09-30_facepull"]=sets([20,20,20],BANDS[2]);
+  s.train["2026-10-07_facepull"]=sets([12,12,12],BANDS[3]);
+  const html=progress(s,{period:36500},{snapshots:()=>[]});
+  assert.match(html,/\+6\.25% веса/);
+  assert.match(html,/40 → 42\.5 кг · 10 → 6 повт\.\/подход/);
+  assert.match(html,/Фиолетовая → Зелёная/);
+  assert.match(html,/20 → 12 повт\.\/подход/);
+  assert.doesNotMatch(html,/>Резинки</);
+  const exportText=report(s,36500,"2026-10-13");
+  assert.match(exportText,/\+6\.25%/);
+  assert.match(exportText,/Фиолетовая → Зелёная/);
+});
+
 test("different set counts with identical load compare per-set averages, not total volume", () => {
   const t = trend(stateWith("row", sets([10, 10, 10, 10], 40), sets([12, 12, 12], 40)));
   assert.equal(t.status, "up");
@@ -169,7 +186,7 @@ test("report and progress explain exact comparison dates and never print null pe
   const s = stateWith("row", sets([10, 10, 10]), sets([12, 12, 12]));
   assert.match(
     report(s, 7, end),
-    /\+20% к предыдущей тренировке 2026-09-03: 30 → 36 повторы/,
+    /\+20% повторений к предыдущей тренировке 2026-09-03: 30 → 36 повторы/,
   );
   s.train[`${end}_row`][2].done = false;
   const text = report(s, 7, end);
