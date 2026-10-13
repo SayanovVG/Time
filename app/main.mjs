@@ -203,6 +203,28 @@ function openModal(title, body, kind = "generic") {
   if (!dialog.open) dialog.showModal();
   dialog.scrollTop = 0;
 }
+function showBandPicker(ex, index) {
+  const load = rowsFor(store.state, ui.date, ex)[index].load;
+  const [primary, secondary] = String(load || "").split(" + ");
+  const colors = ["red", "black", "violet", "green"];
+  const choices = (name, current, optional) =>
+    `<fieldset class="band-choices"><legend>${optional ? "Вторая резинка (необязательно)" : "Первая резинка"}</legend>
+      <div class="band-choice-grid">${optional ? `<label class="band-choice band-choice-none"><input type="radio" name="${name}" value="" ${!current ? "checked" : ""}><span>Нет</span></label>` : ""}
+      ${BANDS.map((band, i) =>
+        `<label class="band-choice band-choice-${colors[i]}"><input type="radio" name="${name}" value="${esc(band)}" ${current === band ? "checked" : ""} ${!optional ? "required" : ""}>
+          <span><i class="band-color-circle" aria-hidden="true"></i><strong>${esc(band.split(" ")[0])}</strong><small>${esc(band.split(" ").slice(1).join(" "))}</small></span></label>`
+      ).join("")}</div></fieldset>`;
+  openModal(
+    "Выбрать резинки",
+    `<form id="band-form" data-ex="${esc(ex.id)}" data-index="${index}">
+       <p class="band-modal-description">${esc(ex.n)} · подход ${index + 1}</p>
+       ${choices("primary", primary, false)}
+       ${choices("secondary", secondary, true)}
+       <div class="band-modal-actions"><button type="button" class="button secondary" data-action="close-dialog">Отмена</button><button type="submit" class="button primary">Сохранить</button></div>
+     </form>`,
+    "band",
+  );
+}
 function closeModal() {
   if (dialog.dataset.kind === "recipe-product" && recipeDraft) {
     drawRecipe();
@@ -836,21 +858,22 @@ document.addEventListener("click", async (event) => {
         );
         render({ top: true });
         break;
-      case "band-add": {
-        const widget = button.closest(".band-load");
-        if (!widget) break;
-        widget.querySelector(".band-second").hidden = false;
-        button.hidden = true;
-        widget.querySelector('[data-field="band-secondary"]')?.focus();
-        break;
-      }
-      case "band-remove": {
+      case "band-open":
         writableWorkout();
-        const current = rowsFor(store.state, ui.date, ex)[index];
-        const first = String(current.load || "").split(" + ")[0];
-        commit((s) => updateSet(s, ex, index, (r) => setInput(ex, r, "load", first)));
-        render();
-        notify("Вторая резинка убрана");
+        showBandPicker(ex, index);
+        break;
+      case "repair-workout": {
+        const repair = exerciseById(button.dataset.ex);
+        const day = Object.entries(PROGRAM).find(([, p]) => p.ex.some((x) => x.id === repair?.id));
+        if (!repair || !day || !parseDate(button.dataset.date))
+          throw new Error("Не удалось найти тренировку для исправления.");
+        ui.tab = "training";
+        ui.date = button.dataset.date;
+        ui.day = Number(day[0]);
+        ui.focus = false;
+        await fullscreen(false);
+        render({top:true});
+        root.querySelector(`[data-exercise="${repair.id}"]`)?.scrollIntoView({block:"center",behavior:"smooth"});
         break;
       }
       case "check-set": {
@@ -964,9 +987,9 @@ document.addEventListener("click", async (event) => {
         const rows = trainingSessions(store.state, 36500)
           .filter((r) => r.id === exerciseGroupId(exId))
           .slice(-10);
-        const reference = rows.findLast((r) => r.complete);
+        const reference = rows.findLast((r) => r.complete && !r.suspicious);
         const comparable = rows.filter(
-          (r) => r.complete && sameSessionConditions(r, reference),
+          (r) => r.complete && !r.suspicious && sameSessionConditions(r, reference),
         );
         openModal(
           esc(ex.n),
@@ -1265,22 +1288,6 @@ document.addEventListener("change", async (event) => {
       render();
       return;
     }
-    if (kind === "band-primary" || kind === "band-secondary") {
-      writableWorkout();
-      const exercise = exerciseById(id);
-      const widget = field.closest(".band-load");
-      const first = widget?.querySelector('[data-field="band-primary"]')?.value || "";
-      const second = widget?.querySelector('[data-field="band-secondary"]')?.value || "";
-      if (second && !first) throw new Error("Сначала выбери первую резинку.");
-      const load = [first, second]
-        .filter(Boolean)
-        .sort((a, b) => BANDS.indexOf(a) - BANDS.indexOf(b))
-        .join(" + ");
-      commit((s) => updateSet(s, exercise, +index, (r) => setInput(exercise, r, "load", load)));
-      field.removeAttribute("aria-invalid");
-      render();
-      return;
-    }
     if (kind === "metric") {
       commit((s) => setMetric(s, key, field.value, ui.foodDate));
       field.removeAttribute("aria-invalid");
@@ -1320,6 +1327,24 @@ document.addEventListener("submit", (event) => {
   const form = event.target,
     values = Object.fromEntries(new FormData(form));
   try {
+    if (form.id === "band-form") {
+      writableWorkout();
+      const exercise = exerciseById(form.dataset.ex);
+      const index = Number(form.dataset.index);
+      if (!exercise || !Number.isInteger(index) || index < 0 || index >= exercise.s)
+        throw new Error("Не удалось определить подход.");
+      if (!BANDS.includes(values.primary) || (values.secondary && !BANDS.includes(values.secondary)))
+        throw new Error("Выбери первую и при необходимости вторую резинку.");
+      const load = [values.primary, values.secondary]
+        .filter(Boolean)
+        .sort((a, b) => BANDS.indexOf(a) - BANDS.indexOf(b))
+        .join(" + ");
+      commit((state) => updateSet(state, exercise, index, (row) => setInput(exercise, row, "load", load)));
+      closeModal();
+      render();
+      notify("Резинки сохранены");
+      return;
+    }
     if (form.id === "food-amount-form") {
       recordProduct(findFood(form.dataset.id), values.amount);
     }
