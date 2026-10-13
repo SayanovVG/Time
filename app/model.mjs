@@ -684,30 +684,54 @@ export function exerciseTrend(current, previous, count) {
     };
   }
 
-  // Weight progression is visible in kg even when repetition counts differ.
-  // It must not be shown as a percentage of strength.
+  // Describe working-weight changes as percentages of the recorded load,
+  // not as a strength percentage; preserve the actual repetitions alongside it.
   if (current.kind === "weight") {
     const oldMax = Math.max(...previous.loads);
     const newMax = Math.max(...current.loads);
-    const loadChange = round(newMax - oldMax);
+    const deltaKg = round(newMax - oldMax);
+    const weightPct = oldMax > 0 ? round(deltaKg / oldMax * 100) : null;
+    const formatPct = (n) => `${n > 0 ? "+" : ""}${n}%`;
+    const weightChange = oldMax === newMax
+      ? "Вес без изменений"
+      : weightPct === null
+        ? `Вес: ${oldMax} → ${newMax} кг`
+        : `Вес: ${oldMax} → ${newMax} кг (${formatPct(weightPct)})`;
+    const beforeAvg = round(previous.reps / previous.sets);
+    const afterAvg = round(current.reps / current.sets);
+    const resultChange = `${beforeAvg} → ${afterAvg} повт./подход`;
+    const mixed = previous.loads.some((x) => x !== oldMax) ||
+      current.loads.some((x) => x !== newMax);
     return {
       ...trend,
       status: "load",
-      label: `Вес ${oldMax} → ${newMax} кг`,
-      badge: loadChange === 0 ? "Вес" : `${loadChange > 0 ? "+" : ""}${loadChange} кг`,
-      reason: `Максимальная нагрузка: ${oldMax} → ${newMax} кг; повторения: ${previous.reps} → ${current.reps}; подходы: ${previous.sets} → ${current.sets}. Это фактическое изменение веса, а не процент прироста силы.`,
+      label: weightChange,
+      loadPct: weightPct,
+      loadKg: deltaKg,
+      badge: oldMax === newMax
+        ? "Вес ="
+        : weightPct === null
+          ? `${deltaKg > 0 ? "+" : ""}${deltaKg} кг`
+          : `${formatPct(weightPct)} веса`,
+      summary: `${oldMax} → ${newMax} кг · ${resultChange}`,
+      reason: `${mixed ? "Сравнивается максимальный рабочий вес за занятие. " : ""}${weightChange}; повторы в среднем на подход: ${resultChange}; подходы: ${previous.sets} → ${current.sets}. Изменение веса — не процент прироста силы: учитывай также повторения и RIR.`,
     };
   }
   if (current.kind === "band") {
     const compact = (loads) => [...new Set(loads)].map((load) =>
       String(load).split(" + ").map((part) => part.split(" ")[0]).join(" + ")
     ).join(", ");
+    const before = compact(previous.loads);
+    const after = compact(current.loads);
+    const beforeAvg = round(previous.reps / previous.sets);
+    const afterAvg = round(current.reps / current.sets);
     return {
       ...trend,
       status: "load",
-      label: "Изменились резинки",
-      badge: "Резинки",
-      reason: `Резинки: ${compact(previous.loads)} → ${compact(current.loads)}. Повторения: ${previous.reps} → ${current.reps}; подходы: ${previous.sets} → ${current.sets}. Разные резинки нельзя честно сравнить одним процентом.`,
+      label: `${before} → ${after}`,
+      badge: "Смена",
+      summary: `${before} → ${after} · ${beforeAvg} → ${afterAvg} повт./подход`,
+      reason: `Резинки: ${before} → ${after}; повторы в среднем на подход: ${beforeAvg} → ${afterAvg}; подходы: ${previous.sets} → ${current.sets}. Сопротивление резинок нельзя честно перевести в процент прироста силы.`,
     };
   }
   return {
